@@ -1,0 +1,1504 @@
+{
+  "roles": {
+    "table": "roles",
+    "displayName": "Roles",
+    "apiBaseUrl": "/api/projectmanagement",
+    "endpoints": {
+      "list": { "method": "GET", "url": "/roles" },
+      "create": { "method": "POST", "url": "/roles" },
+      "read": { "method": "GET", "url": "/roles/:id" },
+      "update": { "method": "PUT", "url": "/roles/:id" },
+      "delete": { "method": "DELETE", "url": "/roles/:id" }
+    },
+    "fields": [
+      {
+        "name": "id",
+        "label": "Id",
+        "type": "number",
+        "isPrimaryKey": true,
+        "readOnly": true,
+        "visibleInList": true,
+        "visibleInForm": false,
+        "filterable": false,
+        "filterType": null,
+        "required": false,
+        "maxLength": null,
+        "unique": false,
+        "defaultValue": null
+      },
+      {
+        "name": "name",
+        "label": "Name",
+        "type": "text",
+        "isPrimaryKey": false,
+        "readOnly": false,
+        "visibleInList": true,
+        "visibleInForm": true,
+        "filterable": true,
+        "filterType": "text",
+        "required": true,
+        "maxLength": 50,
+        "unique": true,
+        "defaultValue": null
+      },
+      {
+        "name": "description",
+        "label": "Description",
+        "type": "textarea",
+        "isPrimaryKey": false,
+        "readOnly": false,
+        "visibleInList": true,
+        "visibleInForm": true,
+        "filterable": false,
+        "filterType": null,
+        "required": false,
+        "maxLength": null,
+        "unique": false,
+        "defaultValue": null
+      },
+      {
+        "name": "created_at",
+        "label": "Created At",
+        "type": "datetime",
+        "isPrimaryKey": false,
+        "readOnly": true,
+        "visibleInList": true,
+        "visibleInForm": false,
+        "filterable": true,
+        "filterType": "date",
+        "required": false,
+        "maxLength": null,
+        "unique": false,
+        "defaultValue": "CURRENT_TIMESTAMP"
+      },
+      {
+        "name": "updated_at",
+        "label": "Updated At",
+        "type": "datetime",
+        "isPrimaryKey": false,
+        "readOnly": true,
+        "visibleInList": true,
+        "visibleInForm": false,
+        "filterable": true,
+        "filterType": "date",
+        "required": false,
+        "maxLength": null,
+        "unique": false,
+        "defaultValue": "CURRENT_TIMESTAMP"
+      }
+    ],
+    "listConfig": {
+      "defaultSort": { "field": "created_at", "order": "desc" },
+      "pageSize": 10,
+      "columns": ["name", "description"]
+    },
+    "formConfig": {
+      "fields": ["name", "description"],
+      "validation": {
+        "name": {
+          "required": "Name is required",
+          "maxLength": "Name cannot exceed 50 characters",
+          "unique": "Name must be unique"
+        }
+      }
+    },
+    "filterConfig": {
+      "fields": [
+        { "name": "name", "type": "text", "label": "Name" },
+        { "name": "created_at", "type": "date", "label": "Created At" },
+        { "name": "updated_at", "type": "date", "label": "Updated At" }
+      ]
+    }
+  },
+  "permissions": {
+    "table": "permissions",
+    "displayName": "Permissions",
+    "apiBaseUrl": "/api/projectmanagement",
+    "endpoints": {
+      "list": { "method": "GET", "url": "/permissions" },
+      "create": { "method": "POST", "url": "/permissions" },
+      "read": { "method": "GET", "url": "/permissions/:id" },
+      "update": { "method": "PUT", "url": "/permissions/:id" },
+      "delete": { "method": "DELETE", "url": "/permissions/:id" }
+    },
+    "fields": [
+      {
+        "name": "id",
+        "label": "Id",
+        "type": "number",
+        "isPrimaryKey": true,
+        "readOnly": true,
+        "visibleInList": true,
+        "visibleInForm": false,
+        "filterable": false,
+        "filterType": null,
+        "required": false,
+        "maxLength": null,
+        "unique": false,
+        "defaultValue": null
+      },
+      {
+        "name": "code_name",
+        "label": "Name",
+        "type": "text",
+        "isPrimaryKey": false,
+        "readOnly": false,
+        "visibleInList": true,
+        "visibleInForm": true,
+        "filterable": true,
+        "filterType": "text",
+        "required": true,
+        "maxLength": 100,
+        "unique": true,
+        "defaultValue": null
+      },
+      {
+        "name": "description",
+        "label": "Description",
+        "type": "textarea",
+        "isPrimaryKey": false,
+        "readOnly": false,
+        "visibleInList": true,
+        "visibleInForm": true,
+        "filterable": false,
+        "filterType": null,
+        "required": false,
+        "maxLength": null,
+        "unique": false,
+        "defaultValue": null
+      },
+      {
+        "name": "created_at",
+        "label": "Created At",
+        "type": "datetime",
+        "isPrimaryKey": false,
+        "readOnly": true,
+        "visibleInList": true,
+        "visibleInForm": false,
+        "filterable": true,
+        "filterType": "date",
+        "required": false,
+        "maxLength": null,
+        "unique": false,
+        "defaultValue": "CURRENT_TIMESTAMP"
+      },
+      {
+        "name": "updated_at",
+        "label": "Updated At",
+        "type": "datetime",
+        "isPrimaryKey": false,
+        "readOnly": true,
+        "visibleInList": true,
+        "visibleInForm": false,
+        "filterable": true,
+        "filterType": "date",
+        "required": false,
+        "maxLength": null,
+        "unique": false,
+        "defaultValue": "CURRENT_TIMESTAMP"
+      }
+    ],
+    "listConfig": {
+      "defaultSort": { "field": "created_at", "order": "desc" },
+      "pageSize": 10,
+      "columns": ["code_name", "description"]
+    },
+    "formConfig": {
+      "fields": ["code_name", "description"],
+      "validation": {
+        "code_name": {
+          "required": "Name is required",
+          "maxLength": "Name cannot exceed 100 characters",
+          "unique": "Name must be unique"
+        }
+      }
+    },
+    "filterConfig": {
+      "fields": [
+        { "name": "code_name", "type": "text", "label": "Name" },
+        { "name": "created_at", "type": "date", "label": "Created At" },
+        { "name": "updated_at", "type": "date", "label": "Updated At" }
+      ]
+    }
+  },
+  "role_permissions": {
+    "table": "role-permissions",
+    "displayName": "Role Permissions",
+    "apiBaseUrl": "/api/projectmanagement",
+    "endpoints": {
+      "list": { "method": "GET", "url": "/role-permissions" },
+      "create": { "method": "POST", "url": "/role-permissions" },
+      "read": { "method": "GET", "url": "/role-permissions/:id" },
+      "update": { "method": "PUT", "url": "/role-permissions/:id" },
+      "delete": { "method": "DELETE", "url": "/role-permissions/:id" }
+    },
+    "fields": [
+      {
+        "name": "id",
+        "label": "Id",
+        "type": "number",
+        "isPrimaryKey": true,
+        "readOnly": true,
+        "visibleInList": true,
+        "visibleInForm": false,
+        "filterable": false,
+        "filterType": null,
+        "required": false,
+        "maxLength": null,
+        "unique": false,
+        "defaultValue": null
+      },
+      {
+        "name": "role",
+        "label": "Role Id",
+        "type": "number",
+        "isPrimaryKey": false,
+        "readOnly": false,
+        "visibleInList": false,
+        "visibleInForm": true,
+        "filterable": false,
+        "filterType": null,
+        "required": true,
+        "maxLength": null,
+        "unique": false,
+        "defaultValue": null
+      },
+      {
+        "name": "permission",
+        "label": "Permission Id",
+        "type": "multiselect",
+        "isPrimaryKey": false,
+        "readOnly": false,
+        "visibleInList": false,
+        "visibleInForm": true,
+        "filterable": false,
+        "filterType": null,
+        "required": true,
+        "maxLength": null,
+        "unique": false,
+        "defaultValue": null
+      },
+      {
+        "name": "role_name",
+        "label": "Role",
+        "type": "text",
+        "isPrimaryKey": false,
+        "readOnly": true,
+        "visibleInList": true,
+        "visibleInForm": false,
+        "filterable": false,
+        "filterType": null,
+        "required": false,
+        "maxLength": null,
+        "unique": false,
+        "defaultValue": null
+      },
+      {
+        "name": "permission_name",
+        "label": "Permission",
+        "type": "text",
+        "isPrimaryKey": false,
+        "readOnly": true,
+        "visibleInList": true,
+        "visibleInForm": false,
+        "filterable": false,
+        "filterType": null,
+        "required": false,
+        "maxLength": null,
+        "unique": false,
+        "defaultValue": null
+      },
+      {
+        "name": "created_at",
+        "label": "Created At",
+        "type": "datetime",
+        "isPrimaryKey": false,
+        "readOnly": true,
+        "visibleInList": true,
+        "visibleInForm": false,
+        "filterable": true,
+        "filterType": "date",
+        "required": false,
+        "maxLength": null,
+        "unique": false,
+        "defaultValue": "CURRENT_TIMESTAMP"
+      }
+    ],
+    "listConfig": {
+      "defaultSort": { "field": "created_at", "order": "desc" },
+      "pageSize": 10,
+      "columns": ["role_name", "permission_name"]
+    },
+    "formConfig": {
+      "fields": ["role", "permission"],
+      "validation": {
+        "role": { "required": "Role is required" },
+        "permission": { "required": "At least one permission is required" }
+      }
+    },
+    "filterConfig": {
+      "fields": [
+        { "name": "created_at", "type": "date", "label": "Created At" }
+      ]
+    }
+  },
+  "users": {
+    "table": "users",
+    "displayName": "Users",
+    "apiBaseUrl": "/api/projectmanagement",
+    "endpoints": {
+      "list": { "method": "GET", "url": "/users" },
+      "create": { "method": "POST", "url": "/users" },
+      "read": { "method": "GET", "url": "/users/:id" },
+      "update": { "method": "PUT", "url": "/users/:id" },
+      "delete": { "method": "DELETE", "url": "/users/:id" }
+    },
+    "fields": [
+      {
+        "name": "id",
+        "label": "Id",
+        "type": "number",
+        "isPrimaryKey": true,
+        "readOnly": true,
+        "visibleInList": true,
+        "visibleInForm": false,
+        "filterable": false,
+        "filterType": null,
+        "required": false,
+        "maxLength": null,
+        "unique": false,
+        "defaultValue": null
+      },
+      {
+        "name": "username",
+        "label": "Username",
+        "type": "text",
+        "isPrimaryKey": false,
+        "readOnly": false,
+        "visibleInList": true,
+        "visibleInForm": true,
+        "filterable": true,
+        "filterType": "text",
+        "required": true,
+        "maxLength": 50,
+        "unique": true,
+        "defaultValue": null
+      },
+      {
+        "name": "email",
+        "label": "Email",
+        "type": "text",
+        "isPrimaryKey": false,
+        "readOnly": false,
+        "visibleInList": true,
+        "visibleInForm": true,
+        "filterable": true,
+        "filterType": "text",
+        "required": true,
+        "maxLength": 255,
+        "unique": true,
+        "defaultValue": null
+      },
+      {
+        "name": "hashed_password",
+        "label": "Hashed Password",
+        "type": "text",
+        "isPrimaryKey": false,
+        "readOnly": false,
+        "visibleInList": true,
+        "visibleInForm": true,
+        "filterable": true,
+        "filterType": "text",
+        "required": true,
+        "maxLength": 255,
+        "unique": false,
+        "defaultValue": null
+      },
+      {
+        "name": "first_name",
+        "label": "First Name",
+        "type": "text",
+        "isPrimaryKey": false,
+        "readOnly": false,
+        "visibleInList": true,
+        "visibleInForm": true,
+        "filterable": true,
+        "filterType": "text",
+        "required": false,
+        "maxLength": 50,
+        "unique": false,
+        "defaultValue": null
+      },
+      {
+        "name": "last_name",
+        "label": "Last Name",
+        "type": "text",
+        "isPrimaryKey": false,
+        "readOnly": false,
+        "visibleInList": true,
+        "visibleInForm": true,
+        "filterable": true,
+        "filterType": "text",
+        "required": false,
+        "maxLength": 50,
+        "unique": false,
+        "defaultValue": null
+      },
+      {
+        "name": "is_active",
+        "label": "Is Active",
+        "type": "boolean",
+        "isPrimaryKey": false,
+        "readOnly": false,
+        "visibleInList": true,
+        "visibleInForm": true,
+        "filterable": false,
+        "filterType": null,
+        "required": false,
+        "maxLength": null,
+        "unique": false,
+        "defaultValue": "TRUE"
+      },
+      {
+        "name": "created_at",
+        "label": "Created At",
+        "type": "datetime",
+        "isPrimaryKey": false,
+        "readOnly": true,
+        "visibleInList": true,
+        "visibleInForm": false,
+        "filterable": true,
+        "filterType": "date",
+        "required": false,
+        "maxLength": null,
+        "unique": false,
+        "defaultValue": "CURRENT_TIMESTAMP"
+      },
+      {
+        "name": "updated_at",
+        "label": "Updated At",
+        "type": "datetime",
+        "isPrimaryKey": false,
+        "readOnly": true,
+        "visibleInList": true,
+        "visibleInForm": false,
+        "filterable": true,
+        "filterType": "date",
+        "required": false,
+        "maxLength": null,
+        "unique": false,
+        "defaultValue": "CURRENT_TIMESTAMP"
+      }
+    ],
+    "listConfig": {
+      "defaultSort": { "field": "created_at", "order": "desc" },
+      "pageSize": 10,
+      "columns": [
+        "first_name",
+        "last_name",
+        "username",
+        "email"
+      ]
+    },
+    "formConfig": {
+      "fields": ["username", "email", "hashed_password", "first_name", "last_name", "is_active"],
+      "validation": {
+        "username": {
+          "required": "Username is required",
+          "maxLength": "Username cannot exceed 50 characters",
+          "unique": "Username must be unique"
+        },
+        "email": {
+          "required": "Email is required",
+          "maxLength": "Email cannot exceed 255 characters",
+          "unique": "Email must be unique"
+        },
+        "hashed_password": {
+          "required": "Hashed Password is required",
+          "maxLength": "Hashed Password cannot exceed 255 characters"
+        },
+        "first_name": {
+          "maxLength": "First Name cannot exceed 50 characters"
+        },
+        "last_name": {
+          "maxLength": "Last Name cannot exceed 50 characters"
+        }
+      }
+    },
+    "filterConfig": {
+      "fields": [
+        { "name": "username", "type": "text", "label": "Username" },
+        { "name": "email", "type": "text", "label": "Email" },
+        { "name": "hashed_password", "type": "text", "label": "Hashed Password" },
+        { "name": "first_name", "type": "text", "label": "First Name" },
+        { "name": "last_name", "type": "text", "label": "Last Name" },
+        { "name": "created_at", "type": "date", "label": "Created At" },
+        { "name": "updated_at", "type": "date", "label": "Updated At" }
+      ]
+    }
+  },
+  "user_roles": {
+    "table": "user_roles",
+    "displayName": "User Roles",
+    "apiBaseUrl": "/api/projectmanagement",
+    "endpoints": {
+      "list": { "method": "GET", "url": "/user_roles" },
+      "create": { "method": "POST", "url": "/user_roles" },
+      "read": { "method": "GET", "url": "/user_roles/:id" },
+      "update": { "method": "PUT", "url": "/user_roles/:id" },
+      "delete": { "method": "DELETE", "url": "/user_roles/:id" }
+    },
+    "fields": [
+      {
+        "name": "id",
+        "label": "Id",
+        "type": "number",
+        "isPrimaryKey": true,
+        "readOnly": true,
+        "visibleInList": true,
+        "visibleInForm": false,
+        "filterable": false,
+        "filterType": null,
+        "required": false,
+        "maxLength": null,
+        "unique": false,
+        "defaultValue": null
+      },
+      {
+        "name": "user_id",
+        "label": "User",
+        "type": "select",
+        "isPrimaryKey": false,
+        "readOnly": false,
+        "visibleInList": false,
+        "visibleInForm": true,
+        "filterable": false,
+        "filterType": null,
+        "required": true,
+        "maxLength": null,
+        "unique": false,
+        "defaultValue": null
+      },
+      {
+        "name": "roles",
+        "label": "Roles",
+        "type": "multiselect",
+        "isPrimaryKey": false,
+        "readOnly": false,
+        "visibleInList": false,
+        "visibleInForm": true,
+        "filterable": false,
+        "filterType": null,
+        "required": true,
+        "maxLength": null,
+        "unique": false,
+        "defaultValue": null
+      },
+      {
+        "name": "user_name",
+        "label": "User",
+        "type": "text",
+        "isPrimaryKey": false,
+        "readOnly": true,
+        "visibleInList": true,
+        "visibleInForm": false,
+        "filterable": false,
+        "filterType": null,
+        "required": false,
+        "maxLength": null,
+        "unique": false,
+        "defaultValue": null
+      },
+      {
+        "name": "roles_names",
+        "label": "Roles",
+        "type": "text",
+        "isPrimaryKey": false,
+        "readOnly": true,
+        "visibleInList": true,
+        "visibleInForm": false,
+        "filterable": false,
+        "filterType": null,
+        "required": false,
+        "maxLength": null,
+        "unique": false,
+        "defaultValue": null
+      },
+      {
+        "name": "assigned_at",
+        "label": "Assigned At",
+        "type": "datetime",
+        "isPrimaryKey": false,
+        "readOnly": false,
+        "visibleInList": true,
+        "visibleInForm": true,
+        "filterable": true,
+        "filterType": "date",
+        "required": false,
+        "maxLength": null,
+        "unique": false,
+        "defaultValue": "CURRENT_TIMESTAMP"
+      }
+    ],
+    "listConfig": {
+      "defaultSort": { "field": "id", "order": "desc" },
+      "pageSize": 10,
+      "columns": ["id", "user_name", "roles_names", "assigned_at"]
+    },
+    "formConfig": {
+      "fields": ["user_id", "roles", "assigned_at"],
+      "validation": {
+        "user_id": { "required": "User Id is required" },
+        "roles": { "required": "Roles are required" }
+      }
+    },
+    "filterConfig": {
+      "fields": [
+        { "name": "assigned_at", "type": "date", "label": "Assigned At" }
+      ]
+    }
+  },
+  "projects": {
+    "table": "projects",
+    "displayName": "Projects",
+    "apiBaseUrl": "/api/projectmanagement",
+    "endpoints": {
+      "list": { "method": "GET", "url": "/projects" },
+      "create": { "method": "POST", "url": "/projects" },
+      "read": { "method": "GET", "url": "/projects/:id" },
+      "update": { "method": "PUT", "url": "/projects/:id" },
+      "delete": { "method": "DELETE", "url": "/projects/:id" }
+    },
+    "fields": [
+      {
+        "name": "id",
+        "label": "Id",
+        "type": "number",
+        "isPrimaryKey": true,
+        "readOnly": true,
+        "visibleInList": true,
+        "visibleInForm": false,
+        "filterable": false,
+        "filterType": null,
+        "required": false,
+        "maxLength": null,
+        "unique": false,
+        "defaultValue": null
+      },
+      {
+        "name": "name",
+        "label": "Name",
+        "type": "text",
+        "isPrimaryKey": false,
+        "readOnly": false,
+        "visibleInList": true,
+        "visibleInForm": true,
+        "filterable": true,
+        "filterType": "text",
+        "required": true,
+        "maxLength": 100,
+        "unique": false,
+        "defaultValue": null
+      },
+      {
+        "name": "description",
+        "label": "Description",
+        "type": "textarea",
+        "isPrimaryKey": false,
+        "readOnly": false,
+        "visibleInList": false,
+        "visibleInForm": true,
+        "filterable": false,
+        "filterType": null,
+        "required": false,
+        "maxLength": null,
+        "unique": false,
+        "defaultValue": null
+      },
+      {
+        "name": "status",
+        "label": "Status",
+        "type": "text",
+        "isPrimaryKey": false,
+        "readOnly": false,
+        "visibleInList": true,
+        "visibleInForm": true,
+        "filterable": true,
+        "filterType": "text",
+        "required": true,
+        "maxLength": 20,
+        "unique": false,
+        "defaultValue": null
+      },
+      {
+        "name": "start_date",
+        "label": "Start Date",
+        "type": "date",
+        "isPrimaryKey": false,
+        "readOnly": false,
+        "visibleInList": true,
+        "visibleInForm": true,
+        "filterable": true,
+        "filterType": "date",
+        "required": true,
+        "maxLength": null,
+        "unique": false,
+        "defaultValue": null
+      },
+      {
+        "name": "end_date",
+        "label": "End Date",
+        "type": "date",
+        "isPrimaryKey": false,
+        "readOnly": false,
+        "visibleInList": true,
+        "visibleInForm": true,
+        "filterable": true,
+        "filterType": "date",
+        "required": false,
+        "maxLength": null,
+        "unique": false,
+        "defaultValue": null
+      },
+      {
+        "name": "manager_id",
+        "label": "Manager Id",
+        "type": "number",
+        "isPrimaryKey": false,
+        "readOnly": false,
+        "visibleInList": true,
+        "visibleInForm": true,
+        "filterable": false,
+        "filterType": null,
+        "required": true,
+        "maxLength": null,
+        "unique": false,
+        "defaultValue": null
+      },
+      {
+        "name": "created_by_id",
+        "label": "Created By Id",
+        "type": "number",
+        "isPrimaryKey": false,
+        "readOnly": false,
+        "visibleInList": true,
+        "visibleInForm": true,
+        "filterable": false,
+        "filterType": null,
+        "required": true,
+        "maxLength": null,
+        "unique": false,
+        "defaultValue": null
+      },
+      {
+        "name": "created_at",
+        "label": "Created At",
+        "type": "datetime",
+        "isPrimaryKey": false,
+        "readOnly": true,
+        "visibleInList": true,
+        "visibleInForm": false,
+        "filterable": true,
+        "filterType": "date",
+        "required": false,
+        "maxLength": null,
+        "unique": false,
+        "defaultValue": "CURRENT_TIMESTAMP"
+      },
+      {
+        "name": "updated_at",
+        "label": "Updated At",
+        "type": "datetime",
+        "isPrimaryKey": false,
+        "readOnly": true,
+        "visibleInList": true,
+        "visibleInForm": false,
+        "filterable": true,
+        "filterType": "date",
+        "required": false,
+        "maxLength": null,
+        "unique": false,
+        "defaultValue": "CURRENT_TIMESTAMP"
+      }
+    ],
+    "listConfig": {
+      "defaultSort": { "field": "created_at", "order": "desc" },
+      "pageSize": 10,
+      "columns": [
+        "id",
+        "name",
+        "status",
+        "start_date",
+        "end_date",
+        "manager_id",
+        "created_by_id"
+      ]
+    },
+    "formConfig": {
+      "fields": ["name", "description", "status", "start_date", "end_date", "manager_id", "created_by_id"],
+      "validation": {
+        "name": { "required": "Name is required", "maxLength": "Name cannot exceed 100 characters" },
+        "status": { "required": "Status is required", "maxLength": "Status cannot exceed 20 characters" },
+        "start_date": { "required": "Start Date is required" },
+        "manager_id": { "required": "Manager Id is required" },
+        "created_by_id": { "required": "Created By Id is required" }
+      }
+    },
+    "filterConfig": {
+      "fields": [
+        { "name": "name", "type": "text", "label": "Name" },
+        { "name": "status", "type": "text", "label": "Status" },
+        { "name": "start_date", "type": "date", "label": "Start Date" },
+        { "name": "end_date", "type": "date", "label": "End Date" },
+        { "name": "created_at", "type": "date", "label": "Created At" },
+        { "name": "updated_at", "type": "date", "label": "Updated At" }
+      ]
+    }
+  },
+  "project_members": {
+    "table": "project_members",
+    "displayName": "Project Members",
+    "apiBaseUrl": "/api/projectmanagement",
+    "endpoints": {
+      "list": { "method": "GET", "url": "/project_members" },
+      "create": { "method": "POST", "url": "/project_members" },
+      "read": { "method": "GET", "url": "/project_members/:id" },
+      "update": { "method": "PUT", "url": "/project_members/:id" },
+      "delete": { "method": "DELETE", "url": "/project_members/:id" }
+    },
+    "fields": [
+      {
+        "name": "id",
+        "label": "Id",
+        "type": "number",
+        "isPrimaryKey": true,
+        "readOnly": true,
+        "visibleInList": true,
+        "visibleInForm": false,
+        "filterable": false,
+        "filterType": null,
+        "required": false,
+        "maxLength": null,
+        "unique": false,
+        "defaultValue": null
+      },
+      {
+        "name": "project_id",
+        "label": "Project Id",
+        "type": "number",
+        "isPrimaryKey": false,
+        "readOnly": false,
+        "visibleInList": true,
+        "visibleInForm": true,
+        "filterable": false,
+        "filterType": null,
+        "required": true,
+        "maxLength": null,
+        "unique": false,
+        "defaultValue": null
+      },
+      {
+        "name": "user_id",
+        "label": "User Id",
+        "type": "number",
+        "isPrimaryKey": false,
+        "readOnly": false,
+        "visibleInList": true,
+        "visibleInForm": true,
+        "filterable": false,
+        "filterType": null,
+        "required": true,
+        "maxLength": null,
+        "unique": false,
+        "defaultValue": null
+      },
+      {
+        "name": "assigned_at",
+        "label": "Assigned At",
+        "type": "datetime",
+        "isPrimaryKey": false,
+        "readOnly": false,
+        "visibleInList": true,
+        "visibleInForm": true,
+        "filterable": true,
+        "filterType": "date",
+        "required": false,
+        "maxLength": null,
+        "unique": false,
+        "defaultValue": "CURRENT_TIMESTAMP"
+      }
+    ],
+    "listConfig": {
+      "defaultSort": { "field": "id", "order": "desc" },
+      "pageSize": 10,
+      "columns": ["id", "project_id", "user_id", "assigned_at"]
+    },
+    "formConfig": {
+      "fields": ["project_id", "user_id", "assigned_at"],
+      "validation": {
+        "project_id": { "required": "Project Id is required" },
+        "user_id": { "required": "User Id is required" }
+      }
+    },
+    "filterConfig": {
+      "fields": [
+        { "name": "assigned_at", "type": "date", "label": "Assigned At" }
+      ]
+    }
+  },
+  "tasks": {
+    "table": "tasks",
+    "displayName": "Tasks",
+    "apiBaseUrl": "/api/projectmanagement",
+    "endpoints": {
+      "list": { "method": "GET", "url": "/tasks" },
+      "create": { "method": "POST", "url": "/tasks" },
+      "read": { "method": "GET", "url": "/tasks/:id" },
+      "update": { "method": "PUT", "url": "/tasks/:id" },
+      "delete": { "method": "DELETE", "url": "/tasks/:id" }
+    },
+    "fields": [
+      {
+        "name": "id",
+        "label": "Id",
+        "type": "number",
+        "isPrimaryKey": true,
+        "readOnly": true,
+        "visibleInList": true,
+        "visibleInForm": false,
+        "filterable": false,
+        "filterType": null,
+        "required": false,
+        "maxLength": null,
+        "unique": false,
+        "defaultValue": null
+      },
+      {
+        "name": "project_id",
+        "label": "Project Id",
+        "type": "number",
+        "isPrimaryKey": false,
+        "readOnly": false,
+        "visibleInList": true,
+        "visibleInForm": true,
+        "filterable": false,
+        "filterType": null,
+        "required": true,
+        "maxLength": null,
+        "unique": false,
+        "defaultValue": null
+      },
+      {
+        "name": "name",
+        "label": "Name",
+        "type": "text",
+        "isPrimaryKey": false,
+        "readOnly": false,
+        "visibleInList": true,
+        "visibleInForm": true,
+        "filterable": true,
+        "filterType": "text",
+        "required": true,
+        "maxLength": 100,
+        "unique": false,
+        "defaultValue": null
+      },
+      {
+        "name": "description",
+        "label": "Description",
+        "type": "textarea",
+        "isPrimaryKey": false,
+        "readOnly": false,
+        "visibleInList": false,
+        "visibleInForm": true,
+        "filterable": false,
+        "filterType": null,
+        "required": false,
+        "maxLength": null,
+        "unique": false,
+        "defaultValue": null
+      },
+      {
+        "name": "priority",
+        "label": "Priority",
+        "type": "text",
+        "isPrimaryKey": false,
+        "readOnly": false,
+        "visibleInList": true,
+        "visibleInForm": true,
+        "filterable": true,
+        "filterType": "text",
+        "required": true,
+        "maxLength": 20,
+        "unique": false,
+        "defaultValue": null
+      },
+      {
+        "name": "status",
+        "label": "Status",
+        "type": "text",
+        "isPrimaryKey": false,
+        "readOnly": false,
+        "visibleInList": true,
+        "visibleInForm": true,
+        "filterable": true,
+        "filterType": "text",
+        "required": true,
+        "maxLength": 20,
+        "unique": false,
+        "defaultValue": null
+      },
+      {
+        "name": "due_date",
+        "label": "Due Date",
+        "type": "date",
+        "isPrimaryKey": false,
+        "readOnly": false,
+        "visibleInList": true,
+        "visibleInForm": true,
+        "filterable": true,
+        "filterType": "date",
+        "required": false,
+        "maxLength": null,
+        "unique": false,
+        "defaultValue": null
+      },
+      {
+        "name": "assigned_to_id",
+        "label": "Assigned To Id",
+        "type": "number",
+        "isPrimaryKey": false,
+        "readOnly": false,
+        "visibleInList": true,
+        "visibleInForm": true,
+        "filterable": false,
+        "filterType": null,
+        "required": false,
+        "maxLength": null,
+        "unique": false,
+        "defaultValue": null
+      },
+      {
+        "name": "created_by_id",
+        "label": "Created By Id",
+        "type": "number",
+        "isPrimaryKey": false,
+        "readOnly": false,
+        "visibleInList": true,
+        "visibleInForm": true,
+        "filterable": false,
+        "filterType": null,
+        "required": true,
+        "maxLength": null,
+        "unique": false,
+        "defaultValue": null
+      },
+      {
+        "name": "created_at",
+        "label": "Created At",
+        "type": "datetime",
+        "isPrimaryKey": false,
+        "readOnly": true,
+        "visibleInList": true,
+        "visibleInForm": false,
+        "filterable": true,
+        "filterType": "date",
+        "required": false,
+        "maxLength": null,
+        "unique": false,
+        "defaultValue": "CURRENT_TIMESTAMP"
+      },
+      {
+        "name": "updated_at",
+        "label": "Updated At",
+        "type": "datetime",
+        "isPrimaryKey": false,
+        "readOnly": true,
+        "visibleInList": true,
+        "visibleInForm": false,
+        "filterable": true,
+        "filterType": "date",
+        "required": false,
+        "maxLength": null,
+        "unique": false,
+        "defaultValue": "CURRENT_TIMESTAMP"
+      }
+    ],
+    "listConfig": {
+      "defaultSort": { "field": "created_at", "order": "desc" },
+      "pageSize": 10,
+      "columns": [
+        "id",
+        "project_id",
+        "name",
+        "priority",
+        "status",
+        "due_date",
+        "assigned_to_id",
+        "created_by_id"
+      ]
+    },
+    "formConfig": {
+      "fields": [
+        "project_id",
+        "name",
+        "description",
+        "priority",
+        "status",
+        "due_date",
+        "assigned_to_id",
+        "created_by_id"
+      ],
+      "validation": {
+        "project_id": { "required": "Project Id is required" },
+        "name": { "required": "Name is required", "maxLength": "Name cannot exceed 100 characters" },
+        "priority": { "required": "Priority is required", "maxLength": "Priority cannot exceed 20 characters" },
+        "status": { "required": "Status is required", "maxLength": "Status cannot exceed 20 characters" },
+        "created_by_id": { "required": "Created By Id is required" }
+      }
+    },
+    "filterConfig": {
+      "fields": [
+        { "name": "name", "type": "text", "label": "Name" },
+        { "name": "priority", "type": "text", "label": "Priority" },
+        { "name": "status", "type": "text", "label": "Status" },
+        { "name": "due_date", "type": "date", "label": "Due Date" },
+        { "name": "created_at", "type": "date", "label": "Created At" },
+        { "name": "updated_at", "type": "date", "label": "Updated At" }
+      ]
+    }
+  },
+  "comments": {
+    "table": "comments",
+    "displayName": "Comments",
+    "apiBaseUrl": "/api/projectmanagement",
+    "endpoints": {
+      "list": { "method": "GET", "url": "/comments" },
+      "create": { "method": "POST", "url": "/comments" },
+      "read": { "method": "GET", "url": "/comments/:id" },
+      "update": { "method": "PUT", "url": "/comments/:id" },
+      "delete": { "method": "DELETE", "url": "/comments/:id" }
+    },
+    "fields": [
+      {
+        "name": "id",
+        "label": "Id",
+        "type": "number",
+        "isPrimaryKey": true,
+        "readOnly": true,
+        "visibleInList": true,
+        "visibleInForm": false,
+        "filterable": false,
+        "filterType": null,
+        "required": false,
+        "maxLength": null,
+        "unique": false,
+        "defaultValue": null
+      },
+      {
+        "name": "task_id",
+        "label": "Task Id",
+        "type": "number",
+        "isPrimaryKey": false,
+        "readOnly": false,
+        "visibleInList": true,
+        "visibleInForm": true,
+        "filterable": false,
+        "filterType": null,
+        "required": true,
+        "maxLength": null,
+        "unique": false,
+        "defaultValue": null
+      },
+      {
+        "name": "user_id",
+        "label": "User Id",
+        "type": "number",
+        "isPrimaryKey": false,
+        "readOnly": false,
+        "visibleInList": true,
+        "visibleInForm": true,
+        "filterable": false,
+        "filterType": null,
+        "required": true,
+        "maxLength": null,
+        "unique": false,
+        "defaultValue": null
+      },
+      {
+        "name": "parent_comment_id",
+        "label": "Parent Comment Id",
+        "type": "number",
+        "isPrimaryKey": false,
+        "readOnly": false,
+        "visibleInList": true,
+        "visibleInForm": true,
+        "filterable": false,
+        "filterType": null,
+        "required": false,
+        "maxLength": null,
+        "unique": false,
+        "defaultValue": null
+      },
+      {
+        "name": "content",
+        "label": "Content",
+        "type": "textarea",
+        "isPrimaryKey": false,
+        "readOnly": false,
+        "visibleInList": false,
+        "visibleInForm": true,
+        "filterable": false,
+        "filterType": null,
+        "required": true,
+        "maxLength": null,
+        "unique": false,
+        "defaultValue": null
+      },
+      {
+        "name": "created_at",
+        "label": "Created At",
+        "type": "datetime",
+        "isPrimaryKey": false,
+        "readOnly": true,
+        "visibleInList": true,
+        "visibleInForm": false,
+        "filterable": true,
+        "filterType": "date",
+        "required": false,
+        "maxLength": null,
+        "unique": false,
+        "defaultValue": "CURRENT_TIMESTAMP"
+      },
+      {
+        "name": "updated_at",
+        "label": "Updated At",
+        "type": "datetime",
+        "isPrimaryKey": false,
+        "readOnly": true,
+        "visibleInList": true,
+        "visibleInForm": false,
+        "filterable": true,
+        "filterType": "date",
+        "required": false,
+        "maxLength": null,
+        "unique": false,
+        "defaultValue": "CURRENT_TIMESTAMP"
+      }
+    ],
+    "listConfig": {
+      "defaultSort": { "field": "created_at", "order": "desc" },
+      "pageSize": 10,
+      "columns": ["id", "task_id", "user_id", "parent_comment_id"]
+    },
+    "formConfig": {
+      "fields": ["task_id", "user_id", "parent_comment_id", "content"],
+      "validation": {
+        "task_id": { "required": "Task Id is required" },
+        "user_id": { "required": "User Id is required" },
+        "content": { "required": "Content is required" }
+      }
+    },
+    "filterConfig": {
+      "fields": [
+        { "name": "created_at", "type": "date", "label": "Created At" },
+        { "name": "updated_at", "type": "date", "label": "Updated At" }
+      ]
+    }
+  },
+  "time_logs": {
+    "table": "time_logs",
+    "displayName": "Time Logs",
+    "apiBaseUrl": "/api/projectmanagement",
+    "endpoints": {
+      "list": { "method": "GET", "url": "/time_logs" },
+      "create": { "method": "POST", "url": "/time_logs" },
+      "read": { "method": "GET", "url": "/time_logs/:id" },
+      "update": { "method": "PUT", "url": "/time_logs/:id" },
+      "delete": { "method": "DELETE", "url": "/time_logs/:id" }
+    },
+    "fields": [
+      {
+        "name": "id",
+        "label": "Id",
+        "type": "number",
+        "isPrimaryKey": true,
+        "readOnly": true,
+        "visibleInList": true,
+        "visibleInForm": false,
+        "filterable": false,
+        "filterType": null,
+        "required": false,
+        "maxLength": null,
+        "unique": false,
+        "defaultValue": null
+      },
+      {
+        "name": "task_id",
+        "label": "Task Id",
+        "type": "number",
+        "isPrimaryKey": false,
+        "readOnly": false,
+        "visibleInList": true,
+        "visibleInForm": true,
+        "filterable": false,
+        "filterType": null,
+        "required": true,
+        "maxLength": null,
+        "unique": false,
+        "defaultValue": null
+      },
+      {
+        "name": "user_id",
+        "label": "User Id",
+        "type": "number",
+        "isPrimaryKey": false,
+        "readOnly": false,
+        "visibleInList": true,
+        "visibleInForm": true,
+        "filterable": false,
+        "filterType": null,
+        "required": true,
+        "maxLength": null,
+        "unique": false,
+        "defaultValue": null
+      },
+      {
+        "name": "start_time",
+        "label": "Start Time",
+        "type": "datetime",
+        "isPrimaryKey": false,
+        "readOnly": false,
+        "visibleInList": true,
+        "visibleInForm": true,
+        "filterable": true,
+        "filterType": "date",
+        "required": true,
+        "maxLength": null,
+        "unique": false,
+        "defaultValue": null
+      },
+      {
+        "name": "end_time",
+        "label": "End Time",
+        "type": "datetime",
+        "isPrimaryKey": false,
+        "readOnly": false,
+        "visibleInList": true,
+        "visibleInForm": true,
+        "filterable": true,
+        "filterType": "date",
+        "required": false,
+        "maxLength": null,
+        "unique": false,
+        "defaultValue": null
+      },
+      {
+        "name": "duration_minutes",
+        "label": "Duration Minutes",
+        "type": "number",
+        "isPrimaryKey": false,
+        "readOnly": false,
+        "visibleInList": true,
+        "visibleInForm": true,
+        "filterable": false,
+        "filterType": null,
+        "required": false,
+        "maxLength": null,
+        "unique": false,
+        "defaultValue": null
+      },
+      {
+        "name": "log_date",
+        "label": "Log Date",
+        "type": "date",
+        "isPrimaryKey": false,
+        "readOnly": false,
+        "visibleInList": true,
+        "visibleInForm": true,
+        "filterable": true,
+        "filterType": "date",
+        "required": true,
+        "maxLength": null,
+        "unique": false,
+        "defaultValue": null
+      },
+      {
+        "name": "description",
+        "label": "Description",
+        "type": "textarea",
+        "isPrimaryKey": false,
+        "readOnly": false,
+        "visibleInList": false,
+        "visibleInForm": true,
+        "filterable": false,
+        "filterType": null,
+        "required": false,
+        "maxLength": null,
+        "unique": false,
+        "defaultValue": null
+      },
+      {
+        "name": "created_at",
+        "label": "Created At",
+        "type": "datetime",
+        "isPrimaryKey": false,
+        "readOnly": true,
+        "visibleInList": true,
+        "visibleInForm": false,
+        "filterable": true,
+        "filterType": "date",
+        "required": false,
+        "maxLength": null,
+        "unique": false,
+        "defaultValue": "CURRENT_TIMESTAMP"
+      },
+      {
+        "name": "updated_at",
+        "label": "Updated At",
+        "type": "datetime",
+        "isPrimaryKey": false,
+        "readOnly": true,
+        "visibleInList": true,
+        "visibleInForm": false,
+        "filterable": true,
+        "filterType": "date",
+        "required": false,
+        "maxLength": null,
+        "unique": false,
+        "defaultValue": "CURRENT_TIMESTAMP"
+      }
+    ],
+    "listConfig": {
+      "defaultSort": { "field": "created_at", "order": "desc" },
+      "pageSize": 10,
+      "columns": [
+        "id",
+        "task_id",
+        "user_id",
+        "start_time",
+        "end_time",
+        "duration_minutes",
+        "log_date"
+      ]
+    },
+    "formConfig": {
+      "fields": ["task_id", "user_id", "start_time", "end_time", "duration_minutes", "log_date", "description"],
+      "validation": {
+        "task_id": { "required": "Task Id is required" },
+        "user_id": { "required": "User Id is required" },
+        "start_time": { "required": "Start Time is required" },
+        "log_date": { "required": "Log Date is required" }
+      }
+    },
+    "filterConfig": {
+      "fields": [
+        { "name": "start_time", "type": "date", "label": "Start Time" },
+        { "name": "end_time", "type": "date", "label": "End Time" },
+        { "name": "log_date", "type": "date", "label": "Log Date" },
+        { "name": "created_at", "type": "date", "label": "Created At" },
+        { "name": "updated_at", "type": "date", "label": "Updated At" }
+      ]
+    }
+  }
+}

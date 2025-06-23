@@ -1,0 +1,206 @@
+import { useState } from "react";
+import { Link } from "react-router-dom";
+import { ChevronDownIcon, HorizontaLDots, TableIcon } from "../icons";
+import { useSidebar } from "../context/SidebarContext";
+import modules from "../config/loadModules";
+import {
+  UserIcon,
+  TaskIcon,
+  GroupIcon,
+  ListIcon,
+  LockIcon,
+  PlugInIcon,
+  ChatIcon,
+  BoxIcon,
+  TimeIcon,
+  FileIcon,
+} from '../icons';
+
+type NavItem = {
+  icon?: React.ReactNode;
+  name: string;
+  path?: string;
+  pro?: boolean;
+  new?: boolean;
+  subItems?: NavItem[];
+};
+
+// Icon map for modules
+const iconMap: Record<string, React.ReactNode> = {
+  users: <UserIcon />,
+  roles: <GroupIcon />,
+  permissions: <LockIcon />,
+  role_permissions: <PlugInIcon />,
+  user_roles: <ListIcon />,
+  projects: <TableIcon />,
+  project_members: <GroupIcon />,
+  tasks: <TaskIcon />,
+  comments: <ChatIcon />,
+  attachments: <FileIcon />,
+  time_logs: <TimeIcon />,
+  // fallback
+  default: <BoxIcon />,
+};
+
+// Dynamically generate navigation items
+const jsonNavItems: NavItem[] = Object.entries(modules).map(([key, resource]) => ({
+  icon: iconMap[key] || iconMap.default,
+  name: resource.displayName,
+  subItems: [
+    { name: `List ${resource.displayName}`, path: `/${key}` },
+    { name: `Create ${resource.displayName.slice(0, -1)}`, path: `/${key}/create` },
+  ],
+}));
+
+const AppSidebar: React.FC = () => {
+  const { isExpanded, isMobileOpen, isHovered, setIsHovered } = useSidebar();
+  const [openSubmenus, setOpenSubmenus] = useState<string[]>([]);
+
+  const handleSubmenuToggle = (submenuPath: string) => {
+    setOpenSubmenus((prev) =>
+      prev.includes(submenuPath)
+        ? prev.filter((path) => path !== submenuPath && !path.startsWith(submenuPath + "-"))
+        : [...prev, submenuPath]
+    );
+  };
+
+  const renderMenuItems = (
+    items: NavItem[],
+    menuType: string,
+    parentPath: string[] = [],
+    level: number = 0
+  ) => (
+    <ul className={`flex flex-col gap-4  ${level > 0 ? `ml-${level * 4} mt-2` : ""}`}>
+      {items.map((nav, index) => {
+        const submenuPath = [...parentPath, `${menuType}-${index}`].join("");
+        const isSubmenuOpen = openSubmenus.includes(submenuPath);
+
+        return (
+          <li key={nav.name}>
+            {nav.subItems ? (
+              <button
+                onClick={() => handleSubmenuToggle(submenuPath)}
+                className={`menu-item group w-full text-left flex items-center ${
+                  isSubmenuOpen ? "menu-item-active" : "menu-item-inactive"
+                } cursor-pointer ${
+                  !isExpanded && !isHovered ? "lg:justify-center " : "lg:justify-start "
+                }`}
+              >
+                <span
+                  className={`menu-item-icon-size text-black-500  ${
+                    isSubmenuOpen ? "menu-item-icon-active " : "menu-item-icon-inactive "
+                  }`}
+                >
+                  {nav.icon}
+                </span>
+                {(isExpanded || isHovered || isMobileOpen) && (
+                  <span className="menu-item-text text-black ">{nav.name}</span>
+                )}
+                {(isExpanded || isHovered || isMobileOpen) && (
+                  <ChevronDownIcon
+                    className={`ml-auto w-5 h-5 transition-transform duration-200 ${
+                      isSubmenuOpen ? "rotate-180 text-brand-500 " : ""
+                    }`}
+                  />
+                )}
+              </button>
+            ) : (
+              nav.path && (
+                <Link
+                  to={nav.path}
+                  className={`menu-item group flex items-center ${
+                    !isExpanded && !isHovered ? "lg:justify-center " : "lg:justify-start"
+                  }`}
+                >
+                  <span className="menu-item-icon-size">{nav.icon}</span>
+                  {(isExpanded || isHovered || isMobileOpen) && (
+                    <span className="menu-item-text ">{nav.name}</span>
+                  )}
+                </Link>
+              )
+            )}
+            {nav.subItems && (isExpanded || isHovered || isMobileOpen) && (
+              <div
+                className={`overflow-hidden transition-all duration-300 ${
+                  isSubmenuOpen ? "block" : "hidden"
+                }`}
+              >
+                {renderMenuItems(nav.subItems, menuType, [...parentPath, `${menuType}-${index}`], level + 1)}
+              </div>
+            )}
+          </li>
+        );
+      })}
+    </ul>
+  );
+
+  return (
+    <>
+      {/* Mobile overlay backdrop */}
+      {isMobileOpen && (
+        <div
+          className="fixed inset-0 z-40 bg-black bg-opacity-40 backdrop-blur-sm lg:hidden"
+          onClick={() => setIsHovered(false)}
+        />
+      )}
+      <aside
+        className={`fixed top-0 left-0 flex flex-col px-4 pt-4 bg-white h-screen transition-all text-black-100 duration-300 ease-in-out border-r border-gray-200 z-50
+          ${isExpanded || isMobileOpen ? "w-[260px]" : isHovered ? "w-[260px]" : "w-[70px]"}
+          ${isMobileOpen ? "translate-x-0" : "-translate-x-full"} lg:translate-x-0 lg:mt-0 mt-0`}
+        onMouseEnter={() => !isExpanded && setIsHovered(true)}
+        onMouseLeave={() => setIsHovered(false)}
+        style={{ maxWidth: '90vw' }}
+      >
+        <div
+          className={`py-8 flex ${
+            !isExpanded && !isHovered ? "lg:justify-center" : "justify-start"
+          }`}
+        >
+          <Link to="/">
+            {isExpanded || isHovered || isMobileOpen ? (
+              <>
+                <img
+                  src="/images/logo/logo.png"
+                  alt="Logo"
+                  width={150}
+                  height={40}
+                />
+              </>
+            ) : (
+              <img
+                src="/images/logo/Ebizneeds_uni_logo.png"
+                alt="Logo"
+                width={32}
+                height={32}
+              />
+            )}
+          </Link>
+        </div>
+        <div className="flex flex-col overflow-y-auto duration-300 ease-linear no-scrollbar">
+          <nav className="mb-6">
+            <div className="flex flex-col gap-4">
+              <div>
+                <h2
+                  className={`mb-4 text-xs uppercase flex leading-[20px] text-black ${
+                    !isExpanded && !isHovered
+                      ? "lg:justify-center"
+                      : "justify-start"
+                  }`}
+                >
+                  {isExpanded || isHovered || isMobileOpen ? (
+                    "Menu"
+                  ) : (
+                    <HorizontaLDots className="size-6" />
+                  )}
+                </h2>
+                {renderMenuItems(jsonNavItems, "main")}
+              </div>
+            </div>
+          </nav>
+        </div>
+      </aside>
+    </>
+  );
+};
+
+export default AppSidebar;
