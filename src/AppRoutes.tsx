@@ -65,9 +65,9 @@ const ProtectedRoute: React.FC<{ children: React.ReactNode }> = ({ children }) =
 const PrivateRoute: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const isAuthenticated = tokenManager.isAuthenticated();
   console.log('PrivateRoute: user authenticated?', isAuthenticated);
-  if (!isAuthenticated) {
-    return <Navigate to="/auth" replace />;
-  }
+  // if (!isAuthenticated) {
+  //   return <Navigate to="/auth" replace />;
+  // }
   return <>{children}</>;
 };
 
