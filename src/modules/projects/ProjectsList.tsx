@@ -13,6 +13,7 @@ interface ProjectsListProps {
 const ProjectsList: React.FC<ProjectsListProps> = ({ moduleName }) => {
     const navigate = useNavigate();
     const [filters, setFilters] = useState<{ [key: string]: string }>({});
+    const [search, setSearch] = useState('');
     const config: ModuleConfig = modules[moduleName as keyof typeof modules];
 
     if (!config) {
@@ -41,22 +42,66 @@ const ProjectsList: React.FC<ProjectsListProps> = ({ moduleName }) => {
     };
 
     const handleShow = (id: number) => {
-        navigate(`/${moduleName}/show/${id}`);
+        navigate(`/${moduleName}/${id}/tasks`);
     };
 
     return (
         <div className="p-4">
-            <h1 className="text-2xl font-bold mb-6">{config.displayName} List</h1>
-            <div className="mb-6">
-                <GenericFilter config={config} onFilter={handleFilter} />
+            {/* Header with title and New Project button */}
+            <div className="flex justify-between items-center mb-4">
+                <div>
+                    <div className="text-[16px] text-black mb-4">Dashboard / Project Management</div>
+                    <h1 className="text-2xl font-bold">Projects</h1>
+                </div>
+                <button
+                    className="bg-[#F1F1F1] border-0 rounded px-4 py-2 text-sm font-semibold hover:bg-gray-200"
+                    onClick={() => navigate(`/${moduleName}/create`)}
+                >
+                    + New Project
+                </button>
             </div>
-            <GenericList
-                config={config}
-                filters={filters}
-                onEdit={handleEdit}
-                onDelete={handleDelete}
-                onShow={handleShow}
-            />
+
+            {/* Search and filters */}
+            <div className="flex flex-col sm:justify-between mb-6 gap-6">
+                <input
+                    type="text"
+                    placeholder="Search projects"
+                    className="border-0 rounded px-3 py-2 w-full bg-[#F1F1F1] focus:outline-0 text-black placeholder:text-black"
+                    value={search}
+                    onChange={e => setSearch(e.target.value)}
+                />
+                <div className="flex gap-2">
+                    <select className="border-0 rounded px-3 py-2 text-[14px] bg-[#F1F1F1] text-black">
+                        <option>My Projects</option>
+                        {/* Add more options as needed */}
+                    </select>
+                    <select className="border-0 rounded px-3 py-2 text-[14px] bg-[#F1F1F1] text-black">
+                        <option>Active</option>
+                        {/* Add more options as needed */}
+                    </select>
+                    <select className="border-0 rounded px-3 py-2 text-[14px] bg-[#F1F1F1] text-black">
+                        <option>Archived</option>
+                        {/* Add more options as needed */}
+                    </select>
+                </div>
+            </div>
+
+            {/* Existing filter component (optional, can be removed if not needed) */}
+            {/* <div className="mb-6">
+                <GenericFilter config={config} onFilter={handleFilter} />
+            </div> */}
+
+            <div className="overflow-x-auto w-full">
+                <table className="min-w-full divide-y divide-gray-200 text-sm sm:text-base">
+                    <GenericList
+                        config={config}
+                        filters={filters}
+                        onEdit={handleEdit}
+                        onDelete={handleDelete}
+                        onShow={handleShow}
+                    />
+                </table>
+            </div>
         </div>
     );
 };
