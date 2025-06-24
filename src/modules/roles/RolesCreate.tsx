@@ -16,7 +16,7 @@ const RolesCreate: React.FC<RolesCreateProps> = ({ moduleName }) => {
 
   if (!config)
     return (
-      <div className="text-red-600 text-lg font-semibold p-4">
+      <div className="text-red-800 text-lg font-semibold p-4">
         Module not found
       </div>
     );
