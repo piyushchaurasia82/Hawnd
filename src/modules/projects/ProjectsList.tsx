@@ -42,7 +42,7 @@ const ProjectsList: React.FC<ProjectsListProps> = ({ moduleName }) => {
     };
 
     const handleShow = (id: number) => {
-        navigate(`/${moduleName}/show/${id}`);
+        navigate(`/${moduleName}/${id}/tasks`);
     };
 
     return (

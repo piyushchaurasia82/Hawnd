@@ -50,6 +50,7 @@ import ForgotPassword from './components/auth/ForgotPassword';
 import Dashboard from './components/Dashboard';
 import EditProfile from './pages/EditProfile';
 import { tokenManager } from './services/api';
+import ProjectTasks from './modules/projects/ProjectTasks';
 
 // ProtectedRoute: Prevents authenticated users from accessing login page
 const ProtectedRoute: React.FC<{ children: React.ReactNode }> = ({ children }) => {
@@ -119,6 +120,7 @@ const AppRoutes: React.FC = () => {
         <Route path="/projects/create" element={<ProjectsCreate moduleName={'projects'} />} />
         <Route path="/projects/edit/:id" element={<ProjectsEdit moduleName={'projects'} />} />
         <Route path="/projects/show/:id" element={<ProjectsShow moduleName={'projects'} />} />
+        <Route path="/projects/:id/tasks" element={<ProjectTasks />} />
         <Route path="/project_members" element={<ProjectMembersList moduleName={'project_members'} />} />
         <Route path="/project_members/create" element={<ProjectMembersCreate moduleName={'project_members'} />} />
         <Route path="/project_members/edit/:id" element={<ProjectMembersEdit moduleName={'project_members'} />} />

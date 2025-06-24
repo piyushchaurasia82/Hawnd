@@ -222,7 +222,14 @@ const GenericList: React.FC<GenericListProps> = ({
         </tr>
         {dummyProjects.map((row) => (
           <tr key={row.id} className="border-t">
-            <td className="px-4 py-4">{row.title}</td>
+            <td className="px-4 py-4">
+              <button 
+                onClick={() => onShow(row.id)} 
+                className="text-left hover:text-orange-500 hover:underline transition-colors cursor-pointer"
+              >
+                {row.title}
+              </button>
+            </td>
             <td className="px-4 py-4">{row.owner}</td>
             <td className="px-4 py-4">
               <span
