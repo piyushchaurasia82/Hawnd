@@ -22,8 +22,6 @@ body {
   --color-sidebar-active: #fb6514;
   --color-sidebar-text: #222;
   --color-sidebar-icon: #222;
-  --color-table-header: #F1F1F1;
-  --color-table-header-text: #000000;
 }
 
 /* Sidebar */
@@ -75,8 +73,8 @@ body {
 
 /* Table header accent */
 th {
-  background: var(--color-table-header);
-  color: var(--color-table-header-text);
+  background: var(--color-accent-light);
+  color: var(--color-header);
   font-weight: 600;
 }
 

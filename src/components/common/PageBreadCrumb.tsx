@@ -13,7 +13,7 @@ const PageBreadcrumb: React.FC<BreadcrumbProps> = ({ pageTitle }) => {
       >
         {pageTitle}
       </h2>
-      <nav className="flex flex-wrap overflow-x-auto text-sm sm:text-base" aria-label="Breadcrumb">
+      <nav>
         <ol className="flex items-center gap-1.5">
           <li>
             <Link

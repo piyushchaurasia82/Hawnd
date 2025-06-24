@@ -15,6 +15,9 @@ const RolePermissionsEdit: React.FC<RolePermissionsEditProps> = ({ moduleName })
     const navigate = useNavigate();
     const [roles, setRoles] = useState<{ id: number; name: string; description?: string }[]>([]);
     const [permissions, setPermissions] = useState<{ id: number; code_name: string; description?: string }[]>([]);
+    const [initialValues, setInitialValues] = useState<any>(null);
+    const [loading, setLoading] = useState(true);
+    const [success, setSuccess] = useState(false);
 
     if (!config) return (
         <div className="text-lg font-medium text-red-600">Module not found</div>
@@ -36,12 +39,30 @@ const RolePermissionsEdit: React.FC<RolePermissionsEditProps> = ({ moduleName })
                   ? permissionsResponse.data
                   : permissionsResponse.data.data || permissionsResponse.data.permissions || [];
                 setPermissions(permissionsData);
+
+                // Fetch assigned permissions for this role
+                const rolePermsResponse = await api.get(`/api/projectmanagement/role-permissions/?role=${id}`);
+                const assignedPerms = Array.isArray(rolePermsResponse.data)
+                  ? rolePermsResponse.data
+                  : rolePermsResponse.data.data || rolePermsResponse.data.role_permissions || [];
+                // Ensure permission IDs are numbers
+                const permissionIds = assignedPerms.map((rp: any) => Number(rp.permission));
+                console.log('Assigned permission IDs:', permissionIds);
+                console.log('Permission options:', permissions);
+                // Set initial values for the form
+                setInitialValues({
+                  role: Number(id),
+                  permission: permissionIds
+                });
+                console.log('Initial values for form:', { role: Number(id), permission: permissionIds });
             } catch (err) {
                 console.error('Error fetching data:', err);
+            } finally {
+                setLoading(false);
             }
         };
         fetchData();
-    }, []);
+    }, [id]);
 
     const enhancedConfig: ModuleConfig = {
         ...config,
@@ -64,13 +85,14 @@ const RolePermissionsEdit: React.FC<RolePermissionsEditProps> = ({ moduleName })
                 })),
                 required: true,
                 visibleInForm: true,
+                readOnly: true, // Prevent changing role in edit
             },
             {
                 name: 'permission',
                 label: 'Permissions',
                 type: 'multiselect',
                 options: permissions.map((perm) => ({
-                    value: perm.id,
+                    value: Number(perm.id),
                     label: perm.code_name,
                 })),
                 required: true,
@@ -82,7 +104,7 @@ const RolePermissionsEdit: React.FC<RolePermissionsEditProps> = ({ moduleName })
     const handleSubmit = async (formData: { [key: string]: any }) => {
         try {
             const { permission, ...otherData } = formData;
-            // First, delete existing role-permission relationships for this role
+            // First, delete existing role-permission relationships for this role (single delete request)
             await api.delete(`${config.apiBaseUrl}${config.endpoints.delete.url.replace(':id', id!)}/`);
             // Then create new role-permission relationships
             const promises = permission.map((permId: number) =>
@@ -92,18 +114,24 @@ const RolePermissionsEdit: React.FC<RolePermissionsEditProps> = ({ moduleName })
                 })
             );
             await Promise.all(promises);
-            navigate(`/${moduleName}`);
+            setSuccess(true);
+            setTimeout(() => navigate(`/${moduleName}`), 1200);
         } catch (error: any) {
             console.error('Error updating:', error);
         }
     };
 
+    if (loading || !initialValues) return <div className="p-4 text-gray-600">Loading...</div>;
+
     return (
         <div className="p-4">
             <h1 className="text-2xl font-bold mb-4">Edit {config.displayName}</h1>
-            <form className="space-y-4 sm:space-y-6 w-full max-w-lg mx-auto px-2 sm:px-0">
-                <GenericForm config={enhancedConfig} id={id} onSubmit={handleSubmit} isEdit />
-            </form>
+            {success && (
+                <div className="mb-4 p-2 bg-green-100 text-green-800 rounded border border-green-300">
+                    Permissions updated successfully! Redirecting to list...
+                </div>
+            )}
+            <GenericForm config={enhancedConfig} id={id} onSubmit={handleSubmit} isEdit initialValues={initialValues} />
         </div>
     );
 };

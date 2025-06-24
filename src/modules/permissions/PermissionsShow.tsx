@@ -15,7 +15,7 @@ const PermissionsShow: React.FC<PermissionsShowProps> = ({ moduleName }) => {
     if (!config) return <div className="text-lg font-medium text-red-600">Module not found</div>;
 
     return (
-        <div className="bg-white rounded-xl shadow p-4 sm:p-6 text-sm sm:text-base">
+        <div className="p-4">
             <h1 className="text-2xl font-bold mb-4">{config.displayName} Details</h1>
             <GenericShow config={config} id={id!} />
         </div>

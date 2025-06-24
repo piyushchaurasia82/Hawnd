@@ -1,3 +1,4 @@
+
 import React from 'react';
 import { Line } from 'react-chartjs-2';
 import {
@@ -69,9 +70,7 @@ const ExpenseVsCollection: React.FC = () => {
         </div>
       </div>
 
-      <div className="chart-container w-full p-2 sm:p-0 overflow-x-auto text-sm sm:text-base">
-        <Line data={data} options={options} />
-      </div>
+      <Line data={data} options={options} />
 
       <div className="text-center mt-6">
         <p className="font-semibold">

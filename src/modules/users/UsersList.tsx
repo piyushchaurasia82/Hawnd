@@ -50,17 +50,13 @@ const UsersList: React.FC<UsersListProps> = ({ moduleName }) => {
             <div className="mb-6">
                 <GenericFilter config={config} onFilter={handleFilter} />
             </div>
-            <div className="overflow-x-auto w-full">
-                <table className="min-w-full divide-y divide-gray-200 text-sm sm:text-base">
-                    <GenericList
-                        config={config}
-                        filters={filters}
-                        onEdit={handleEdit}
-                        onDelete={handleDelete}
-                        onShow={handleShow}
-                    />
-                </table>
-            </div>
+            <GenericList
+                config={config}
+                filters={filters}
+                onEdit={handleEdit}
+                onDelete={handleDelete}
+                onShow={handleShow}
+            />
         </div>
     );
 };

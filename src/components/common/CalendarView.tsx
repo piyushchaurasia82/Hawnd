@@ -22,27 +22,25 @@ const CalendarView: React.FC = () => {
           Add event
         </button>
       </div>
-      <div className="calendar-container overflow-x-auto p-2 sm:p-4 text-sm sm:text-base">
-        <FullCalendar
-          plugins={[dayGridPlugin, interactionPlugin]}
-          initialView="dayGridMonth"
-          height="auto"
-          events={events.map((e) => ({
-            title: `${e.title} ${e.time}`,
-            date: e.date,
-          }))}
-          headerToolbar={{
-            left: 'prev,next today',
-            center: 'title',
-            right: 'dayGridMonth',
-          }}
-          eventContent={({ event }: { event: any }) => (
-            <div className="text-xs sm:text-sm md:text-base p-1">
-              {event.title}
-            </div>
-          )}
-        />
-      </div>
+      <FullCalendar
+        plugins={[dayGridPlugin, interactionPlugin]}
+        initialView="dayGridMonth"
+        height="auto"
+        events={events.map((e) => ({
+          title: `${e.title} ${e.time}`,
+          date: e.date,
+        }))}
+        headerToolbar={{
+          left: 'prev,next today',
+          center: 'title',
+          right: 'dayGridMonth',
+        }}
+        eventContent={({ event }: { event: any }) => (
+          <div className="text-xs sm:text-sm md:text-base p-1">
+            {event.title}
+          </div>
+        )}
+      />
     </div>
   );
 };

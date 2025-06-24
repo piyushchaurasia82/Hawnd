@@ -47,7 +47,7 @@ const Input: FC<InputProps> = ({
   }
 
   return (
-    <div className="relative w-full">
+    <div className="relative">
       <input
         type={type}
         id={id}
@@ -59,7 +59,7 @@ const Input: FC<InputProps> = ({
         max={max}
         step={step}
         disabled={disabled}
-        className={inputClasses + ' w-full px-3 py-2 sm:px-4 sm:py-2.5'}
+        className={inputClasses}
       />
 
       {hint && (

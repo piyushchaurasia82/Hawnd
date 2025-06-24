@@ -30,7 +30,7 @@ const Dashboard: React.FC = () => {
       </div>
 
       {/* Project Summary & Reminder */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6 mb-8">
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
         <div className="md:col-span-2 bg-white rounded-xl shadow p-6">
           <div className="flex items-center gap-2 mb-2">
             <span className="text-base font-semibold text-gray-800">Project Summary</span>

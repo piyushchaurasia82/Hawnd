@@ -54,11 +54,10 @@ const AppHeader: React.FC<AppHeaderProps> = ({ hidden }) => {
 
   return (
     <header className="sticky top-0 flex w-full bg-white border-gray-200 z-99999 lg:border-b">
-      <div className="flex flex-col items-center justify-between grow w-full px-2 py-2 shadow md:px-4 lg:flex-row lg:px-6">
-        <div className="flex items-center justify-between w-full gap-2 sm:gap-4 lg:justify-normal lg:border-b-0 lg:px-0 lg:py-4">
+      <div className="flex flex-col items-center justify-between grow lg:flex-row lg:px-6">
+        <div className="flex items-center justify-between w-full gap-2 px-3 py-3 border-b border-gray-200 sm:gap-4 lg:justify-normal lg:border-b-0 lg:px-0 lg:py-4">
           <button
-            className={`items-center justify-center w-10 h-10 text-gray-500 border-gray-200 rounded-lg lg:flex lg:h-11 lg:w-11 lg:border transition-all duration-200
-               ${blurSidebarToggle ? 'backdrop-blur-[8px] bg-white/60 opacity-60 pointer-events-none z-0' : 'z-99999'}`}
+            className={`items-center justify-center w-10 h-10 text-gray-500 border-gray-200 rounded-lg z-99999 lg:flex lg:h-11 lg:w-11 lg:border${blurSidebarToggle ? ' backdrop-blur-sm bg-white/50 pointer-events-none' : ''}`}
             onClick={handleToggle}
             aria-label="Toggle Sidebar"
             disabled={blurSidebarToggle}
@@ -95,23 +94,13 @@ const AppHeader: React.FC<AppHeaderProps> = ({ hidden }) => {
               </svg>
             )}
           </button>
-          {/* Mobile logo (visible only on mobile) */}
-          <div className="ml-2 flex items-center lg:hidden">
-            <a href="/">
-              <img src="/images/logo/hawnd.png" alt="Logo" className="h-10 w-auto max-w-[120px] object-contain" />
-            </a>
-          </div>
-          {/* Desktop logo (hidden on mobile) */}
-          <div className="ml-2 hidden lg:flex items-center">
+          <div className="ml-2 flex items-center">
             <img src={logo} alt="Logo" className="h-11 w-auto max-w-[160px] object-contain transition-all duration-200" />
           </div>
         </div>
-        <div className="flex items-center justify-end w-full gap-2 px-1 py-2 sm:gap-4 sm:px-3 lg:gap-4 lg:px-5 lg:py-4">
+        <div className="flex items-center justify-end w-full gap-4 px-5 py-4 lg:flex lg:shadow-none lg:px-0">
           <div className="flex items-center gap-2 2xsm:gap-3">
             <NotificationDropdown />
-            <button className="block lg:hidden p-2" aria-label="Search">
-              <svg width="20" height="20" fill="none" viewBox="0 0 24 24"><circle cx="11" cy="11" r="7" stroke="currentColor" strokeWidth="2"/><path stroke="currentColor" strokeWidth="2" strokeLinecap="round" d="M20 20l-3.5-3.5"/></svg>
-            </button>
             <form className="relative max-w-xs hidden lg:block ml-4">
               <input
                 ref={inputRef}

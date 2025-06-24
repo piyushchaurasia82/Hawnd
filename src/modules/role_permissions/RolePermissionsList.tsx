@@ -4,6 +4,7 @@ import api from "../../services/api";
 import GenericFilter from "../../components/GenericFilter";
 import modules from "../../config/loadModules";
 import type { ModuleConfig } from "../../config/types";
+import ComponentCard from "../../components/common/ComponentCard";
 
 interface RolePermissionsListProps {
   moduleName: string;
@@ -164,8 +165,8 @@ const RolePermissionsList: React.FC<RolePermissionsListProps> = ({ moduleName })
         <GenericFilter config={config} onFilter={handleFilter} />
       </div>
       <div className="mt-4">
-        <div className="overflow-x-auto w-full">
-          <table className="min-w-full divide-y divide-gray-200 text-sm sm:text-base">
+        <div className="overflow-auto">
+          <table className="min-w-full border border-gray-200 text-sm">
             <thead className="bg-gray-100 text-gray-700 text-left">
               <tr>
                 <th className="px-4 py-2 whitespace-nowrap">Role</th>

@@ -13,12 +13,10 @@ const LoginForm: React.FC = () => {
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gradient-to-b from-[#b3d8fd] to-[#eaf6ff] font-inter p-2">
-      <div className="bg-white bg-opacity-90 rounded-2xl shadow-xl px-4 py-8 sm:px-8 sm:py-10 w-full max-w-md text-center">
+    <div className="min-h-screen flex items-center justify-center bg-gradient-to-b from-[#b3d8fd] to-[#eaf6ff] font-inter">
+      <div className="bg-white bg-opacity-90 rounded-2xl shadow-xl px-8 py-10 w-full max-w-md text-center">
         {/* Logo */}
-        <a href="/" className="block w-full">
-          <img src="/images/logo/Ebizneeds_uni_logo.png" alt="ebizneeds logo" className="mx-auto mb-4 w-32 sm:w-48" />
-        </a>
+        <img src="/images/logo/logo.png" alt="ebizneeds logo" className="mx-auto mb-4 w-48" />
         {/* Heading */}
         <h2 className="text-3xl sm:text-4xl font-bold text-[#f39c12] mb-2">Hey You, Let's Get In</h2>
         <p className="text-xl font-semibold text-gray-900 mb-8">Welcome back, legend</p>

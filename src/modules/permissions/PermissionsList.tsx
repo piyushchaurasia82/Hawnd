@@ -5,6 +5,7 @@ import GenericList from "../../components/GenericList";
 import GenericFilter from "../../components/GenericFilter";
 import modules from "../../config/loadModules";
 import type { ModuleConfig } from "../../config/types";
+import ComponentCard from "../../components/common/ComponentCard";
 
 interface PermissionsListProps {
   moduleName: string;
@@ -56,17 +57,13 @@ const PermissionsList: React.FC<PermissionsListProps> = ({ moduleName }) => {
       <div className="mb-6">
         <GenericFilter config={config} onFilter={handleFilter} />
       </div>
-      <div className="overflow-x-auto w-full">
-        <table className="min-w-full divide-y divide-gray-200 text-sm sm:text-base">
-          <GenericList
-            config={config}
-            filters={filters}
-            onEdit={handleEdit}
-            onDelete={handleDelete}
-            onShow={handleShow}
-          />
-        </table>
-      </div>
+      <GenericList
+        config={config}
+        filters={filters}
+        onEdit={handleEdit}
+        onDelete={handleDelete}
+        onShow={handleShow}
+      />
     </div>
   );
 };

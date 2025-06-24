@@ -39,9 +39,7 @@ const ExampleChart: React.FC<ExampleChartProps> = ({ title = 'Monthly Sales' }) 
 
   return (
     <div className="bg-white rounded-2xl shadow p-4">
-      <div className="chart-container w-full p-2 sm:p-0 overflow-x-auto text-sm sm:text-base">
-        <Bar data={data} options={options} />
-      </div>
+      <Bar data={data} options={options} />
     </div>
   );
 };

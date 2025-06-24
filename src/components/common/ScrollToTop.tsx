@@ -12,9 +12,5 @@ export function ScrollToTop() {
     });
   }, [pathname]);
 
-  return (
-    <button className="scroll-to-top fixed bottom-4 right-4 z-50 p-2 rounded-full bg-blue-600 text-white shadow-lg sm:bottom-8 sm:right-8">
-      Scroll to Top
-    </button>
-  );
+  return null;
 }

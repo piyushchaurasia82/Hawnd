@@ -75,7 +75,7 @@ export default function UserDropdown() {
       <Dropdown
         isOpen={isOpen}
         onClose={closeDropdown}
-        className="absolute right-0 mt-[17px] flex w-[260px] max-w-[90vw] flex-col rounded-2xl border border-gray-200 bg-white p-3 shadow-theme-lg"
+        className="absolute right-0 mt-[17px] flex w-[260px] flex-col rounded-2xl border border-gray-200 bg-white p-3 shadow-theme-lg"
       >
         <div>
           <span className="block font-medium text-gray-700 text-theme-sm">
@@ -187,20 +187,20 @@ export default function UserDropdown() {
 
       {/* Sign Out Confirmation Modal */}
       {showSignOutConfirm && (
-        <div className="fixed inset-0 flex items-center justify-center z-50 bg-black bg-opacity-40 backdrop-blur-sm p-2 sm:p-0">
-          <div className="bg-white bg-opacity-95 p-4 sm:p-6 rounded-lg shadow-xl w-full max-w-xs sm:max-w-sm text-center border border-gray-300">
-            <h3 className="text-lg sm:text-xl font-semibold mb-4 text-gray-800">Confirm Sign Out</h3>
-            <p className="mb-6 text-gray-700 text-sm sm:text-base">Are you sure you want to sign out?</p>
-            <div className="flex flex-col sm:flex-row justify-center gap-3 sm:gap-4">
+        <div className="fixed inset-0 flex items-center justify-center z-50 bg-transparent backdrop-blur-sm">
+          <div className="bg-white bg-opacity-90 p-6 rounded-lg shadow-xl max-w-sm w-full text-center border border-gray-300">
+            <h3 className="text-xl font-semibold mb-4 text-gray-800">Confirm Sign Out</h3>
+            <p className="mb-6 text-gray-700">Are you sure you want to sign out?</p>
+            <div className="flex justify-center gap-4">
               <button
                 onClick={handleSignOut}
-                className="px-4 py-2 sm:px-6 sm:py-2 bg-red-500 text-white rounded-md hover:bg-red-600 transition-colors text-sm sm:text-base"
+                className="px-6 py-2 bg-red-500 text-white rounded-md hover:bg-red-600 transition-colors"
               >
                 Yes, Sign Out
               </button>
               <button
                 onClick={() => setShowSignOutConfirm(false)}
-                className="px-4 py-2 sm:px-6 sm:py-2 bg-gray-200 text-gray-700 rounded-md hover:bg-gray-300 transition-colors text-sm sm:text-base"
+                className="px-6 py-2 bg-gray-300 text-gray-800 rounded-md hover:bg-gray-400 transition-colors"
               >
                 Cancel
               </button>
