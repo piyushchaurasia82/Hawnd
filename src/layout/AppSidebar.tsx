@@ -135,71 +135,67 @@ const AppSidebar: React.FC = () => {
   );
 
   return (
-    <>
-      {/* Mobile overlay backdrop */}
-      {isMobileOpen && (
-        <div
-          className="fixed inset-0 z-40 bg-black bg-opacity-40 backdrop-blur-sm lg:hidden"
-          onClick={() => setIsHovered(false)}
-        />
-      )}
-      <aside
-        className={`fixed top-0 left-0 flex flex-col px-4 pt-4 bg-white h-screen transition-all text-black-100 duration-300 ease-in-out border-r border-gray-200 z-50
-          ${isExpanded || isMobileOpen ? "w-[260px]" : isHovered ? "w-[260px]" : "w-[70px]"}
-          ${isMobileOpen ? "translate-x-0" : "-translate-x-full"} lg:translate-x-0 lg:mt-0 mt-0`}
-        onMouseEnter={() => !isExpanded && setIsHovered(true)}
-        onMouseLeave={() => setIsHovered(false)}
-        style={{ maxWidth: '90vw' }}
+    <aside
+      className={`fixed mt-16 flex flex-col lg:mt-0 top-0 px-5 left-0 bg-white h-screen transition-all text-black-100 duration-300 ease-in-out z-50 border-r border-gray-200 
+        ${
+          isExpanded || isMobileOpen
+            ? "w-[290px]"
+            : isHovered
+            ? "w-[290px]"
+            : "w-[90px]"
+        }
+        ${isMobileOpen ? "translate-x-0" : "-translate-x-full"} lg:translate-x-0`}
+      onMouseEnter={() => !isExpanded && setIsHovered(true)}
+      onMouseLeave={() => setIsHovered(false)}
+    >
+      <div
+        className={`py-8 flex ${
+          !isExpanded && !isHovered ? "lg:justify-center" : "justify-start"
+        }`}
       >
-        <div
-          className={`py-8 flex ${
-            !isExpanded && !isHovered ? "lg:justify-center" : "justify-start"
-          }`}
-        >
-          <Link to="/">
-            {isExpanded || isHovered || isMobileOpen ? (
-              <>
-                <img
-                  src="/images/logo/logo.png"
-                  alt="Logo"
-                  width={150}
-                  height={40}
-                />
-              </>
-            ) : (
+        <Link to="/">
+          {isExpanded || isHovered || isMobileOpen ? (
+            <>
               <img
-                src="/images/logo/Ebizneeds_uni_logo.png"
+                src="/images/logo/logo.png"
                 alt="Logo"
-                width={32}
-                height={32}
+                width={150}
+                height={40}
               />
-            )}
-          </Link>
-        </div>
-        <div className="flex flex-col overflow-y-auto duration-300 ease-linear no-scrollbar">
-          <nav className="mb-6">
-            <div className="flex flex-col gap-4">
-              <div>
-                <h2
-                  className={`mb-4 text-xs uppercase flex leading-[20px] text-black ${
-                    !isExpanded && !isHovered
-                      ? "lg:justify-center"
-                      : "justify-start"
-                  }`}
-                >
-                  {isExpanded || isHovered || isMobileOpen ? (
-                    "Menu"
-                  ) : (
-                    <HorizontaLDots className="size-6" />
-                  )}
-                </h2>
-                {renderMenuItems(jsonNavItems, "main")}
-              </div>
+            </>
+          ) : (
+            <img
+              src="/images/logo/Ebizneeds_uni_logo.png"
+              alt="Logo"
+              width={32}
+              height={32}
+            />
+          )}
+        </Link>
+      </div>
+      <div className="flex flex-col overflow-y-auto duration-300 ease-linear no-scrollbar">
+        <nav className="mb-6">
+          <div className="flex flex-col gap-4">
+            <div>
+              <h2
+                className={`mb-4 text-xs uppercase flex leading-[20px] text-black ${
+                  !isExpanded && !isHovered
+                    ? "lg:justify-center"
+                    : "justify-start"
+                }`}
+              >
+                {isExpanded || isHovered || isMobileOpen ? (
+                  "Menu"
+                ) : (
+                  <HorizontaLDots className="size-6" />
+                )}
+              </h2>
+              {renderMenuItems(jsonNavItems, "main")}
             </div>
-          </nav>
-        </div>
-      </aside>
-    </>
+          </div>
+        </nav>
+      </div>
+    </aside>
   );
 };
 

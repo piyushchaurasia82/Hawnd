@@ -17,8 +17,9 @@ const UserRolesEdit: React.FC<UserRolesEditProps> = ({ moduleName }) => {
     const [roles, setRoles] = useState<{ id: number; name: string; description: string }[]>([]);
     const [loading, setLoading] = useState<boolean>(true);
     const [error, setError] = useState<string | null>(null);
+    const [initialValues, setInitialValues] = useState<any>(null);
 
-    // Fetch users and roles on component mount
+    // Fetch users, roles, and assigned roles for this user
     useEffect(() => {
         const fetchData = async () => {
             try {
@@ -35,6 +36,17 @@ const UserRolesEdit: React.FC<UserRolesEditProps> = ({ moduleName }) => {
                   ? rolesResponse.data
                   : rolesResponse.data.data || rolesResponse.data.roles || [];
                 setRoles(rolesData);
+
+                // Fetch assigned roles for this user
+                const userRolesResponse = await api.get(`/api/projectmanagement/user_roles/?user_id=${id}`);
+                const assignedRoles = Array.isArray(userRolesResponse.data)
+                  ? userRolesResponse.data
+                  : userRolesResponse.data.data || userRolesResponse.data.user_roles || [];
+                const roleIds = assignedRoles.map((ur: any) => ur.role_id);
+                setInitialValues({
+                  user_id: Number(id),
+                  roles: roleIds
+                });
             } catch (err) {
                 setError('Failed to fetch users or roles');
                 console.error('Error fetching data:', err);
@@ -44,12 +56,12 @@ const UserRolesEdit: React.FC<UserRolesEditProps> = ({ moduleName }) => {
         };
 
         fetchData();
-    }, []);
+    }, [id]);
 
     if (!config) return (
         <div className="text-lg font-medium text-red-600">Module not found</div>
     );
-    if (loading) return <div className="text-gray-600 text-lg p-4">Loading...</div>;
+    if (loading || !initialValues) return <div className="text-gray-600 text-lg p-4">Loading...</div>;
     if (error) return <div className="text-red-600 text-lg font-semibold p-4">{error}</div>;
 
     // Enhance config with dropdown fields
@@ -74,6 +86,7 @@ const UserRolesEdit: React.FC<UserRolesEditProps> = ({ moduleName }) => {
                 })),
                 required: true,
                 visibleInForm: true,
+                readOnly: true, // Prevent changing user in edit
             },
             {
                 name: 'roles',
@@ -107,10 +120,8 @@ const UserRolesEdit: React.FC<UserRolesEditProps> = ({ moduleName }) => {
     const handleSubmit = async (formData: { [key: string]: any }) => {
         try {
             const { roles, ...otherData } = formData;
-            
             // First, delete existing user-role relationships for this user
             await api.delete(`${config.apiBaseUrl}${config.endpoints.delete.url.replace(':id', id!)}/`);
-            
             // Then create new user-role relationships
             const promises = roles.map((roleId: number) => 
                 api.post(`${config.apiBaseUrl}${config.endpoints.create.url}/`, {
@@ -118,7 +129,6 @@ const UserRolesEdit: React.FC<UserRolesEditProps> = ({ moduleName }) => {
                     role_id: roleId
                 })
             );
-            
             await Promise.all(promises);
             navigate(`/${moduleName}`);
         } catch (error: any) {
@@ -131,9 +141,7 @@ const UserRolesEdit: React.FC<UserRolesEditProps> = ({ moduleName }) => {
     return (
         <div className="p-4">
             <h1 className="text-2xl font-bold mb-4">Edit {config.displayName}</h1>
-            <form className="space-y-4 sm:space-y-6 w-full max-w-lg mx-auto px-2 sm:px-0">
-                <GenericForm config={enhancedConfig} id={id} onSubmit={handleSubmit} isEdit />
-            </form>
+            <GenericForm config={enhancedConfig} id={id} onSubmit={handleSubmit} isEdit initialValues={initialValues} />
         </div>
     );
 };

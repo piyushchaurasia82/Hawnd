@@ -157,37 +157,31 @@ const EditProfile: React.FC = () => {
   };
 
   return (
-    <div className="w-full max-w-lg mx-auto bg-white rounded-lg shadow-lg p-3 sm:p-8 mt-2 sm:mt-8 relative text-sm sm:text-base">
-      {/* Responsive header row: button left, heading center on mobile; stacked on desktop */}
-      <div className="mb-2 sm:mb-4">
-        <button
-          type="button"
-          className="flex items-center text-orange-500 hover:text-orange-600 font-semibold px-2 py-1"
-          onClick={() => navigate('/')}
-          style={{ zIndex: 30 }}
-          disabled={showProfileConfirm || showPwConfirm}
+    <div className="max-w-4xl mx-auto bg-white rounded-lg shadow-lg p-8 mt-8 relative">
+      <button
+        className="absolute left-8 top-8 flex items-center text-orange-500 hover:text-orange-600 font-semibold"
+        onClick={() => navigate("/")}
+        style={{ zIndex: showProfileConfirm || showPwConfirm ? 0 : 10 }}
+        disabled={showProfileConfirm || showPwConfirm}
+      >
+        <svg
+          className="w-5 h-5 mr-1"
+          fill="none"
+          stroke="currentColor"
+          strokeWidth="2"
+          viewBox="0 0 24 24"
         >
-          <svg
-            className="w-5 h-5 mr-1"
-            fill="none"
-            stroke="currentColor"
-            strokeWidth="2"
-            viewBox="0 0 24 24"
-          >
-            <path
-              strokeLinecap="round"
-              strokeLinejoin="round"
-              d="M15 19l-7-7 7-7"
-            />
-          </svg>
-          <span className="text-base">Back</span>
-        </button>
-      </div>
-      <div className="mb-6 sm:mb-8 w-full flex justify-center">
-        <h1 className="text-2xl sm:text-3xl font-bold text-orange-500 text-center break-words w-full">
-          Edit Profile
-        </h1>
-      </div>
+          <path
+            strokeLinecap="round"
+            strokeLinejoin="round"
+            d="M15 19l-7-7 7-7"
+          />
+        </svg>
+        Back to Dashboard
+      </button>
+      <h1 className="text-3xl font-bold text-orange-500 mb-8 text-center">
+        Edit Profile
+      </h1>
       <form onSubmit={handleProfileSubmit} className="mb-10">
         <h2 className="text-xl font-semibold text-gray-800 mb-4">
           Profile Details

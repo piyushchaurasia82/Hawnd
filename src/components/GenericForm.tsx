@@ -8,6 +8,7 @@ interface GenericFormProps {
   id?: string;
   onSubmit: (formData: { [key: string]: any }) => void;
   isEdit?: boolean;
+  initialValues?: { [key: string]: any };
 }
 
 // Recursively extract key-value pairs into a flat map
@@ -102,13 +103,14 @@ const GenericForm: React.FC<GenericFormProps> = ({
   id,
   onSubmit,
   isEdit = false,
+  initialValues,
 }) => {
-  const [formData, setFormData] = useState<{ [key: string]: any }>({});
+  const [formData, setFormData] = useState<{ [key: string]: any }>(initialValues || {});
   const [errors, setErrors] = useState<{ [key: string]: string }>({});
   const [options, setOptions] = useState<{ [key: string]: { value: string | number; label: string }[] }>({});
 
   const fetchData = useCallback(async () => {
-    if (!id) return;
+    if (!id || initialValues) return; // Do not fetch if initialValues are provided
     try {
       const { data } = await api.get(
         `${config.apiBaseUrl}${config.endpoints.read.url.replace(":id", id)}/`
@@ -117,7 +119,7 @@ const GenericForm: React.FC<GenericFormProps> = ({
     } catch (error) {
       console.error("Error fetching data:", error);
     }
-  }, [id, config.apiBaseUrl, config.endpoints.read.url]);
+  }, [id, config.apiBaseUrl, config.endpoints.read.url, initialValues]);
 
   const fetchSelectOptions = useCallback(async (field: Field) => {
     if (!config) return;
@@ -172,7 +174,7 @@ const GenericForm: React.FC<GenericFormProps> = ({
   }, [config]);
 
   useEffect(() => {
-    if (isEdit && id) {
+    if (isEdit && id && !initialValues) {
       fetchData();
     }
     // Fetch options for select and multiselect fields
@@ -182,7 +184,14 @@ const GenericForm: React.FC<GenericFormProps> = ({
         fetchSelectOptions(field);
       }
     });
-  }, [isEdit, id, fetchData, config.formConfig.fields, config.fields, fetchSelectOptions]);
+  }, [isEdit, id, fetchData, config.formConfig.fields, config.fields, fetchSelectOptions, initialValues]);
+
+  // Add effect to update formData if initialValues change
+  useEffect(() => {
+    if (initialValues) {
+      setFormData(initialValues);
+    }
+  }, [initialValues]);
 
   const handleChange = (name: string, value: string | boolean | (string | number)[]) => {
     setFormData((prev) => ({ ...prev, [name]: value }));
@@ -240,7 +249,7 @@ const GenericForm: React.FC<GenericFormProps> = ({
   };
 
   return (
-    <form onSubmit={handleSubmit} className="space-y-4 sm:space-y-6 w-full max-w-lg mx-auto px-2 sm:px-0">
+    <form onSubmit={handleSubmit} className="mt-4">
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4 rounded-2xl border border-gray-200 bg-white dark:border-gray-800 dark:bg-white/[0.03] p-4 sm:p-6">
         {config.formConfig.fields.map((fieldName) => {
           const field = config.fields.find((f: Field) => f.name === fieldName);

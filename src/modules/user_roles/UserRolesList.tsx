@@ -35,6 +35,7 @@ interface GroupedUserRole {
     user_name: string;
     roles: string[];
     assigned_at: string;
+    main_id: number;
 }
 
 // SVG icon components
@@ -98,11 +99,11 @@ const UserRolesList: React.FC<UserRolesListProps> = ({ moduleName }) => {
     }, [moduleName, config]);
 
     const groupUserRoles = (userRolesData: UserRole[], usersData: User[], rolesData: Role[]): GroupedUserRole[] => {
-        const grouped: { [key: number]: GroupedUserRole } = {};
+        // Use a Map to ensure each user_id is only processed once
+        const grouped = new Map<number, GroupedUserRole>();
 
         userRolesData.forEach(userRole => {
-            const user = usersData.find(u => u.id === userRole.user_id);
-            const role = rolesData.find(r => r.id === userRole.role_id);
+            const user = usersData.find(u => String(u.id) === String(userRole.user_id));
             let displayName = '';
             if (user) {
                 if (user.first_name || user.last_name) {
@@ -113,23 +114,27 @@ const UserRolesList: React.FC<UserRolesListProps> = ({ moduleName }) => {
                 } else if (user.name) {
                     displayName = user.name;
                 } else {
-                    displayName = `User ID: ${userRole.user_id}`;
+                    displayName = '-';
                 }
             } else {
-                displayName = `User ID: ${userRole.user_id}`;
+                displayName = '-';
             }
-            if (!grouped[userRole.user_id]) {
-                grouped[userRole.user_id] = {
+            if (!grouped.has(userRole.user_id)) {
+                grouped.set(userRole.user_id, {
                     user_id: userRole.user_id,
                     user_name: displayName,
                     roles: [],
-                    assigned_at: userRole.assigned_at
-                };
+                    assigned_at: userRole.assigned_at,
+                    main_id: userRole.id
+                });
             }
-            grouped[userRole.user_id].roles.push(role ? role.name : `Role ID: ${userRole.role_id}`);
+            const group = grouped.get(userRole.user_id)!;
+            group.roles.push(
+                (rolesData.find(r => r.id === userRole.role_id)?.name) || `Role ID: ${userRole.role_id}`
+            );
         });
 
-        return Object.values(grouped);
+        return Array.from(grouped.values());
     };
 
     if (!config) {
@@ -178,12 +183,12 @@ const UserRolesList: React.FC<UserRolesListProps> = ({ moduleName }) => {
             <div className="mb-6">
                 <GenericFilter config={config} />
             </div>
-            
             <div className="mt-4">
-                <div className="overflow-x-auto w-full">
-                    <table className="min-w-full divide-y divide-gray-200 text-sm sm:text-base">
+                <div className="overflow-auto">
+                    <table className="min-w-full border border-gray-200 text-sm">
                         <thead className="bg-gray-100 text-gray-700 text-left">
                             <tr>
+                                {/* <th className="px-4 py-2 whitespace-nowrap">ID</th> */}
                                 <th className="px-4 py-2 whitespace-nowrap">User</th>
                                 <th className="px-4 py-2 whitespace-nowrap">Roles</th>
                                 <th className="px-4 py-2 whitespace-nowrap">Assigned At</th>
@@ -193,6 +198,7 @@ const UserRolesList: React.FC<UserRolesListProps> = ({ moduleName }) => {
                         <tbody>
                             {groupedData.map((item) => (
                                 <tr key={item.user_id} className="border-t">
+                                    {/* <td className="px-4 py-2">{item.main_id}</td> */}
                                     <td className="px-4 py-2">{item.user_name}</td>
                                     <td className="px-4 py-2">
                                         {item.roles.length > 0 ? item.roles.join(', ') : '-'}
@@ -200,7 +206,7 @@ const UserRolesList: React.FC<UserRolesListProps> = ({ moduleName }) => {
                                     <td className="px-4 py-2">{item.assigned_at ? format(new Date(item.assigned_at), 'dd/MM/yyyy') : '-'}</td>
                                     <td className="px-4 py-2">
                                         <div className="flex space-x-3">
-                                            <button onClick={() => handleShow(item.user_id)} className="text-blue-600 hover:text-blue-800" title="View">
+                                            <button onClick={() => handleShow(item.user_id)} className="text-blue-600 hover:text-blue-800" title="Show">
                                                 <EyeIcon />
                                             </button>
                                             <button onClick={() => handleEdit(item.user_id)} className="text-green-600 hover:text-green-800" title="Edit">

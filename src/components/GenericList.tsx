@@ -1,7 +1,6 @@
 import React, { useState, useEffect } from "react";
 import api from "../services/api";
 import type { ApiListResponse, ModuleConfig } from "../config/types";
-import { FiEye, FiEdit, FiTrash2 } from 'react-icons/fi';
 
 interface GenericListProps {
   config: ModuleConfig;
@@ -62,88 +61,16 @@ const DescriptionCell: React.FC<{ description: string }> = ({ description }) => 
   );
 };
 
-const dummyProjects = [
-  {
-    id: 1,
-    title: 'Website Redesign',
-    owner: 'Emily Carter',
-    status: 'In Progress',
-    completed: 60,
-    type: 'Marketing',
-  },
-  {
-    id: 2,
-    title: 'Mobile App Development',
-    owner: 'David Lee',
-    status: 'Completed',
-    completed: 100,
-    type: 'Product',
-  },
-  {
-    id: 3,
-    title: 'Content Marketing Strategy',
-    owner: 'Sarah Chen',
-    status: 'Todo',
-    completed: 20,
-    type: 'Marketing',
-  },
-  {
-    id: 4,
-    title: 'Sales Training Program',
-    owner: 'Michael Brown',
-    status: 'In Progress',
-    completed: 40,
-    type: 'Sales',
-  },
-  {
-    id: 5,
-    title: 'Customer Support Portal',
-    owner: 'Jessica Wong',
-    status: 'Completed',
-    completed: 100,
-    type: 'Support',
-  },
-  {
-    id: 6,
-    title: 'Product Launch Campaign',
-    owner: 'Daniel Kim',
-    status: 'Todo',
-    completed: 10,
-    type: 'Marketing',
-  },
-  {
-    id: 7,
-    title: 'Internal Tools Upgrade',
-    owner: 'Olivia Green',
-    status: 'In Progress',
-    completed: 50,
-    type: 'IT',
-  },
-  {
-    id: 8,
-    title: 'Market Research Study',
-    owner: 'Ethan Clark',
-    status: 'Completed',
-    completed: 100,
-    type: 'Research',
-  },
-  {
-    id: 9,
-    title: 'Partnership Development',
-    owner: 'Sophia Davis',
-    status: 'Todo',
-    completed: 30,
-    type: 'Business',
-  },
-  {
-    id: 10,
-    title: 'Employee Onboarding Process',
-    owner: 'Ryan Taylor',
-    status: 'In Progress',
-    completed: 70,
-    type: 'HR',
-  },
-];
+// SVG icon components
+const EyeIcon = () => (
+  <svg width="18" height="18" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M1.5 12S5.25 5.25 12 5.25 22.5 12 22.5 12 18.75 18.75 12 18.75 1.5 12 1.5 12z" /><circle cx="12" cy="12" r="3" stroke="currentColor" strokeWidth={2} /></svg>
+);
+const EditIcon = () => (
+  <svg width="18" height="18" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15.232 5.232l3.536 3.536M9 13.5l6.75-6.75a2.121 2.121 0 113 3L12 16.5H9v-3z" /></svg>
+);
+const TrashIcon = () => (
+  <svg width="18" height="18" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6M1 7h22M8 7V5a2 2 0 012-2h4a2 2 0 012 2v2" /></svg>
+);
 
 const GenericList: React.FC<GenericListProps> = ({
   config,
@@ -207,68 +134,10 @@ const GenericList: React.FC<GenericListProps> = ({
 
   const totalPages = Math.ceil(totalCount / rowsPerPage);
 
-  // Use dummy data and custom columns for projects module
-  const isProjectsModule = config.table === 'projects';
-  if (isProjectsModule) {
-    return (
-      <tbody className="border border-[#EAEAEA]">
-        <tr className="bg-gray-100 text-gray-700 text-left">
-          <th className="px-4 py-3 whitespace-nowrap font-medium">Project Title</th>
-          <th className="px-4 py-3 whitespace-nowrap font-medium">Owner</th>
-          <th className="px-4 py-3 whitespace-nowrap font-medium">Status</th>
-          <th className="px-4 py-3 whitespace-nowrap font-medium">% Completed</th>
-          <th className="px-4 py-3 whitespace-nowrap font-medium">Type</th>
-          <th className="px-4 py-3 whitespace-nowrap font-medium">Actions</th>
-        </tr>
-        {dummyProjects.map((row) => (
-          <tr key={row.id} className="border-t">
-            <td className="px-4 py-4">{row.title}</td>
-            <td className="px-4 py-4">{row.owner}</td>
-            <td className="px-4 py-4">
-              <span
-                className={`px-4 w-full max-w-[90%] block text-center py-2 rounded text-white text-sm font-semibold
-                  ${row.status === 'In Progress' ? 'bg-orange-500' : ''}
-                  ${row.status === 'Completed' ? 'bg-green-500' : ''}
-                  ${row.status === 'Todo' ? 'bg-blue-500' : ''}
-                `}
-              >
-                {row.status}
-              </span>
-            </td>
-            <td className="px-4 py-4">
-              <div className="flex items-center gap-2">
-                <span>{row.completed}</span>
-                <div className="w-24 bg-gray-200 rounded-full h-2">
-                  <div
-                    className={`h-2 rounded-full
-                      ${row.completed === 100 ? 'bg-green-500' : row.completed >= 70 ? 'bg-orange-500' : 'bg-blue-500'}`}
-                    style={{ width: `${row.completed}%` }}
-                  ></div>
-                </div>
-              </div>
-            </td>
-            <td className="px-4 py-4"><span
-                className={`px-4 w-full max-w-[90%] block text-center py-2 rounded text-[#1C170D] text-sm font-semibold bg-[#F1F1F1]`}
-              >
-                {row.type}
-              </span></td>
-            <td className="px-4 py-4">
-              <div className="flex space-x-3">
-                <button onClick={() => onEdit(row.id)} className="text-black" title="Edit">
-                  <FiEdit size={18} />
-                </button>
-              </div>
-            </td>
-          </tr>
-        ))}
-      </tbody>
-    );
-  }
-
   return (
     <div className="mt-4">
-      <div className="overflow-x-auto w-full">
-        <table className="min-w-full divide-y divide-gray-200 text-sm sm:text-base">
+      <div className="overflow-auto">
+        <table className="min-w-full border border-gray-200 text-sm">
           <thead className="bg-gray-100 text-gray-700 text-left">
             <tr>
               {config.listConfig.columns.map((column) => {
@@ -309,13 +178,13 @@ const GenericList: React.FC<GenericListProps> = ({
                 <td className="px-4 py-2">
                   <div className="flex space-x-3">
                     <button onClick={() => onShow(row.id)} className="text-blue-600 hover:text-blue-800" title="View">
-                      <FiEye size={18} />
+                      <EyeIcon />
                     </button>
-                    <button onClick={() => onEdit(row.id)} className="text-black" title="Edit">
-                      <FiEdit size={18} />
+                    <button onClick={() => onEdit(row.id)} className="text-green-600 hover:text-green-800" title="Edit">
+                      <EditIcon />
                     </button>
                     <button onClick={() => onDelete(row.id)} className="text-red-600 hover:text-red-800" title="Delete">
-                      <FiTrash2 size={18} />
+                      <TrashIcon />
                     </button>
                   </div>
                 </td>
