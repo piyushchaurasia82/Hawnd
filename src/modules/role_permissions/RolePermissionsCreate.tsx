@@ -162,10 +162,6 @@ const RolePermissionsCreate: React.FC<RolePermissionsCreateProps> = ({ moduleNam
     if (loading) return <div className="text-gray-600 text-lg p-4">Loading...</div>;
     if (error) return <div className="text-red-600 text-lg font-semibold p-4">{error}</div>;
 
-    const handleChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
-        setFormData({ ...formData, [e.target.name]: e.target.value });
-    };
-
     const handleMultiSelect = (values: (string | number)[]) => {
         setFormData((prev) => ({ ...prev, permission: values }));
     };

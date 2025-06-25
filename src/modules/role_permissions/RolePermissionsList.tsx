@@ -4,8 +4,7 @@ import api from "../../services/api";
 import GenericFilter from "../../components/GenericFilter";
 import modules from "../../config/loadModules";
 import type { ModuleConfig } from "../../config/types";
-import ComponentCard from "../../components/common/ComponentCard";
-
+    
 interface RolePermissionsListProps {
   moduleName: string;
 }
