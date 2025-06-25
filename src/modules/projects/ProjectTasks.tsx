@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { FiEdit } from 'react-icons/fi';
+import { useNavigate } from 'react-router-dom';
 
 interface Task {
     id: number;
@@ -66,6 +67,7 @@ const dummyTasks: Task[] = [
 ];
 
 const ProjectTasks: React.FC = () => {
+    const navigate = useNavigate();
     const [activeTab, setActiveTab] = useState<'team' | 'my'>('team');
     const [searchQuery, setSearchQuery] = useState('');
     const [filters, setFilters] = useState({
@@ -111,7 +113,7 @@ const ProjectTasks: React.FC = () => {
                         <h1 className="text-2xl font-bold">Project Alpha</h1>
                         <p className="text-gray-600 text-sm">Manage and track all tasks related to Project Alpha</p>
                     </div>
-                    <button className="bg-orange-500 text-white px-4 py-2 rounded font-semibold">
+                    <button  onClick={() => navigate(`/tasks/create`)} className="bg-orange-500 text-white px-4 py-2 rounded font-semibold">
                         Add Task
                     </button>
                 </div>
