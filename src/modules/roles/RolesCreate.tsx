@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import api from "../../services/api";
 import modules from "../../config/loadModules";
@@ -12,7 +12,31 @@ const RolesCreate: React.FC<RolesCreateProps> = ({ moduleName }) => {
   const config: ModuleConfig | undefined = moduleName ? modules[moduleName] : undefined;
   const navigate = useNavigate();
   const [formData, setFormData] = useState({ name: "", description: "" });
+  const [permissions, setPermissions] = useState<any[]>([]);
+  const [selectedPermissions, setSelectedPermissions] = useState<number[]>([]);
+  const [selectAll, setSelectAll] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [loading, setLoading] = useState(false);
+
+  useEffect(() => {
+    async function fetchPermissions() {
+      try {
+        const res = await api.get("/api/projectmanagement/permissions/");
+        setPermissions(res.data.data || res.data.permissions || res.data);
+      } catch (e) {
+        setPermissions([]);
+      }
+    }
+    fetchPermissions();
+  }, []);
+
+  useEffect(() => {
+    if (permissions.length > 0 && selectedPermissions.length === permissions.length) {
+      setSelectAll(true);
+    } else {
+      setSelectAll(false);
+    }
+  }, [selectedPermissions, permissions]);
 
   if (!config)
     return (
@@ -25,59 +49,132 @@ const RolesCreate: React.FC<RolesCreateProps> = ({ moduleName }) => {
     setFormData({ ...formData, [e.target.name]: e.target.value });
   };
 
+  const handlePermissionChange = (id: number) => {
+    setSelectedPermissions((prev) =>
+      prev.includes(id) ? prev.filter((pid) => pid !== id) : [...prev, id]
+    );
+  };
+
+  const handleSelectAll = () => {
+    if (selectAll) {
+      setSelectedPermissions([]);
+    } else {
+      setSelectedPermissions(permissions.map((p) => p.id));
+    }
+    setSelectAll(!selectAll);
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    setLoading(true);
+    setError(null);
     try {
-      await api.post(
+      // 1. Create the role
+      const roleRes = await api.post(
         `${config.apiBaseUrl}${config.endpoints.create.url}/`,
-        formData
+        {
+          ...formData,
+        }
       );
+      const roleId = roleRes.data?.id || roleRes.data?.data?.id || roleRes.data?.role?.id;
+      // 2. Assign permissions if any
+      if (roleId && selectedPermissions.length > 0) {
+        await Promise.all(
+          selectedPermissions.map(permissionId =>
+            api.post('/api/projectmanagement/role-permissions/', {
+              role: roleId,
+              permission: permissionId,
+            })
+          )
+        );
+      }
       navigate(`/${moduleName}`);
     } catch (error) {
       setError("Error creating role. Please try again.");
-      console.error("Error creating:", error);
+    } finally {
+      setLoading(false);
     }
   };
 
   return (
-    <div className="p-5 max-w-7xl mx-auto">
-      <h1 className="text-2xl font-bold mb-3">Create Role</h1>
-      <div className="border-b border-gray-200 mb-4">
-        <nav className="flex space-x-8 text-sm" aria-label="Tabs">
-          
-        </nav>
-      </div>
+    <div className="max-w-6xl mx-auto px-4 py-8">
+      <nav className="text-xs text-gray-500 mb-2 flex gap-1">
+        <button type="button" onClick={() => navigate('/')} className="hover:underline hover:text-black focus:outline-none bg-transparent p-0 m-0">Home</button>
+        <span>/</span>
+        <button type="button" onClick={() => navigate('/roles')} className="hover:underline hover:text-black focus:outline-none bg-transparent p-0 m-0">Roles</button>
+        <span>/</span>
+        <span className="font-semibold text-black">Create New Role</span>
+      </nav>
+      <h1 className="text-2xl font-bold mb-6">Create New Role</h1>
       <form onSubmit={handleSubmit}>
-        <div className="mb-3">
-          <label className="block font-semibold mb-1 text-m" htmlFor="name">Name</label>
-          <input
-            id="name"
-            name="name"
-            value={formData.name}
-            onChange={handleChange}
-            placeholder="Enter role name"
-            className="w-full rounded bg-gray-100 p-2 h-12 text-sm placeholder-gray-400"
-            required
-          />
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-8 mb-8">
+          <div>
+            <label className="block font-semibold mb-1 text-base">Role Name</label>
+            <input
+              name="name"
+              value={formData.name}
+              onChange={handleChange}
+              placeholder="Enter  role name"
+              className="w-full rounded bg-gray-100 h-12 p-3 text-sm placeholder-gray-400 border border-gray-200"
+              required
+            />
+          </div>
+          <div>
+            <label className="block font-semibold mb-1 text-base">Role Description</label>
+            <input
+              name="description"
+              value={formData.description}
+              onChange={handleChange}
+              placeholder="Enter  role description"
+              className="w-full rounded bg-gray-100 h-12 p-3 text-sm placeholder-gray-400 border border-gray-200"
+              required
+            />
+          </div>
         </div>
-        <div className="mb-4">
-          <label className="block font-semibold mb-1 text-m" htmlFor="description">Description</label>
-          <input
-            id="description"
-            name="description"
-            value={formData.description}
-            onChange={handleChange}
-            placeholder="Enter role description"
-            className="w-full rounded bg-gray-100 h-12 p-2 text-sm placeholder-gray-400"
-            required
-          />
+        <div className="bg-[#F9F6F2] rounded-lg p-6 mb-8 max-w-3xl">
+          <h2 className="text-lg font-bold mb-4">Permission Assignment</h2>
+          <div className="flex items-center mb-4">
+            <span className="font-semibold text-base mr-4">Select All</span>
+            <button
+              type="button"
+              className={`relative w-12 h-7 rounded-full transition-colors duration-200 focus:outline-none ${selectAll ? 'bg-orange-500' : 'bg-gray-200'}`}
+              onClick={handleSelectAll}
+              aria-pressed={selectAll}
+            >
+              <span className={`absolute left-1 top-1 w-5 h-5 rounded-full bg-white shadow transition-transform duration-200 ${selectAll ? 'translate-x-5' : ''}`}></span>
+            </button>
+          </div>
+          <div className="flex flex-col gap-4 mt-2">
+            {permissions.map((perm) => (
+              <label key={perm.id} className="flex items-start gap-3 cursor-pointer text-base">
+                <input
+                  type="checkbox"
+                  checked={selectedPermissions.includes(perm.id)}
+                  onChange={() => handlePermissionChange(perm.id)}
+                  className="w-5 h-5 mt-1 accent-orange-500 border-gray-300 rounded"
+                />
+                <span>
+                  <span className="font-semibold text-base">{perm.code_name}</span>
+                  {perm.description ? <span className="text-sm"> - {perm.description}</span> : ''}
+                </span>
+              </label>
+            ))}
+          </div>
         </div>
-        <div className="flex justify-end">
+        <div className="flex justify-end gap-4 mt-8">
+          <button
+            type="button"
+            className="bg-[#F9F6F2] text-black font-bold rounded px-8 py-3 text-base border border-gray-200 hover:bg-gray-200 transition"
+            onClick={() => navigate(-1)}
+          >
+            Cancel
+          </button>
           <button
             type="submit"
-            className="bg-orange-500 text-white font-bold rounded px-5 py-2 text-sm shadow hover:bg-orange-600 transition"
+            className="bg-orange-500 text-white font-bold rounded px-8 py-3 text-base shadow hover:bg-orange-600 transition"
+            disabled={loading}
           >
-            Create Role
+            Save Role
           </button>
         </div>
         {error && <div className="text-red-600 mt-2 text-xs">{error}</div>}

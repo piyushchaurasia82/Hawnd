@@ -1,12 +1,11 @@
 import React, { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
 
 interface ProjectsCreateProps {
-    moduleName: string;
+    // Removed: moduleName: string;
 }
 
-const ProjectsCreate: React.FC<ProjectsCreateProps> = ({ moduleName }) => {
-    const navigate = useNavigate();
+const ProjectsCreate: React.FC<ProjectsCreateProps> = () => {
+    // Removed: const navigate = useNavigate();
     const [tab, setTab] = useState<'quick' | 'detailed'>('quick');
     const [quickForm, setQuickForm] = useState({
         title: '',

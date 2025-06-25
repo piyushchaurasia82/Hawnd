@@ -2,7 +2,6 @@ import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import api from '../../services/api';
 import GenericList from '../../components/GenericList';
-import GenericFilter from '../../components/GenericFilter';
 import modules from '../../config/loadModules';
 import type { ModuleConfig } from '../../config/types';
 
@@ -12,17 +11,13 @@ interface ProjectsListProps {
 
 const ProjectsList: React.FC<ProjectsListProps> = ({ moduleName }) => {
     const navigate = useNavigate();
-    const [filters, setFilters] = useState<{ [key: string]: string }>({});
+    const [filters] = useState<{ [key: string]: string }>({});
     const [search, setSearch] = useState('');
     const config: ModuleConfig = modules[moduleName as keyof typeof modules];
 
     if (!config) {
         return <h1 className="text-xl font-semibold text-red-600">Module not found</h1>;
     }
-
-    const handleFilter = (newFilters: { [key: string]: string }) => {
-        setFilters(newFilters);
-    };
 
     const handleEdit = (id: number) => {
         navigate(`/${moduleName}/edit/${id}`);
