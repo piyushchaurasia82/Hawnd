@@ -4,6 +4,7 @@ import api from '../../services/api';
 import Button from '../../components/ui/button/Button';
 import Avatar from '../../components/ui/avatar/Avatar';
 import PencilIcon from '../../icons/pencil.svg';
+import TrashIcon from '../../icons/trash.svg';
 
 const ROLE_OPTIONS = [
   { label: 'Role', value: '' },
@@ -76,6 +77,17 @@ const UsersList: React.FC = () => {
     navigate(`/users/edit/${id}`);
   };
 
+  const handleDelete = async (id: number) => {
+    if (window.confirm('Are you sure you want to delete this user?')) {
+      try {
+        await api.delete(`/api/projectmanagement/users/${id}/`);
+        fetchUsers();
+      } catch (e) {
+        alert('Failed to delete user.');
+      }
+    }
+  };
+
   // Helper to get all role names for a user
   const getUserRoleNames = (userId: number) => {
     const assignedRoleIds = userRoles.filter((ur: any) => ur.user_id === userId).map((ur: any) => ur.role_id);
@@ -95,7 +107,7 @@ const UsersList: React.FC = () => {
       {/* Title and Add User */}
       <div className="flex items-center justify-between mb-4">
         <h1 className="text-2xl font-bold">User Directory</h1>
-        <Button size="sm" onClick={() => navigate('/users/create')}>
+        <Button size="sm" onClick={() => navigate('/users/create')} className="bg-orange-500 hover:bg-orange-600 text-white border-orange-500">
           + Add User
         </Button>
       </div>
@@ -167,15 +179,24 @@ const UsersList: React.FC = () => {
                     </span>
                   </td>
                   <td className="px-6 py-4">
-                    {user.is_active ? (
-                      <span className="font-bold text-black">Active</span>
+                    {user.is_active === "True" || user.is_active === "true" ? (
+                      <span className="inline-flex items-center px-3 py-1 rounded-full bg-green-100">
+                        <span className="w-2 h-2 rounded-full bg-green-700 mr-2"></span>
+                        <span className="font-bold text-green-700">Active</span>
+                      </span>
                     ) : (
-                      <span className="font-bold text-gray-400">Inactive</span>
+                      <span className="inline-flex items-center px-3 py-1 rounded-full bg-red-100">
+                        <span className="w-2 h-2 rounded-full bg-red-700 mr-2"></span>
+                        <span className="font-bold text-red-700">Inactive</span>
+                      </span>
                     )}
                   </td>
                   <td className="px-6 py-4">
-                    <button onClick={() => handleEdit(user.id)} className="text-black hover:text-orange-500" title="Edit">
+                    <button onClick={() => handleEdit(user.id)} className="text-black hover:text-orange-500 mr-2" title="Edit">
                       <img src={PencilIcon} width={18} height={18} alt="Edit" />
+                    </button>
+                    <button onClick={() => handleDelete(user.id)} className="text-red-600 hover:text-red-800" title="Delete">
+                      <img src={TrashIcon} width={18} height={18} alt="Delete" />
                     </button>
                   </td>
                 </tr>

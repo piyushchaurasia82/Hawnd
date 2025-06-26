@@ -8,6 +8,92 @@ import TextArea from '../../components/form/input/TextArea';
 import Checkbox from '../../components/form/input/Checkbox';
 import type { ModuleConfig, Field } from '../../config/types';
 
+const OrangeToggle = ({ checked, onChange }: { checked: boolean; onChange: (v: boolean) => void }) => (
+  <label className="inline-flex items-center cursor-pointer">
+    <input
+      type="checkbox"
+      className="sr-only peer"
+      checked={checked}
+      onChange={e => onChange(e.target.checked)}
+    />
+    <div className={
+      `w-11 h-6 rounded-full transition-all duration-300
+       ${checked ? 'bg-orange-500 shadow-lg ring-2 ring-orange-300' : 'bg-gray-200 shadow-inner'}
+       peer-focus:ring-4 peer-focus:ring-orange-300`
+    }></div>
+    <span className={`ml-3 text-sm font-medium ${checked ? 'text-orange-700' : 'text-gray-900'}`}>{checked ? 'Active' : 'Inactive'}</span>
+  </label>
+);
+
+const MultiSelectDropdown = ({ options, selectedValues, onChange, label, disabled, onAddNew }: {
+  options: { value: string | number; label: string }[];
+  selectedValues: (string | number)[];
+  onChange: (values: (string | number)[]) => void;
+  label?: string;
+  disabled?: boolean;
+  onAddNew?: () => void;
+}) => {
+  const [open, setOpen] = React.useState(false);
+  const ref = React.useRef<HTMLDivElement>(null);
+
+  React.useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (ref.current && !ref.current.contains(event.target as Node)) {
+        setOpen(false);
+      }
+    };
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, []);
+
+  const handleSelect = (value: string | number) => {
+    if (selectedValues.includes(value)) {
+      onChange(selectedValues.filter((v) => v !== value));
+    } else {
+      onChange([...selectedValues, value]);
+    }
+  };
+
+  const selectedLabels = options.filter(opt => selectedValues.includes(opt.value)).map(opt => opt.label);
+
+  return (
+    <div className="relative" ref={ref}>
+      <button
+        type="button"
+        className="border rounded p-2 w-full text-left bg-white focus:outline-none focus:ring-2 focus:ring-blue-500"
+        onClick={() => setOpen((o) => !o)}
+        disabled={disabled}
+      >
+        {selectedLabels.length > 0 ? selectedLabels.join(', ') : `Select ${label || ''}`}
+        <span className="float-right">▼</span>
+      </button>
+      {open && (
+        <div className="absolute z-10 mt-1 w-full bg-white border border-gray-300 rounded shadow-lg max-h-48 overflow-y-auto">
+          {options.map((option) => (
+            <label key={option.value} className="flex items-center px-2 py-1 cursor-pointer hover:bg-gray-100">
+              <input
+                type="checkbox"
+                checked={selectedValues.includes(option.value)}
+                onChange={() => handleSelect(option.value)}
+                className="h-4 w-4 text-blue-600 border-gray-300 rounded mr-2"
+                disabled={disabled}
+              />
+              <span className="text-sm">{option.label}</span>
+            </label>
+          ))}
+          <button
+            type="button"
+            className="w-full text-left px-2 py-1 text-orange-600 hover:bg-orange-50 font-semibold border-t border-gray-200"
+            onClick={onAddNew}
+          >
+            + Create New Role
+          </button>
+        </div>
+      )}
+    </div>
+  );
+};
+
 const UsersEdit: React.FC<{ moduleName: string }> = ({ moduleName }) => {
     const { id } = useParams<{ id: string }>();
     const config: ModuleConfig | undefined = moduleName ? modules[moduleName] : undefined;
@@ -17,6 +103,8 @@ const UsersEdit: React.FC<{ moduleName: string }> = ({ moduleName }) => {
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
     const [saving, setSaving] = useState(false);
+    const [rolesOptions, setRolesOptions] = React.useState<{ value: string; label: string }[]>([]);
+    const [selectedRoles, setSelectedRoles] = React.useState<(string | number)[]>([]);
 
     useEffect(() => {
         if (!config || !id) return;
@@ -24,9 +112,11 @@ const UsersEdit: React.FC<{ moduleName: string }> = ({ moduleName }) => {
         api.get(`${config.apiBaseUrl}${config.endpoints.read.url.replace(':id', id)}/`)
             .then(res => {
                 const user = res.data;
-                // Always ensure is_active is present and boolean
+                // Always ensure is_active is present and boolean for the toggle
                 if (typeof user.is_active === 'undefined' || user.is_active === null) {
-                    user.is_active = false;
+                    user.is_active = true;
+                } else if (typeof user.is_active === 'string') {
+                    user.is_active = user.is_active === "true" || user.is_active === "True";
                 } else if (typeof user.is_active !== 'boolean') {
                     user.is_active = user.is_active === true || user.is_active === 'TRUE' || user.is_active === 1;
                 }
@@ -38,6 +128,20 @@ const UsersEdit: React.FC<{ moduleName: string }> = ({ moduleName }) => {
                 setLoading(false);
             });
     }, [config, id]);
+
+    useEffect(() => {
+        api.get('/api/projectmanagement/roles/').then(res => {
+            setRolesOptions((res.data.data || res.data.roles || res.data).map((r: any) => ({ value: String(r.id), label: r.name || r.description })));
+        });
+    }, []);
+
+    useEffect(() => {
+        if (!id) return;
+        api.get('/api/projectmanagement/user_roles/').then(res => {
+            const userRoles = (res.data.data || res.data.user_roles || res.data).filter((ur: any) => String(ur.user_id) === String(id)).map((ur: any) => String(ur.role_id));
+            setSelectedRoles(userRoles);
+        });
+    }, [id]);
 
     if (!config) return <div className="text-lg font-medium text-red-600">Module not found</div>;
     if (loading) return <div className="p-8 text-center text-lg">Loading...</div>;
@@ -60,14 +164,24 @@ const UsersEdit: React.FC<{ moduleName: string }> = ({ moduleName }) => {
         setSaving(true);
         setError(null);
         try {
-            // Always include is_active as boolean in the payload, even if false
+            // Always include is_active as string in the payload
             const payload = { ...formData };
-            if (typeof payload.is_active === 'undefined' || payload.is_active === null) payload.is_active = false;
-            payload.is_active = !!payload.is_active;
+            payload.is_active = formData.is_active ? "true" : "false";
             await api.put(
                 `${config.apiBaseUrl}${config.endpoints.update.url.replace(':id', id!)}/`,
                 payload
             );
+            // Fetch all user_roles for this user and delete each one individually
+            const userRolesRes = await api.get('/api/projectmanagement/user_roles/');
+            const userRolesToDelete = (userRolesRes.data.data || userRolesRes.data.user_roles || userRolesRes.data)
+                .filter((ur: any) => String(ur.user_id) === String(id));
+            await Promise.all(userRolesToDelete.map((ur: any) =>
+                api.delete(`/api/projectmanagement/user_roles/${ur.id}/`)
+            ));
+            // Assign new roles
+            await Promise.all(selectedRoles.map(roleId =>
+                api.post('/api/projectmanagement/user_roles/', { user_id: id, role_id: roleId })
+            ));
             navigate(`/${moduleName}`);
         } catch (err: any) {
             setError('Error updating user. Please try again.');
@@ -95,7 +209,7 @@ const UsersEdit: React.FC<{ moduleName: string }> = ({ moduleName }) => {
                 <div className="mb-8">
                     <h2 className="text-lg font-bold mb-4">User Information</h2>
                     <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                        {fields.map(field => {
+                        {fields.filter(field => field.name !== 'is_active').map(field => {
                             let value = formData[field.name];
                             if (field.type === 'boolean') {
                                 value = typeof value === 'boolean' ? value : value === 'TRUE' || value === 1;
@@ -153,6 +267,22 @@ const UsersEdit: React.FC<{ moduleName: string }> = ({ moduleName }) => {
                             );
                         })}
                     </div>
+                </div>
+                <div className="mb-8">
+                    <h2 className="text-lg font-bold mb-4">Roles</h2>
+                    <div className="max-w-xs relative">
+                        <MultiSelectDropdown
+                            options={rolesOptions}
+                            selectedValues={selectedRoles}
+                            onChange={setSelectedRoles}
+                            label="Roles"
+                            onAddNew={() => navigate('/roles/create')}
+                        />
+                    </div>
+                </div>
+                <div className="flex items-center gap-4 mb-8">
+                    <span className="block font-semibold mb-1">Status</span>
+                    <OrangeToggle checked={formData.is_active !== false} onChange={v => handleChange('is_active', v)} />
                 </div>
                 {error && <div className="text-red-600 mb-4">{error}</div>}
                 <div className="flex gap-4">
