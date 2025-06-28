@@ -6,18 +6,12 @@ import Avatar from '../../components/ui/avatar/Avatar';
 import PencilIcon from '../../icons/pencil.svg';
 import TrashIcon from '../../icons/trash.svg';
 
-const ROLE_OPTIONS = [
-  { label: 'Role', value: '' },
-  { label: 'Admin', value: 'admin' },
-  { label: 'Manager', value: 'manager' },
-  { label: 'Contributor', value: 'contributor' },
-  { label: 'Viewer', value: 'viewer' },
-];
 const STATUS_OPTIONS = [
   { label: 'Status', value: '' },
   { label: 'Active', value: 'active' },
   { label: 'Inactive', value: 'inactive' },
 ];
+
 const PROJECT_OPTIONS = [
   { label: 'Project Assigned', value: '' },
   { label: 'Project A', value: 'project_a' },
@@ -41,18 +35,11 @@ const UsersList: React.FC = () => {
   const [status, setStatus] = useState('');
   const [project, setProject] = useState('');
 
-  // Pagination (optional, can be added if needed)
-
   const fetchUsers = async () => {
     setLoading(true);
     try {
-      const params: any = {};
-      if (search) params.search = search;
-      if (role) params.role = role;
-      if (status) params.status = status;
-      if (project) params.project = project;
       const [usersRes, userRolesRes, rolesRes] = await Promise.all([
-        api.get('/api/projectmanagement/users/', { params }),
+        api.get('/api/projectmanagement/users/'),
         api.get('/api/projectmanagement/user_roles/'),
         api.get('/api/projectmanagement/roles/'),
       ]);
@@ -71,7 +58,7 @@ const UsersList: React.FC = () => {
   useEffect(() => {
     fetchUsers();
     // eslint-disable-next-line
-  }, [search, role, status, project]);
+  }, []);
 
   const handleEdit = (id: number) => {
     navigate(`/users/edit/${id}`);
@@ -93,6 +80,41 @@ const UsersList: React.FC = () => {
     const assignedRoleIds = userRoles.filter((ur: any) => ur.user_id === userId).map((ur: any) => ur.role_id);
     return roles.filter((r: any) => assignedRoleIds.includes(r.id)).map((r: any) => r.name);
   };
+
+  // Dynamic role options
+  const roleOptions = [
+    { label: 'Role', value: '' },
+    ...roles.map((r: any) => ({ label: r.name, value: r.name }))
+  ];
+
+  // Filter and sort users client-side
+  let filteredUsers = users.filter((user: any) => {
+    const fullName = `${user.first_name} ${user.last_name}`.toLowerCase();
+    const email = (user.email || '').toLowerCase();
+    const searchLower = search.toLowerCase();
+    let matchesSearch = !searchLower || fullName.includes(searchLower) || email.includes(searchLower);
+    let matchesRole = !role || getUserRoleNames(user.id).includes(role);
+    let matchesStatus = !status || (status === 'active' ? (user.is_active === 'True' || user.is_active === 'true' || user.is_active === true) : (user.is_active === 'False' || user.is_active === 'false' || user.is_active === false));
+    return matchesSearch && matchesRole && matchesStatus;
+  });
+
+  // Sort by role or status if selected
+  if (role) {
+    filteredUsers = filteredUsers.sort((a: any, b: any) => {
+      const aHasRole = getUserRoleNames(a.id).includes(role);
+      const bHasRole = getUserRoleNames(b.id).includes(role);
+      return (aHasRole === bHasRole) ? 0 : aHasRole ? -1 : 1;
+    });
+  }
+  if (status) {
+    filteredUsers = filteredUsers.sort((a: any, b: any) => {
+      const aActive = a.is_active === 'True' || a.is_active === 'true' || a.is_active === true;
+      const bActive = b.is_active === 'True' || b.is_active === 'true' || b.is_active === true;
+      if (status === 'active') return (aActive === bActive) ? 0 : aActive ? -1 : 1;
+      if (status === 'inactive') return (aActive === bActive) ? 0 : !aActive ? -1 : 1;
+      return 0;
+    });
+  }
 
   return (
     <div className="max-w-6xl mx-auto px-4 py-8">
@@ -127,7 +149,7 @@ const UsersList: React.FC = () => {
         </div>
         <div className="flex gap-2">
           <select value={role} onChange={e => setRole(e.target.value)} className="rounded-lg border border-gray-200 bg-white px-3 py-2 text-sm min-w-[120px]">
-            {ROLE_OPTIONS.map(opt => <option key={opt.value} value={opt.value}>{opt.label}</option>)}
+            {roleOptions.map(opt => <option key={opt.value} value={opt.value}>{opt.label}</option>)}
           </select>
           <select value={status} onChange={e => setStatus(e.target.value)} className="rounded-lg border border-gray-200 bg-white px-3 py-2 text-sm min-w-[120px]">
             {STATUS_OPTIONS.map(opt => <option key={opt.value} value={opt.value}>{opt.label}</option>)}
@@ -152,10 +174,10 @@ const UsersList: React.FC = () => {
           <tbody>
             {loading ? (
               <tr><td colSpan={5} className="text-center py-8">Loading...</td></tr>
-            ) : users.length === 0 ? (
+            ) : filteredUsers.length === 0 ? (
               <tr><td colSpan={5} className="text-center py-8">No users found.</td></tr>
             ) : (
-              users.map((user: any) => (
+              filteredUsers.map((user: any) => (
                 <tr key={user.id} className="border-t hover:bg-gray-50 transition">
                   <td className="px-6 py-4 flex items-center gap-3">
                     {/* Avatar with fallback to initials */}

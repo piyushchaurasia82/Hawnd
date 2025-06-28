@@ -1,12 +1,13 @@
 import React, { useEffect, useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import api from '../../services/api';
+import api, { tokenManager } from '../../services/api';
 import modules from '../../config/loadModules';
 import InputField from '../../components/form/input/InputField';
 import SelectField from '../../components/form/input/SelectField';
 import TextArea from '../../components/form/input/TextArea';
 import Checkbox from '../../components/form/input/Checkbox';
 import type { ModuleConfig, Field } from '../../config/types';
+import { usePasswordChange } from '../../pages/AccountSettings';
 
 const OrangeToggle = ({ checked, onChange }: { checked: boolean; onChange: (v: boolean) => void }) => (
   <label className="inline-flex items-center cursor-pointer">
@@ -98,6 +99,7 @@ const UsersEdit: React.FC<{ moduleName: string }> = ({ moduleName }) => {
     const { id } = useParams<{ id: string }>();
     const config: ModuleConfig | undefined = moduleName ? modules[moduleName] : undefined;
     const navigate = useNavigate();
+    const { lastChangedPassword } = usePasswordChange();
 
     const [formData, setFormData] = useState<{ [key: string]: any }>({});
     const [loading, setLoading] = useState(true);
@@ -120,6 +122,11 @@ const UsersEdit: React.FC<{ moduleName: string }> = ({ moduleName }) => {
                 } else if (typeof user.is_active !== 'boolean') {
                     user.is_active = user.is_active === true || user.is_active === 'TRUE' || user.is_active === 1;
                 }
+                // If this is the logged-in user, check for last changed password in context
+                const userData = tokenManager.getUserData();
+                if (userData && userData.username && user.username === userData.username && lastChangedPassword) {
+                  user.hashed_password = lastChangedPassword;
+                }
                 setFormData(user);
                 setLoading(false);
             })
@@ -127,7 +134,7 @@ const UsersEdit: React.FC<{ moduleName: string }> = ({ moduleName }) => {
                 setError('Failed to load user data.');
                 setLoading(false);
             });
-    }, [config, id]);
+    }, [config, id, lastChangedPassword]);
 
     useEffect(() => {
         api.get('/api/projectmanagement/roles/').then(res => {
@@ -149,6 +156,9 @@ const UsersEdit: React.FC<{ moduleName: string }> = ({ moduleName }) => {
     const fields = config.formConfig.fields.map(
         fname => config.fields.find(f => f.name === fname)
     ).filter(Boolean) as Field[];
+
+    // Filter out the hashed_password field from the form
+    const visibleFields = fields.filter(field => field.name !== 'hashed_password');
 
     const handleChange = (name: string, value: any) => {
         // Special handling for is_active to always set boolean
@@ -209,7 +219,7 @@ const UsersEdit: React.FC<{ moduleName: string }> = ({ moduleName }) => {
                 <div className="mb-8">
                     <h2 className="text-lg font-bold mb-4">User Information</h2>
                     <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                        {fields.filter(field => field.name !== 'is_active').map(field => {
+                        {visibleFields.filter(field => field.name !== 'is_active').map(field => {
                             let value = formData[field.name];
                             if (field.type === 'boolean') {
                                 value = typeof value === 'boolean' ? value : value === 'TRUE' || value === 1;
