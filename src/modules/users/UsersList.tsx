@@ -38,15 +38,30 @@ const UsersList: React.FC = () => {
   const fetchUsers = async () => {
     setLoading(true);
     try {
+      console.log('Fetching users from project management system...');
       const [usersRes, userRolesRes, rolesRes] = await Promise.all([
         api.get('/api/projectmanagement/users/'),
         api.get('/api/projectmanagement/user_roles/'),
         api.get('/api/projectmanagement/roles/'),
       ]);
-      setUsers(usersRes.data.data || usersRes.data);
-      setUserRoles(userRolesRes.data.data || userRolesRes.data.user_roles || userRolesRes.data);
-      setRoles(rolesRes.data.data || rolesRes.data.roles || rolesRes.data);
+      
+      console.log('Users response:', usersRes.data);
+      console.log('User roles response:', userRolesRes.data);
+      console.log('Roles response:', rolesRes.data);
+      
+      const usersData = usersRes.data.data || usersRes.data;
+      const userRolesData = userRolesRes.data.data || userRolesRes.data.user_roles || userRolesRes.data;
+      const rolesData = rolesRes.data.data || rolesRes.data.roles || rolesRes.data;
+      
+      console.log('Processed users data:', usersData);
+      console.log('Processed user roles data:', userRolesData);
+      console.log('Processed roles data:', rolesData);
+      
+      setUsers(usersData || []);
+      setUserRoles(userRolesData || []);
+      setRoles(rolesData || []);
     } catch (e) {
+      console.error('Error fetching users:', e);
       setUsers([]);
       setUserRoles([]);
       setRoles([]);
@@ -57,6 +72,17 @@ const UsersList: React.FC = () => {
 
   useEffect(() => {
     fetchUsers();
+    
+    // Refresh users when the page gains focus (e.g., when navigating back from create user)
+    const handleFocus = () => {
+      fetchUsers();
+    };
+    
+    window.addEventListener('focus', handleFocus);
+    
+    return () => {
+      window.removeEventListener('focus', handleFocus);
+    };
     // eslint-disable-next-line
   }, []);
 
@@ -129,9 +155,11 @@ const UsersList: React.FC = () => {
       {/* Title and Add User */}
       <div className="flex items-center justify-between mb-4">
         <h1 className="text-2xl font-bold">User Directory</h1>
-        <Button size="sm" onClick={() => navigate('/users/create')} className="bg-orange-500 hover:bg-orange-600 text-white border-orange-500">
-          + Add User
-        </Button>
+        <div className="flex gap-2">
+          <Button size="sm" onClick={() => navigate('/users/create')} className="bg-orange-500 hover:bg-orange-600 text-white border-orange-500">
+            + Add User
+          </Button>
+        </div>
       </div>
       {/* Search and Filters */}
       <div className="flex flex-col md:flex-row md:items-center gap-3 mb-4">

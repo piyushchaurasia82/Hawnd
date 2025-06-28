@@ -72,14 +72,10 @@ const UsersCreate: React.FC = () => {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
-  const [verificationToken, setVerificationToken] = useState('');
-  const [tokenStatus, setTokenStatus] = useState<'Pending' | 'Valid' | 'Invalid'>('Pending');
   const [rolesOptions, setRolesOptions] = useState<{ value: string; label: string }[]>([]);
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
-  const [tokenLoading, setTokenLoading] = useState(false);
-  const [tokenValidated, setTokenValidated] = useState(false);
-  const [otpTimer, setOtpTimer] = useState(0);
+  const [success, setSuccess] = useState<string | null>(null);
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [firstName, setFirstName] = useState('');
@@ -110,45 +106,21 @@ const UsersCreate: React.FC = () => {
     fetchOptions();
   }, []);
 
-  // Email verification token logic (UI only)
-  const handleSendToken = async () => {
-    setTokenLoading(true);
-    setTimeout(() => {
-      setTokenLoading(false);
-      setTokenStatus('Pending');
-      setOtpTimer(30);
-    }, 1000);
-  };
-  const handleValidateToken = async () => {
-    setTokenLoading(true);
-    setTimeout(() => {
-      setTokenLoading(false);
-      setTokenStatus(verificationToken === '123456' ? 'Valid' : 'Invalid');
-      setTokenValidated(verificationToken === '123456');
-    }, 1000);
-  };
-
-  // OTP resend timer logic
-  useEffect(() => {
-    if (otpTimer > 0) {
-      const interval = setInterval(() => {
-        setOtpTimer((prev) => prev - 1);
-      }, 1000);
-      return () => clearInterval(interval);
-    }
-  }, [otpTimer]);
-
   // Save handler
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError(null);
+    setSuccess(null);
     setLoading(true);
+    
     try {
+      // Validation
       if (!firstName || !lastName || !email || !password || !confirmPassword) {
         setError('Please fill all required fields.');
         setLoading(false);
         return;
       }
+      
       // Password validation
       const passwordRegex = /^(?=.*[A-Z])(?=.*[!@#$%^&*()_+\-=[\]{};':"\\|,.<>/?]).{8,}$/;
       if (!passwordRegex.test(password)) {
@@ -156,44 +128,125 @@ const UsersCreate: React.FC = () => {
         setLoading(false);
         return;
       }
+      
       if (password !== confirmPassword) {
         setError('Passwords do not match.');
         setLoading(false);
         return;
       }
-      // Always use firstName and lastName
-      const payload = {
-        username: fullName,
+
+      // Generate username from email if not provided
+      const username = fullName.trim() || email.split('@')[0];
+      
+      // Create user in project management system (this is what login and user directory use)
+      const userPayload = {
+        username: username,
         first_name: firstName,
         last_name: lastName,
-        email,
-        hashed_password: password,
-        is_active: isActive ? "True" : "false",
+        email: email,
+        password: password,
+        is_active: isActive ? "True" : "False"
       };
-      console.log('User creation payload:', payload);
-      const userRes = await api.post('/api/projectmanagement/users/', payload);
-      const userId = userRes.data.id || userRes.data.data?.id;
-      // Assign roles
-      if (selectedRoles.length && userId) {
-        await Promise.all(selectedRoles.map(roleId =>
-          api.post('/api/projectmanagement/user_roles/', { user_id: userId, role_id: roleId })
-        ));
+      
+      console.log('Creating user in project management system:', userPayload);
+      
+      const userRes = await api.post('/api/projectmanagement/users/', userPayload);
+      console.log('User creation response:', userRes.data);
+      
+      // Extract user ID from response
+      const userId = userRes.data.id || userRes.data.user_id;
+      
+      if (!userId) {
+        throw new Error('User created but no user ID returned');
       }
-      // Assign projects
-      if (selectedProjects.length && userId) {
-        await Promise.all(selectedProjects.map(projectId =>
-          api.post('/api/projectmanagement/project_members/', { project_id: projectId, user_id: userId })
-        ));
+      
+      console.log('Successfully created user with ID:', userId);
+      
+      // Assign roles if selected
+      if (selectedRoles.length > 0) {
+        try {
+          await Promise.all(selectedRoles.map(roleId =>
+            api.post('/api/projectmanagement/user_roles/', { 
+              user_id: userId, 
+              role_id: roleId 
+            })
+          ));
+          console.log('Roles assigned successfully');
+        } catch (roleError) {
+          console.warn('Failed to assign some roles:', roleError);
+        }
       }
-      // Assign tasks
-      if (selectedTasks.length && userId) {
-        await Promise.all(selectedTasks.map(taskId =>
-          api.put(`/api/projectmanagement/tasks/${taskId}/`, { assigned_to_id: userId })
-        ));
+      
+      // Assign projects if selected
+      if (selectedProjects.length > 0) {
+        try {
+          await Promise.all(selectedProjects.map(projectId =>
+            api.post('/api/projectmanagement/project_members/', { 
+              project_id: projectId, 
+              user_id: userId 
+            })
+          ));
+          console.log('Projects assigned successfully');
+        } catch (projectError) {
+          console.warn('Failed to assign some projects:', projectError);
+        }
       }
-      navigate('/users');
-    } catch (err: any) {
-      setError('Error creating user. Please try again.');
+      
+      // Assign tasks if selected
+      if (selectedTasks.length > 0) {
+        try {
+          await Promise.all(selectedTasks.map(taskId =>
+            api.put(`/api/projectmanagement/tasks/${taskId}/`, { 
+              assigned_to_id: userId 
+            })
+          ));
+          console.log('Tasks assigned successfully');
+        } catch (taskError) {
+          console.warn('Failed to assign some tasks:', taskError);
+        }
+      }
+      
+      setSuccess(`User "${firstName} ${lastName}" created successfully! They can now login with username: ${username}`);
+      
+      // Reset form
+      setFirstName('');
+      setLastName('');
+      setFullName('');
+      setEmail('');
+      setPassword('');
+      setConfirmPassword('');
+      setSelectedRoles([]);
+      setSelectedProjects([]);
+      setSelectedTasks([]);
+      setIsActive(true);
+      
+      // Navigate back to user list after a short delay
+      setTimeout(() => {
+        navigate('/users');
+      }, 2000);
+      
+    } catch (error: any) {
+      console.error('Error creating user:', error);
+      
+      let errorMessage = 'Failed to create user. Please try again.';
+      
+      if (error.response?.data) {
+        const data = error.response.data;
+        if (data.message) {
+          errorMessage = data.message;
+        } else if (data.error) {
+          errorMessage = data.error;
+        } else if (typeof data === 'string') {
+          errorMessage = data;
+        } else if (data.data && typeof data.data === 'object') {
+          const fieldErrors = Object.entries(data.data)
+            .map(([field, messages]) => `${field}: ${Array.isArray(messages) ? messages.join(', ') : messages}`)
+            .join('; ');
+          errorMessage = `Validation errors: ${fieldErrors}`;
+        }
+      }
+      
+      setError(errorMessage);
     } finally {
       setLoading(false);
     }
@@ -216,7 +269,7 @@ const UsersCreate: React.FC = () => {
           <h2 className="text-lg font-bold mb-4">User Information</h2>
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
             <div>
-              <label className="block font-semibold mb-1">User Name</label>
+              <label className="block font-semibold mb-1">User Name </label>
               <input
                 type="text"
                 placeholder="Enter user name"
@@ -256,40 +309,6 @@ const UsersCreate: React.FC = () => {
                 onChange={e => setEmail(e.target.value)}
                 required
               />
-              <span
-                className={`absolute right-4 top-1/2 -translate-y-1/5 text-xs font-medium cursor-pointer select-none ${tokenLoading || otpTimer > 0 ? 'text-gray-400 cursor-not-allowed' : 'text-blue-600 hover:underline'}`}
-                onClick={() => {
-                  if (!tokenLoading && otpTimer === 0) handleSendToken();
-                }}
-                style={{ userSelect: 'none' }}
-              >
-                {tokenLoading
-                  ? 'Sending...'
-                  : otpTimer > 0
-                    ? `Resend OTP in ${otpTimer}s`
-                    : (otpTimer === 0 ? (tokenValidated ? 'Resend OTP' : 'Send OTP') : 'Send OTP')}
-              </span>
-            </div>
-            <div>
-              <label className="block font-semibold mb-1">Verification Token</label>
-              <div className="flex gap-2">
-                <input
-                  type="text"
-                  placeholder="Enter verification token"
-                  className="w-full rounded bg-gray-100 h-12 p-3 text-sm placeholder-gray-400"
-                  value={verificationToken}
-                  onChange={e => setVerificationToken(e.target.value)}
-                />
-                <button
-                  type="button"
-                  className="bg-gray-100 rounded px-4 text-sm font-semibold border border-gray-200"
-                  onClick={handleValidateToken}
-                  disabled={tokenLoading}
-                >
-                  {tokenLoading ? '...' : 'Validate'}
-                </button>
-              </div>
-              <div className="text-xs mt-1 text-gray-600">Token Status: {tokenStatus}</div>
             </div>
             <div className="relative">
               <label className="block font-semibold mb-1">Enter Password</label>
@@ -416,6 +435,7 @@ const UsersCreate: React.FC = () => {
           </div>
         </div>
         {error && <div className="text-red-600 mt-2 text-xs">{error}</div>}
+        {success && <div className="text-green-600 mt-2 text-xs">{success}</div>}
       </form>
     </div>
   );
