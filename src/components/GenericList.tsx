@@ -172,13 +172,13 @@ const GenericList: React.FC<GenericListProps> = ({
       const response = await api.get<ApiListResponse<any>>(
         `${config.apiBaseUrl}${config.endpoints.list.url}/`,
         {
-          params: {
-            page: page + 1,
-            per_page: rowsPerPage,
-            sort: orderBy,
-            order,
-            ...filters,
-          },
+          // params: {
+          //   page: page + 1,
+          //   per_page: rowsPerPage,
+          //   sort: orderBy,
+          //   order,
+          //   ...filters,
+          // },
         }
       );
       setData(response.data.data || response.data);
@@ -216,21 +216,20 @@ const GenericList: React.FC<GenericListProps> = ({
           <th className="px-4 py-3 whitespace-nowrap font-medium">Project Title</th>
           <th className="px-4 py-3 whitespace-nowrap font-medium">Owner</th>
           <th className="px-4 py-3 whitespace-nowrap font-medium">Status</th>
-          <th className="px-4 py-3 whitespace-nowrap font-medium">% Completed</th>
-          <th className="px-4 py-3 whitespace-nowrap font-medium">Type</th>
+          <th className="px-4 py-3 whitespace-nowrap font-medium">Priority</th>
           <th className="px-4 py-3 whitespace-nowrap font-medium">Actions</th>
         </tr>
-        {dummyProjects.map((row) => (
+        {data.map((row) => (
           <tr key={row.id} className="border-t">
             <td className="px-4 py-4">
               <button 
                 onClick={() => onShow(row.id)} 
                 className="text-left hover:text-orange-500 hover:underline transition-colors cursor-pointer"
               >
-                {row.title}
+                {row.project_title}
               </button>
             </td>
-            <td className="px-4 py-4">{row.owner}</td>
+            <td className="px-4 py-4">{row.project_owner}</td>
             <td className="px-4 py-4">
               <span
                 className={`px-4 w-full max-w-[90%] block text-center py-2 rounded text-white text-sm font-semibold
@@ -242,7 +241,7 @@ const GenericList: React.FC<GenericListProps> = ({
                 {row.status}
               </span>
             </td>
-            <td className="px-4 py-4">
+            {/* <td className="px-4 py-4">
               <div className="flex items-center gap-2">
                 <span>{row.completed}</span>
                 <div className="w-24 bg-gray-200 rounded-full h-2">
@@ -253,11 +252,11 @@ const GenericList: React.FC<GenericListProps> = ({
                   ></div>
                 </div>
               </div>
-            </td>
+            </td> */}
             <td className="px-4 py-4"><span
                 className={`px-4 w-full max-w-[90%] block text-center py-2 rounded text-[#1C170D] text-sm font-semibold bg-[#F1F1F1]`}
               >
-                {row.type}
+                {row.priority}
               </span></td>
             <td className="px-4 py-4">
               <div className="flex space-x-3">

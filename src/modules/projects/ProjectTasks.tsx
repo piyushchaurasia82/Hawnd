@@ -1,73 +1,24 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { FiEdit } from 'react-icons/fi';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useParams } from 'react-router-dom';
+import { format } from 'date-fns';
 
 interface Task {
     id: number;
-    taskName: string;
-    projectName: string;
-    status: 'In Progress' | 'Todo' | 'Done';
-    priority: 'High' | 'Medium' | 'Low';
-    dueDate: string;
+    name: string;
+    project_id: number;
+    status: string;
+    priority: string;
+    due_date: string;
     description: string;
-    assignees: { id: number; avatar: string }[];
+    assigned_to_id?: number;
+    created_by_id?: number;
+    // Add more fields as needed
 }
-
-const dummyTasks: Task[] = [
-    {
-        id: 1,
-        taskName: 'Design landing page',
-        projectName: 'Marketing Campaign',
-        status: 'In Progress',
-        priority: 'High',
-        dueDate: '03-05-2024',
-        description: 'Design the main landing page for the new marketing campaign.',
-        assignees: [{ id: 1, avatar: '👤' }, { id: 2, avatar: '👤' }]
-    },
-    {
-        id: 2,
-        taskName: 'Prepare presentation',
-        projectName: 'Sales Meeting',
-        status: 'Todo',
-        priority: 'Medium',
-        dueDate: '03-05-2024',
-        description: 'Prepare the presentation slides for the upcoming sales meeting.',
-        assignees: [{ id: 3, avatar: '👤' }, { id: 4, avatar: '👤' }]
-    },
-    {
-        id: 3,
-        taskName: 'Review documentation',
-        projectName: 'Product Launch',
-        status: 'Done',
-        priority: 'Low',
-        dueDate: '03-05-2024',
-        description: 'Review the product documentation before the launch.',
-        assignees: [{ id: 5, avatar: '👤' }, { id: 6, avatar: '👤' }]
-    },
-    {
-        id: 4,
-        taskName: 'Fix bugs',
-        projectName: 'Software Development',
-        status: 'In Progress',
-        priority: 'High',
-        dueDate: '03-05-2024',
-        description: 'Fix the critical bugs reported in the latest software release.',
-        assignees: [{ id: 7, avatar: '👤' }, { id: 8, avatar: '👤' }]
-    },
-    {
-        id: 5,
-        taskName: 'Plan team event',
-        projectName: 'Team Building',
-        status: 'Todo',
-        priority: 'Medium',
-        dueDate: '03-05-2024',
-        description: 'Plan a team-building event for the upcoming quarter.',
-        assignees: [{ id: 9, avatar: '👤' }, { id: 10, avatar: '👤' }]
-    }
-];
 
 const ProjectTasks: React.FC = () => {
     const navigate = useNavigate();
+    const { id } = useParams<{ id: string }>();
     const [activeTab, setActiveTab] = useState<'team' | 'my'>('team');
     const [searchQuery, setSearchQuery] = useState('');
     const [filters, setFilters] = useState({
@@ -76,6 +27,24 @@ const ProjectTasks: React.FC = () => {
         dueDate: '',
         taskName: ''
     });
+    const [tasks, setTasks] = useState<Task[]>([]);
+    const [loading, setLoading] = useState(false);
+    const API_BASE_URL = import.meta.env.VITE_API_BASE_URL;
+
+    useEffect(() => {
+        if (!id) return;
+        setLoading(true);
+        fetch(`${API_BASE_URL}/api/projectmanagement/tasks/?project_id=${id}`)
+            .then(res => res.json())
+            
+            .then(data => {
+                setTasks(data.data || []);
+            })
+            .catch(() => setTasks([]))
+            .finally(() => setLoading(false));
+    }, [id, API_BASE_URL]);
+
+    console.log(tasks);
 
     const getStatusColor = (status: string) => {
         switch (status) {
@@ -107,18 +76,17 @@ const ProjectTasks: React.FC = () => {
         <div className="p-4">
             {/* Header */}
             <div className="mb-4">
-                <div className="text-[16px] text-black mb-1">Projects / Project Alpha / Tasks</div>
+                <div className="text-[16px] text-black mb-1">Projects / Project / Tasks</div>
                 <div className="flex justify-between items-center">
                     <div>
-                        <h1 className="text-2xl font-bold">Project Alpha</h1>
-                        <p className="text-gray-600 text-sm">Manage and track all tasks related to Project Alpha</p>
+                        <h1 className="text-2xl font-bold">Project Tasks</h1>
+                        <p className="text-gray-600 text-sm">Manage and track all tasks related to this project</p>
                     </div>
-                    <button  onClick={() => navigate(`/tasks/create`)} className="bg-orange-500 text-white px-4 py-2 rounded font-semibold">
+                    <button  onClick={() => navigate(`/tasks/create/${id}`)} className="bg-orange-500 text-white px-4 py-2 rounded font-semibold">
                         Add Task
                     </button>
                 </div>
             </div>
-
             {/* Tabs */}
             <div className="flex border-b border-gray-200 mb-6">
                 <button
@@ -134,7 +102,6 @@ const ProjectTasks: React.FC = () => {
                     My Tasks
                 </button>
             </div>
-
             {/* Filters */}
             <div className="mb-6 space-y-4">
                 <div className="flex gap-4">
@@ -181,26 +148,25 @@ const ProjectTasks: React.FC = () => {
                     onChange={(e) => setSearchQuery(e.target.value)}
                 />
             </div>
-
             {/* Tasks Table */}
             <div className="overflow-x-auto">
+                {loading ? (
+                    <div className="text-center py-8 text-gray-500">Loading tasks...</div>
+                ) : (
                 <table className="min-w-full">
                     <thead>
                         <tr className="text-left border-b border-gray-200">
                             <th className="px-4 py-3 text-sm font-semibold">Task Name</th>
-                            <th className="px-4 py-3 text-sm font-semibold">Project Name</th>
                             <th className="px-4 py-3 text-sm font-semibold">Status</th>
                             <th className="px-4 py-3 text-sm font-semibold">Priority</th>
                             <th className="px-4 py-3 text-sm font-semibold">Due Date</th>
-                            <th className="px-4 py-3 text-sm font-semibold">Assignees</th>
                             <th className="px-4 py-3 text-sm font-semibold">Edit Task</th>
                         </tr>
                     </thead>
                     <tbody className="divide-y divide-gray-200">
-                        {dummyTasks.map((task) => (
+                        {tasks.map((task) => (
                             <tr key={task.id} className="hover:bg-gray-50">
-                                <td className="px-4 py-4">{task.taskName}</td>
-                                <td className="px-4 py-4">{task.projectName}</td>
+                                <td className="px-4 py-4">{task.task_title}</td>
                                 <td className="px-4 py-4">
                                     <span className={`px-3 py-1 rounded text-white text-sm ${getStatusColor(task.status)}`}>
                                         {task.status}
@@ -211,16 +177,7 @@ const ProjectTasks: React.FC = () => {
                                         {task.priority}
                                     </span>
                                 </td>
-                                <td className="px-4 py-4">{task.dueDate}</td>
-                                <td className="px-4 py-4">
-                                    <div className="flex -space-x-2">
-                                        {task.assignees.map(a => (
-                                            <div key={a.id} className="w-8 h-8 rounded-full bg-gray-300 border-2 border-white flex items-center justify-center text-sm">
-                                                {a.avatar}
-                                            </div>
-                                        ))}
-                                    </div>
-                                </td>
+                                <td className="px-4 py-4">{task.due_date ? format(new Date(task.due_date), 'dd-MM-yyyy') : ''}</td>
                                 <td className="px-4 py-4">
                                     <button className="text-black hover:text-gray-700">
                                         <FiEdit size={18} />
@@ -230,6 +187,7 @@ const ProjectTasks: React.FC = () => {
                         ))}
                     </tbody>
                 </table>
+                )}
             </div>
         </div>
     );

@@ -1,5 +1,6 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { useToast } from '../../components/ui/alert/ToastContext';
 
 interface ProjectsCreateProps {
     moduleName: string;
@@ -7,6 +8,7 @@ interface ProjectsCreateProps {
 
 const ProjectsCreate: React.FC<ProjectsCreateProps> = ({ moduleName }) => {
     const navigate = useNavigate();
+    const { showToast } = useToast();
     const [tab, setTab] = useState<'quick' | 'detailed'>('quick');
     const [quickForm, setQuickForm] = useState({
         title: '',
@@ -15,6 +17,7 @@ const ProjectsCreate: React.FC<ProjectsCreateProps> = ({ moduleName }) => {
     });
     const [detailedForm, setDetailedForm] = useState({
         title: '',
+        owner: '',
         startDate: '',
         endDate: '',
         description: '',
@@ -25,12 +28,133 @@ const ProjectsCreate: React.FC<ProjectsCreateProps> = ({ moduleName }) => {
         clientAccess: false,
         type: 'Internal',
     });
+    const [loading, setLoading] = useState(false);
+    const [fieldErrors, setFieldErrors] = useState<{ [key: string]: string }>({});
+    const [users, setUsers] = useState<{ id: number; first_name: string; last_name: string }[]>([]);
+
+    // Get API base URL from env
+    const API_BASE_URL = import.meta.env.VITE_API_BASE_URL;
+
+    useEffect(() => {
+        // Fetch users for Project Owner dropdown
+        fetch(`${API_BASE_URL}/api/projectmanagement/users/`)
+            .then(res => res.json())
+            .then(data => {
+                setUsers(Array.isArray(data) ? data : []);
+            })
+            .catch(() => setUsers([]));
+    }, []);
 
     const handleQuickChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
         setQuickForm({ ...quickForm, [e.target.name]: e.target.value });
+        // Remove error for this field
+        if (fieldErrors[e.target.name === 'title' ? 'project_title' : e.target.name === 'owner' ? 'project_owner' : e.target.name === 'type' ? 'internal_external' : e.target.name]) {
+            setFieldErrors(prev => {
+                const newErrors = { ...prev };
+                if (e.target.name === 'title') delete newErrors.project_title;
+                else if (e.target.name === 'owner') delete newErrors.project_owner;
+                else if (e.target.name === 'type') delete newErrors.internal_external;
+                else delete newErrors[e.target.name];
+                return newErrors;
+            });
+        }
     };
     const handleDetailedChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) => {
         setDetailedForm({ ...detailedForm, [e.target.name]: e.target.value });
+        // Remove error for this field
+        if (fieldErrors[e.target.name === 'title' ? 'project_title' : e.target.name === 'owner' ? 'project_owner' : e.target.name === 'type' ? 'internal_external' : e.target.name]) {
+            setFieldErrors(prev => {
+                const newErrors = { ...prev };
+                if (e.target.name === 'title') delete newErrors.project_title;
+                else if (e.target.name === 'owner') delete newErrors.project_owner;
+                else if (e.target.name === 'type') delete newErrors.internal_external;
+                else delete newErrors[e.target.name];
+                return newErrors;
+            });
+        }
+    };
+
+    // Helper to map quick form to API
+    const mapQuickToApi = () => ({
+        project_title: quickForm.title,
+        project_owner: quickForm.owner,
+        internal_external: quickForm.type.toLowerCase(),
+    });
+
+    // Helper to map detailed form to API
+    const mapDetailedToApi = () => ({
+        project_title: detailedForm.title,
+        project_owner: detailedForm.owner || '', // fallback if not present
+        start_date: detailedForm.startDate,
+        description: detailedForm.description,
+        status: detailedForm.status,
+        priority: detailedForm.priority,
+        document_tagging: detailedForm.tags,
+        integration_tag: detailedForm.integrationTag,
+        client_access: detailedForm.clientAccess,
+        internal_external: detailedForm.type.toLowerCase(),
+    });
+
+    // Quick Create submit handler
+    const handleQuickSubmit = async (e: React.FormEvent) => {
+        e.preventDefault();
+        setFieldErrors({});
+        const data = mapQuickToApi();
+        const errors: { [key: string]: string } = {};
+        if (!data.project_title) errors.project_title = 'Project Title is required';
+        if (!data.project_owner) errors.project_owner = 'Project Owner is required';
+        if (!data.internal_external) errors.internal_external = 'Project Type is required';
+        if (Object.keys(errors).length > 0) {
+            setFieldErrors(errors);
+            showToast({ type: 'error', title: 'Validation Error', message: 'Please fill all required fields.' });
+            return;
+        }
+        setLoading(true);
+        try {
+            const res = await fetch(`${API_BASE_URL}/api/projectmanagement/projects/`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(data),
+            });
+            if (!res.ok) throw new Error('Failed to create project');
+            showToast({ type: 'success', title: 'Success', message: 'Project created successfully!' });
+            navigate(-1);
+        } catch (err: any) {
+            showToast({ type: 'error', title: 'Error', message: err.message || 'Error occurred' });
+        } finally {
+            setLoading(false);
+        }
+    };
+
+    // Detailed Create submit handler
+    const handleDetailedSubmit = async (e: React.FormEvent) => {
+        e.preventDefault();
+        setFieldErrors({});
+        const data = mapDetailedToApi();
+        const errors: { [key: string]: string } = {};
+        if (!data.project_title) errors.project_title = 'Project Title is required';
+        if (!data.project_owner) errors.project_owner = 'Project Owner is required';
+        if (!data.internal_external) errors.internal_external = 'Project Type is required';
+        if (Object.keys(errors).length > 0) {
+            setFieldErrors(errors);
+            showToast({ type: 'error', title: 'Validation Error', message: 'Please fill all required fields.' });
+            return;
+        }
+        setLoading(true);
+        try {
+            const res = await fetch(`${API_BASE_URL}/api/projectmanagement/projects/`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(data),
+            });
+            if (!res.ok) throw new Error('Failed to create project');
+            showToast({ type: 'success', title: 'Success', message: 'Project created successfully!' });
+            navigate(-1);
+        } catch (err: any) {
+            showToast({ type: 'error', title: 'Error', message: err.message || 'Error occurred' });
+        } finally {
+            setLoading(false);
+        }
     };
 
     return (
@@ -54,28 +178,40 @@ const ProjectsCreate: React.FC<ProjectsCreateProps> = ({ moduleName }) => {
             </div>
             {/* Quick Create Tab */}
             {tab === 'quick' && (
-                <form className="space-y-8">
+                <form className="space-y-8" onSubmit={handleQuickSubmit}>
                     <div className=' md:w-6/12'>
-                        <label className="block mb-2 font-semibold">Project Title</label>
+                        <label className="block mb-2 font-semibold">
+                            Project Title <span className="text-red-500">*</span>
+                        </label>
                         <input
                             type="text"
                             name="title"
                             placeholder="e.g. Website Redesign"
-                            className="w-full bg-[#F1F1F1] rounded px-4 py-3 text-black placeholder:text-black border-0"
+                            className={`w-full bg-[#F1F1F1] rounded px-4 py-3 text-black placeholder:text-black border-0 ${fieldErrors.project_title ? 'border border-red-500' : ''}`}
                             value={quickForm.title}
                             onChange={handleQuickChange}
                         />
+                        {fieldErrors.project_title && <div className="text-red-500 text-sm mt-1">{fieldErrors.project_title}</div>}
                     </div>
                     <div className=' md:w-6/12'>
-                        <label className="block mb-2 font-semibold">Project Owner</label>
-                        <input
-                            type="text"
+                        <label className="block mb-2 font-semibold">
+                            Project Owner <span className="text-red-500">*</span>
+                        </label>
+                        <select
                             name="owner"
-                            placeholder="Select an owner"
-                            className="w-full bg-[#F1F1F1] rounded px-4 py-3 text-black placeholder:text-black border-0"
+                            className={`w-full bg-[#F1F1F1] rounded px-4 py-3 text-black border-0 ${fieldErrors.project_owner ? 'border border-red-500' : ''}`}
                             value={quickForm.owner}
                             onChange={handleQuickChange}
-                        />
+                        >
+                            <option value="">Select an owner</option>
+                            {users.map(user => {
+                                const fullName = `${user.first_name} ${user.last_name}`.trim();
+                                return (
+                                    <option key={user.id} value={fullName}>{fullName}</option>
+                                );
+                            })}
+                        </select>
+                        {fieldErrors.project_owner && <div className="text-red-500 text-sm mt-1">{fieldErrors.project_owner}</div>}
                     </div>
                     <div className="flex justify-between items-center mt-8">
                         <div className="flex gap-2 bg-orange-500 rounded py-1 px-1">
@@ -88,34 +224,60 @@ const ProjectsCreate: React.FC<ProjectsCreateProps> = ({ moduleName }) => {
                             </button>
                             <button
                                 type="button"
-                                className={`py-1 px-6 rounded font-semibold text-[16px]  ${quickForm.type === "External" ?  " text-black bg-[#FCFAF7]" : "text-white"}`}onClick={() => setQuickForm({ ...quickForm, type: 'External' })}
+                                className={`py-1 px-6 rounded font-semibold text-[16px]  ${quickForm.type === "External" ?  " text-black bg-[#FCFAF7]" : "text-white"}`}
+                                onClick={() => setQuickForm({ ...quickForm, type: 'External' })}
                             >
                                 External
                             </button>
                         </div>
+                        {fieldErrors.internal_external && <div className="text-red-500 text-sm mt-1">{fieldErrors.internal_external}</div>}
                         <button
                             type="submit"
                             className="bg-orange-500 text-white px-8 py-2 rounded font-semibold text-[16px] hover:bg-orange-600"
+                            disabled={loading}
                         >
-                            Create Project
+                            {loading ? 'Creating...' : 'Create Project'}
                         </button>
                     </div>
                 </form>
             )}
             {/* Detailed Create Tab */}
             {tab === 'detailed' && (
-                <form className="space-y-8">
+                <form className="space-y-8" onSubmit={handleDetailedSubmit}>
                     <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
                         <div>
-                            <label className="block mb-2 font-semibold">Project Title</label>
+                            <label className="block mb-2 font-semibold">
+                                Project Title <span className="text-red-500">*</span>
+                            </label>
                             <input
                                 type="text"
                                 name="title"
                                 placeholder="Enter project title"
-                                className="w-full bg-[#F1F1F1] rounded px-4 py-3 text-black placeholder:text-black border-0"
+                                className={`w-full bg-[#F1F1F1] rounded px-4 py-3 text-black placeholder:text-black border-0 ${fieldErrors.project_title ? 'border border-red-500' : ''}`}
                                 value={detailedForm.title}
                                 onChange={handleDetailedChange}
                             />
+                            {fieldErrors.project_title && <div className="text-red-500 text-sm mt-1">{fieldErrors.project_title}</div>}
+                        </div>
+                        <div>
+                            <label className="block mb-2 font-semibold">
+                                Project Owner <span className="text-red-500">*</span>
+                            </label>
+                            <select
+                                name="owner"
+                                className={`w-full bg-[#F1F1F1] rounded px-4 py-3 text-black border-0 ${fieldErrors.project_owner ? 'border border-red-500' : ''}`}
+                                value={detailedForm.owner}
+                                onChange={handleDetailedChange}
+                            >
+                                <option value="">Select an owner</option>
+                                {users.map(user => {
+                                    const fullName = `${user.first_name} ${user.last_name}`.trim();
+                                    return (
+                                        <option key={user.id} value={fullName}>{fullName}</option>
+                                    );
+                                })}
+                            </select>
+                            {fieldErrors.project_owner && <div className="text-red-500 text-sm mt-1">{fieldErrors.project_owner}</div>}
                         </div>
                         <div>
                             <label className="block mb-2 font-semibold">Start Date</label>
@@ -127,28 +289,8 @@ const ProjectsCreate: React.FC<ProjectsCreateProps> = ({ moduleName }) => {
                                 onChange={handleDetailedChange}
                             />
                         </div>
-                        <div>
-                            <label className="block mb-2 font-semibold">End Date</label>
-                            <input
-                                type="date"
-                                name="endDate"
-                                className="w-full bg-[#F1F1F1] rounded px-4 py-3 text-black border-0"
-                                value={detailedForm.endDate}
-                                onChange={handleDetailedChange}
-                            />
-                        </div>
                     </div>
-                    <div>
-                        <label className="block mb-2 font-semibold">Description</label>
-                        <textarea
-                            name="description"
-                            placeholder=""
-                            className="w-full bg-[#F1F1F1] rounded px-4 py-3 text-black border-0 min-h-[100px]"
-                            value={detailedForm.description}
-                            onChange={handleDetailedChange}
-                        />
-                        <div className="text-right text-sm text-gray-500 mt-1">Upload Files</div>
-                    </div>
+                    
                     <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
                         <div>
                             <label className="block mb-2 font-semibold">Status</label>
@@ -215,7 +357,9 @@ const ProjectsCreate: React.FC<ProjectsCreateProps> = ({ moduleName }) => {
                             </div>
                         </div>
                         <div className="flex flex-col justify-end">
-                            <label className="block mb-2 font-semibold">&nbsp;</label>
+                            <label className="block mb-2 font-semibold">
+                                Project Type <span className="text-red-500">*</span>
+                            </label>
                             <div className="flex gap-2 bg-orange-500 rounded py-1 px-1">
                                 <button
                                     type="button"
@@ -232,14 +376,28 @@ const ProjectsCreate: React.FC<ProjectsCreateProps> = ({ moduleName }) => {
                                     External
                                 </button>
                             </div>
+                            {fieldErrors.internal_external && <div className="text-red-500 text-sm mt-1">{fieldErrors.internal_external}</div>}
                         </div>
+                    </div>
+                    <div>
+                        <label className="block mb-2 font-semibold">Description</label>
+                        <textarea
+                            name="description"
+                            placeholder=""
+                            className="w-full bg-[#F1F1F1] rounded px-4 py-3 text-black border-0 min-h-[100px]"
+                            value={detailedForm.description}
+                            onChange={handleDetailedChange}
+                        />
+                        <div className="text-right text-sm text-gray-500 mt-1">Upload Files</div>
                     </div>
                     <div className="flex justify-end mt-8">
                         <button
                             type="submit"
-                            className="bg-orange-500 text-white px-8 py-2 rounded font-semibold text-[16px] hover:bg-orange-600"
+                            className="bg-orange-500 text-white px-8 py-2 rounded font-semibold text-[16px] hover:bg-orange-600 flex items-center justify-center min-w-[120px]"
+                            disabled={loading}
                         >
-                            Submit
+                            {loading ? <span className="loader mr-2"></span> : null}
+                            {loading ? 'Submitting...' : 'Submit'}
                         </button>
                     </div>
                 </form>
@@ -249,3 +407,21 @@ const ProjectsCreate: React.FC<ProjectsCreateProps> = ({ moduleName }) => {
 };
 
 export default ProjectsCreate;
+
+<style>
+{`
+.loader {
+  border: 2px solid #f3f3f3;
+  border-top: 2px solid #fff;
+  border-radius: 50%;
+  width: 16px;
+  height: 16px;
+  animation: spin 1s linear infinite;
+  display: inline-block;
+}
+@keyframes spin {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
+}
+`}
+</style>

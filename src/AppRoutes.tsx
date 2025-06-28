@@ -128,6 +128,7 @@ const AppRoutes: React.FC = () => {
         <Route path="/project_members/show/:id" element={<ProjectMembersShow moduleName={'project_members'} />} />
         <Route path="/tasks" element={<TasksList moduleName={'tasks'} />} />
         <Route path="/tasks/create" element={<TasksCreate moduleName={'tasks'} />} />
+        <Route path="/tasks/create/:id" element={<TasksCreate moduleName={'tasks'} />} />
         <Route path="/tasks/edit/:id" element={<TasksEdit moduleName={'tasks'} />} />
         <Route path="/tasks/show/:id" element={<TasksShow moduleName={'tasks'} />} />
         <Route path="/comments" element={<CommentsList moduleName={'comments'} />} />
