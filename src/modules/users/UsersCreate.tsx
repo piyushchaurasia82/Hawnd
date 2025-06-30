@@ -400,22 +400,24 @@ const UsersCreate: React.FC = () => {
         </div>
         {/* Status and Buttons */}
         <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4 mt-8">
-          <div className="flex items-center gap-2">
-            <label className="block font-semibold mb-1">Status</label>
-            <label className="inline-flex items-center cursor-pointer ml-2">
-              <input
-                type="checkbox"
-                className="sr-only peer"
-                checked={isActive}
-                onChange={e => setIsActive(!!e.target.checked)}
-              />
-              <div className={
-                `w-11 h-6 rounded-full transition-all duration-300
-                 ${isActive ? 'bg-orange-500 shadow-lg ring-2 ring-orange-300' : 'bg-gray-200 shadow-inner'}
-                 peer-focus:ring-4 peer-focus:ring-orange-300`
-              }></div>
-              <span className={`ml-3 text-sm font-medium ${isActive ? 'text-orange-700' : 'text-gray-900'}`}>{isActive ? 'Active' : 'Inactive'}</span>
-            </label>
+          <div className="flex items-center gap-4">
+            <span className="block font-semibold mb-1">Status</span>
+            <div className="flex gap-0 overflow-hidden border border-orange-500 w-fit">
+                <button
+                    type="button"
+                    className={`py-1 px-6 font-semibold text-[16px] transition-all ${isActive ? 'bg-orange-500 text-white' : 'bg-white text-orange-500'} border-none outline-none`}
+                    onClick={() => setIsActive(true)}
+                >
+                    Active
+                </button>
+                <button
+                    type="button"
+                    className={`py-1 px-6 font-semibold text-[16px] transition-all ${!isActive ? 'bg-orange-500 text-white' : 'bg-white text-orange-500'} border-none outline-none`}
+                    onClick={() => setIsActive(false)}
+                >
+                    Inactive
+                </button>
+            </div>
           </div>
           <div className="flex justify-end gap-4">
             <button

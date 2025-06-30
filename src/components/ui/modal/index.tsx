@@ -1,4 +1,4 @@
-import { useRef, useEffect } from "react";
+import React, { useRef, useEffect } from "react";
 
 interface ModalProps {
   isOpen: boolean;
@@ -55,7 +55,7 @@ export const Modal: React.FC<ModalProps> = ({
 
   return (
     <div className="fixed inset-0 flex items-center justify-center overflow-y-auto modal z-99999">
-      <div
+      <div 
         className="fixed inset-0 h-full w-full bg-gray-400/50 backdrop-blur-[32px]"
         onClick={onClose}
       ></div>
@@ -86,6 +86,61 @@ export const Modal: React.FC<ModalProps> = ({
           </button>
         )}
         <div>{children}</div>
+      </div>
+    </div>
+  );
+};
+
+interface ConfirmationModalProps {
+  isOpen: boolean;
+  onClose: () => void;
+  onConfirm: () => void;
+  title: string;
+  message: string;
+  confirmText?: string;
+  cancelText?: string;
+  variant?: 'danger' | 'warning' | 'info';
+}
+
+export const ConfirmationModal: React.FC<ConfirmationModalProps> = ({
+  isOpen,
+  onClose,
+  onConfirm,
+  title,
+  message,
+  confirmText = 'Confirm',
+  cancelText = 'Cancel',
+  variant = 'danger'
+}) => {
+  if (!isOpen) return null;
+
+  // Button color for danger (delete)
+  const confirmButtonClass =
+    variant === 'danger'
+      ? 'bg-red-500 text-white hover:bg-red-600'
+      : variant === 'warning'
+      ? 'bg-yellow-500 text-white hover:bg-yellow-600'
+      : 'bg-blue-500 text-white hover:bg-blue-600';
+
+  return (
+    <div className="fixed inset-0 flex items-center justify-center z-50 bg-transparent backdrop-blur-sm">
+      <div className="bg-white bg-opacity-90 p-6 rounded-lg shadow-xl max-w-sm w-full text-center border border-gray-300">
+        <h3 className="text-xl font-semibold mb-4 text-gray-800">{title}</h3>
+        <p className="mb-6 text-gray-700">{message}</p>
+        <div className="flex justify-center gap-4">
+          <button
+            onClick={onConfirm}
+            className={`px-6 py-2 rounded-md font-semibold transition-colors ${confirmButtonClass}`}
+          >
+            {confirmText}
+          </button>
+          <button
+            onClick={onClose}
+            className="px-6 py-2 bg-gray-300 text-gray-800 rounded-md hover:bg-gray-400 font-semibold transition-colors"
+          >
+            {cancelText}
+          </button>
+        </div>
       </div>
     </div>
   );
