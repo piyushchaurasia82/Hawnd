@@ -2,6 +2,8 @@ import React, { useState, useEffect } from 'react';
 import { FiEdit } from 'react-icons/fi';
 import { useNavigate, useParams } from 'react-router-dom';
 import { format } from 'date-fns';
+import type { ModuleConfig } from '../../config/types';
+import modules from '../../config/loadModules';
 
 interface Task {
     id: number;
@@ -15,12 +17,16 @@ interface Task {
     created_by_id?: number;
     // Add more fields as needed
 }
+interface ProjectTakProps {
+    moduleName: string;
+}
 
-const ProjectTasks: React.FC = () => {
+const ProjectTasks: React.FC<ProjectTakProps> = ({ moduleName }) => {
     const navigate = useNavigate();
     const { id } = useParams<{ id: string }>();
     const [activeTab, setActiveTab] = useState<'team' | 'my'>('team');
     const [searchQuery, setSearchQuery] = useState('');
+    const config: ModuleConfig = modules[moduleName as keyof typeof modules];
     const [filters, setFilters] = useState({
         status: '',
         priority: '',
@@ -44,7 +50,10 @@ const ProjectTasks: React.FC = () => {
             .finally(() => setLoading(false));
     }, [id, API_BASE_URL]);
 
-    console.log(tasks);
+    // console.log(tasks);
+    const handleEdit = (id: number) => {
+        navigate(`/tasks/edit/${id}`);
+    };
 
     const getStatusColor = (status: string) => {
         switch (status) {
@@ -178,7 +187,7 @@ const ProjectTasks: React.FC = () => {
                                     </span>
                                 </td>
                                 <td className="px-4 py-4">{task.due_date ? format(new Date(task.due_date), 'dd-MM-yyyy') : ''}</td>
-                                <td className="px-4 py-4">
+                                <td onClick={() => handleEdit(task.id)} className="px-4 py-4">
                                     <button className="text-black hover:text-gray-700">
                                         <FiEdit size={18} />
                                     </button>

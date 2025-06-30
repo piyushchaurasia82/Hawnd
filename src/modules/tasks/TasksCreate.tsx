@@ -20,6 +20,12 @@ const reviewers = [
 const priorities = ['Low', 'Medium', 'High'];
 const statuses = ['To Do', 'In Progress', 'Done'];
 
+interface DateRangeSelection extends Range {
+  startDate: Date | undefined;
+  endDate: Date | undefined;
+  key: string;
+}
+
 const TasksCreate: React.FC = () => {
   const location = useLocation();
   const { id: projectId } = useParams<{ id: string }>();
@@ -29,8 +35,9 @@ const TasksCreate: React.FC = () => {
   const [quickForm, setQuickForm] = useState({
     title: '',
     assignee: '',
-    project_id: '',
+    project_id: projectId || '',
   });
+
   const [form, setForm] = useState({
     title: '',
     assignee: '',
@@ -47,15 +54,15 @@ const TasksCreate: React.FC = () => {
     notifyStatus: false,
     notifyComment: false,
     notifySubmission: false,
-    project_id: '',
+    project_id: projectId || '',
   });
   const [showRange, setShowRange] = useState(false);
-  const [dateRange, setDateRange] = useState<Range[]>([
+  const [dateRange, setDateRange] = useState<DateRangeSelection[]>([
     {
       startDate: form.start_date ? new Date(form.start_date) : undefined,
       endDate: form.due_date ? new Date(form.due_date) : undefined,
-      key: 'selection',
-    },
+      key: 'selection'
+    }
   ]);
   const [loading, setLoading] = useState(false);
   const [fieldErrors, setFieldErrors] = useState<{ [key: string]: string }>({});
@@ -175,7 +182,13 @@ const TasksCreate: React.FC = () => {
       });
       if (!res.ok) throw new Error('Failed to create task');
       showToast({ type: 'success', title: 'Success', message: 'Task created successfully!' });
-      navigate(-1);
+      if(projectId || quickForm.project_id){
+        navigate(`/projects/${projectId || quickForm.project_id}/tasks`);
+      }
+      else{
+        navigate(`/projects`);
+      }
+      
     } catch (err: any) {
       showToast({ type: 'error', title: 'Error', message: err.message || 'Error occurred' });
     } finally {
@@ -183,25 +196,35 @@ const TasksCreate: React.FC = () => {
     }
   };
 
-  const handleQuickChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
-    setQuickForm({ ...quickForm, [e.target.name]: e.target.value });
-    // Remove error for this field
-    if (fieldErrors[e.target.name]) {
-      setFieldErrors(prev => {
-        const newErrors = { ...prev };
-        delete newErrors[e.target.name];
-        return newErrors;
+  const handleChange = (
+    e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>,
+    formType: 'quick' | 'detailed'
+  ) => {
+    const { name, value, type } = e.target;
+    const isCheckbox = type === 'checkbox';
+    const checked = isCheckbox ? (e.target as HTMLInputElement).checked : undefined;
+
+    if (formType === 'quick') {
+      setQuickForm(prev => ({
+        ...prev,
+        [name]: isCheckbox ? checked : value,
+      }));
+    } else {
+      // console.log('Detailed form change:', { name, value, type, isCheckbox, checked });
+      setForm(prev => {
+        const newState = {
+          ...prev,
+          [name]: isCheckbox ? checked : value,
+        };
+        // console.log('New detailed form state:', newState);
+        return newState;
       });
     }
-  };
 
-  const handleDetailedChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) => {
-    setForm({ ...form, [e.target.name]: e.target.value });
-    // Remove error for this field
-    if (fieldErrors[e.target.name]) {
+    if (fieldErrors[name]) {
       setFieldErrors(prev => {
         const newErrors = { ...prev };
-        delete newErrors[e.target.name];
+        delete newErrors[name];
         return newErrors;
       });
     }
@@ -240,7 +263,7 @@ const TasksCreate: React.FC = () => {
                 name="project_id"
                 className="w-full bg-[#F3F3F3] rounded px-4 py-3 text-black outline-none"
                 value={quickForm.project_id || ''}
-                onChange={handleQuickChange}
+                onChange={(e) => handleChange(e, 'quick')}
               >
                 <option value="">Select project</option>
                 {projects.map(project => (
@@ -259,7 +282,7 @@ const TasksCreate: React.FC = () => {
               className="w-full bg-[#F3F3F3] rounded px-4 py-3 text-black placeholder:text-gray-500 outline-none"
               placeholder="Enter task title"
               value={quickForm.title}
-              onChange={handleQuickChange}
+              onChange={(e) => handleChange(e, 'quick')}
             />
             {fieldErrors.title && <div className="text-red-500 text-sm mt-1">{fieldErrors.title}</div>}
           </div>
@@ -271,7 +294,7 @@ const TasksCreate: React.FC = () => {
               name="assignee"
               className="w-full bg-[#F3F3F3] rounded px-4 py-3 text-black outline-none"
               value={quickForm.assignee}
-              onChange={handleQuickChange}
+              onChange={(e) => handleChange(e, 'quick')}
             >
               <option value="">Select assignee</option>
               {users.map(user => {
@@ -303,7 +326,7 @@ const TasksCreate: React.FC = () => {
                     name="project_id"
                     className="w-full bg-[#F3F3F3] rounded px-4 py-3 text-black outline-none text-[15px]"
                     value={form.project_id || ''}
-                    onChange={handleDetailedChange}
+                    onChange={(e) => handleChange(e, 'detailed')}
                   >
                     <option value="">Select project</option>
                     {projects.map(project => (
@@ -322,7 +345,7 @@ const TasksCreate: React.FC = () => {
                   className="w-full bg-[#F3F3F3] rounded px-4 py-3 text-black placeholder:text-gray-500 outline-none text-[15px]"
                   placeholder="Enter task title"
                   value={form.title}
-                  onChange={handleDetailedChange}
+                  onChange={(e) => handleChange(e, 'detailed')}
                 />
                 {fieldErrors.title && <div className="text-red-500 text-sm mt-1">{fieldErrors.title}</div>}
               </div>
@@ -334,7 +357,7 @@ const TasksCreate: React.FC = () => {
                   name="assignee"
                   className="w-full bg-[#F3F3F3] rounded px-4 py-3 text-black outline-none text-[15px]"
                   value={form.assignee}
-                  onChange={handleDetailedChange}
+                  onChange={(e) => handleChange(e, 'detailed')}
                 >
                   <option value="">Select assignee</option>
                   {users.map(user => {
@@ -365,7 +388,7 @@ const TasksCreate: React.FC = () => {
                   <div className="absolute z-50 mt-2">
                     <DateRange
                       editableDateInputs={true}
-                      onChange={item => {
+                      onChange={(item: { selection: DateRangeSelection }) => {
                         setDateRange([item.selection]);
                         setForm(f => ({
                           ...f,
@@ -387,7 +410,14 @@ const TasksCreate: React.FC = () => {
             </div>
             <div>
               <label className="block mb-2 font-medium text-[15px]">Description</label>
-              <textarea className="w-full bg-[#F3F3F3] rounded px-4 py-3 text-black outline-none text-[15px] min-h-[90px]" rows={4} placeholder="" value={form.description} onChange={handleDetailedChange} />
+              <textarea
+                name="description"
+                className="w-full bg-[#F3F3F3] rounded px-4 py-3 text-black outline-none text-[15px] min-h-[90px]"
+                rows={4}
+                placeholder=""
+                value={form.description}
+                onChange={(e) => handleChange(e, 'detailed')}
+              />
               <div className="text-right text-xs text-gray-400 mt-1 font-semibold">Upload Files</div>
             </div>
           </div>
@@ -397,23 +427,38 @@ const TasksCreate: React.FC = () => {
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
               <div>
                 <label className="block mb-2 font-medium text-[15px]">Priority</label>
-                <select className="w-full bg-[#F3F3F3] rounded px-4 py-3 text-black outline-none text-[15px]" value={form.priority} onChange={handleDetailedChange}>
+                <select
+                  name="priority"
+                  className="w-full bg-[#F3F3F3] rounded px-4 py-3 text-black outline-none text-[15px]"
+                  value={form.priority}
+                  onChange={(e) => handleChange(e, 'detailed')}
+                >
                   <option value="">Select priority</option>
-                  {priorities.map(p => <option key={p}>{p}</option>)}
+                  {priorities.map(p => <option key={p} value={p}>{p}</option>)}
                 </select>
               </div>
               <div>
                 <label className="block mb-2 font-medium text-[15px]">Status</label>
-                <select className="w-full bg-[#F3F3F3] rounded px-4 py-3 text-black outline-none text-[15px]" value={form.status} onChange={handleDetailedChange}>
+                <select
+                  name="status"
+                  className="w-full bg-[#F3F3F3] rounded px-4 py-3 text-black outline-none text-[15px]"
+                  value={form.status}
+                  onChange={(e) => handleChange(e, 'detailed')}
+                >
                   <option value="">Select status</option>
-                  {statuses.map(s => <option key={s}>{s}</option>)}
+                  {statuses.map(s => <option key={s} value={s}>{s}</option>)}
                 </select>
               </div>
               <div>
                 <label className="block mb-2 font-medium text-[15px]">Reviewer/Approver</label>
-                <select className="w-full bg-[#F3F3F3] rounded px-4 py-3 text-black outline-none text-[15px]" value={form.reviewer} onChange={handleDetailedChange}>
+                <select
+                  name="reviewer"
+                  className="w-full bg-[#F3F3F3] rounded px-4 py-3 text-black outline-none text-[15px]"
+                  value={form.reviewer}
+                  onChange={(e) => handleChange(e, 'detailed')}
+                >
                   <option value="">Select Reviewer/Approver</option>
-                  {reviewers.map(r => <option key={r.id} value={r.name}>{r.name}</option>)}
+                  {reviewers.map(r => <option key={r.id} value={r.id}>{r.name}</option>)}
                 </select>
               </div>
             </div>
@@ -424,11 +469,23 @@ const TasksCreate: React.FC = () => {
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
               <div>
                 <label className="block mb-2 font-medium text-[15px]">Start After</label>
-                <input className="w-full bg-[#F3F3F3] rounded px-4 py-3 text-black outline-none text-[15px]" placeholder="Select Start After" value={form.startAfter} onChange={handleDetailedChange} />
+                <input
+                  name="startAfter"
+                  className="w-full bg-[#F3F3F3] rounded px-4 py-3 text-black outline-none text-[15px]"
+                  placeholder="Select Start After"
+                  value={form.startAfter}
+                  onChange={(e) => handleChange(e, 'detailed')}
+                />
               </div>
               <div>
                 <label className="block mb-2 font-medium text-[15px]">Blocked By</label>
-                <input className="w-full bg-[#F3F3F3] rounded px-4 py-3 text-black outline-none text-[15px]" placeholder="Select Blocked By" value={form.blockedBy} onChange={e => setForm({ ...form, blockedBy: e.target.value })} />
+                <input
+                  name="blockedBy"
+                  className="w-full bg-[#F3F3F3] rounded px-4 py-3 text-black outline-none text-[15px]"
+                  placeholder="Select Blocked By"
+                  value={form.blockedBy}
+                  onChange={(e) => handleChange(e, 'detailed')}
+                />
               </div>
             </div>
           </div>
@@ -440,22 +497,40 @@ const TasksCreate: React.FC = () => {
               <button
                 type="button"
                 className={`w-10 h-5 flex items-center rounded-full p-1 duration-300 ease-in-out ${form.overrideNotifications ? 'bg-orange-500' : 'bg-gray-300'}`}
-                onClick={() => setForm({ ...form, overrideNotifications: !form.overrideNotifications })}
+                onClick={() => setForm(prev => ({ ...prev, overrideNotifications: !prev.overrideNotifications }))}
               >
                 <span className={`bg-white w-4 h-4 rounded-full shadow-md transform duration-300 ease-in-out ${form.overrideNotifications ? 'translate-x-5' : ''}`}></span>
               </button>
             </div>
             <div className="ml-2 space-y-2">
               <label className="flex items-center gap-2 text-[15px]">
-                <input type="checkbox" className="accent-orange-500 w-4 h-4" checked={form.notifyStatus} onChange={handleDetailedChange} />
+                <input
+                  type="checkbox"
+                  name="notifyStatus"
+                  className="accent-orange-500 w-4 h-4"
+                  checked={form.notifyStatus}
+                  onChange={(e) => handleChange(e, 'detailed')}
+                />
                 Notify on status change
               </label>
               <label className="flex items-center gap-2 text-[15px]">
-                <input type="checkbox" className="accent-orange-500 w-4 h-4" checked={form.notifyComment} onChange={handleDetailedChange} />
+                <input
+                  type="checkbox"
+                  name="notifyComment"
+                  className="accent-orange-500 w-4 h-4"
+                  checked={form.notifyComment}
+                  onChange={(e) => handleChange(e, 'detailed')}
+                />
                 Notify on comment
               </label>
               <label className="flex items-center gap-2 text-[15px]">
-                <input type="checkbox" className="accent-orange-500 w-4 h-4" checked={form.notifySubmission} onChange={handleDetailedChange} />
+                <input
+                  type="checkbox"
+                  name="notifySubmission"
+                  className="accent-orange-500 w-4 h-4"
+                  checked={form.notifySubmission}
+                  onChange={(e) => handleChange(e, 'detailed')}
+                />
                 Notify reviewer on submission
               </label>
             </div>
