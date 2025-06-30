@@ -232,36 +232,47 @@ const GenericList: React.FC<GenericListProps> = ({
             <td className="px-4 py-4">{row.project_owner}</td>
             <td className="px-4 py-4">
               <span
-                className={`px-4 w-full max-w-[90%] block text-center py-2 rounded text-white text-sm font-semibold
-                  ${row.status === 'In Progress' ? 'bg-orange-500' : ''}
-                  ${row.status === 'Completed' ? 'bg-green-500' : ''}
-                  ${row.status === 'Todo' ? 'bg-blue-500' : ''}
+                className={`inline-flex items-center gap-1 px-3 py-1 rounded-full text-xs font-semibold border
+                  ${row.status === 'In Progress' ? 'border-orange-500 text-orange-600 bg-orange-50' : ''}
+                  ${row.status === 'Completed' ? 'border-green-500 text-green-700 bg-green-50' : ''}
+                  ${row.status === 'Todo' ? 'border-blue-500 text-blue-600 bg-blue-50' : ''}
                 `}
               >
+                <span
+                  className={`w-2 h-2 rounded-full mr-1
+                    ${row.status === 'In Progress' ? 'bg-orange-500' : ''}
+                    ${row.status === 'Completed' ? 'bg-green-500' : ''}
+                    ${row.status === 'Todo' ? 'bg-blue-500' : ''}
+                  `}
+                ></span>
                 {row.status}
               </span>
             </td>
-            {/* <td className="px-4 py-4">
-              <div className="flex items-center gap-2">
-                <span>{row.completed}</span>
-                <div className="w-24 bg-gray-200 rounded-full h-2">
-                  <div
-                    className={`h-2 rounded-full
-                      ${row.completed === 100 ? 'bg-green-500' : row.completed >= 70 ? 'bg-orange-500' : 'bg-blue-500'}`}
-                    style={{ width: `${row.completed}%` }}
-                  ></div>
-                </div>
-              </div>
-            </td> */}
-            <td className="px-4 py-4"><span
-                className={`px-4 w-full max-w-[90%] block text-center py-2 rounded text-[#1C170D] text-sm font-semibold bg-[#F1F1F1]`}
+            <td className="px-4 py-4">
+              <span
+                className={`inline-flex items-center gap-1 px-3 py-1 rounded-full text-xs font-semibold border
+                  ${row.priority === 'High' ? 'border-red-500 text-red-600 bg-red-50' : ''}
+                  ${row.priority === 'Medium' ? 'border-yellow-500 text-yellow-700 bg-yellow-50' : ''}
+                  ${row.priority === 'Low' ? 'border-green-500 text-green-700 bg-green-50' : ''}
+                `}
               >
+                <span
+                  className={`w-2 h-2 rounded-full mr-1
+                    ${row.priority === 'High' ? 'bg-red-500' : ''}
+                    ${row.priority === 'Medium' ? 'bg-yellow-400' : ''}
+                    ${row.priority === 'Low' ? 'bg-green-500' : ''}
+                  `}
+                ></span>
                 {row.priority}
-              </span></td>
+              </span>
+            </td>
             <td className="px-4 py-4">
               <div className="flex space-x-3">
                 <button onClick={() => onEdit(row.id)} className="text-black" title="Edit">
                   <FiEdit size={18} />
+                </button>
+                <button onClick={() => onDelete(row.id)} className="text-red-600 hover:text-red-800" title="Delete">
+                  <FiTrash2 size={18} />
                 </button>
               </div>
             </td>

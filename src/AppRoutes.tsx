@@ -49,6 +49,7 @@ import AttachmentsShow from './modules/attachments/AttachmentsShow';
 import ForgotPassword from './components/auth/ForgotPassword';
 import Dashboard from './components/Dashboard';
 import EditProfile from './pages/EditProfile';
+import AccountSettings from './pages/AccountSettings';
 import { tokenManager } from './services/api';
 import ProjectTasks from './modules/projects/ProjectTasks';
 
@@ -109,8 +110,8 @@ const AppRoutes: React.FC = () => {
         <Route path="/role_permissions/create" element={<RolePermissionsCreate moduleName={'role_permissions'} />} />
         <Route path="/role_permissions/edit/:id" element={<RolePermissionsEdit moduleName={'role_permissions'} />} />
         <Route path="/role_permissions/show/:id" element={<RolePermissionsShow moduleName={'role_permissions'} />} />
-        <Route path="/users" element={<UsersList moduleName={'users'} />} />
-        <Route path="/users/create" element={<UsersCreate moduleName={'users'} />} />
+        <Route path="/users" element={<UsersList />} />
+        <Route path="/users/create" element={<UsersCreate />} />
         <Route path="/users/edit/:id" element={<UsersEdit moduleName={'users'} />} />
         <Route path="/users/show/:id" element={<UsersShow moduleName={'users'} />} />
         <Route path="/user_roles" element={<UserRolesList moduleName={'user_roles'} />} />
@@ -126,9 +127,9 @@ const AppRoutes: React.FC = () => {
         <Route path="/project_members/create" element={<ProjectMembersCreate moduleName={'project_members'} />} />
         <Route path="/project_members/edit/:id" element={<ProjectMembersEdit moduleName={'project_members'} />} />
         <Route path="/project_members/show/:id" element={<ProjectMembersShow moduleName={'project_members'} />} />
-        <Route path="/tasks" element={<TasksList moduleName={'tasks'} />} />
-        <Route path="/tasks/create" element={<TasksCreate moduleName={'tasks'} />} />
-        <Route path="/tasks/create/:id" element={<TasksCreate moduleName={'tasks'} />} />
+        <Route path="/tasks" element={<TasksList />} />
+        <Route path="/tasks/create" element={<TasksCreate />} />
+        <Route path="/tasks/create/:id" element={<TasksCreate />} />
         <Route path="/tasks/edit/:id" element={<TasksEdit moduleName={'tasks'} />} />
         <Route path="/tasks/show/:id" element={<TasksShow moduleName={'tasks'} />} />
         <Route path="/comments" element={<CommentsList moduleName={'comments'} />} />
@@ -144,6 +145,7 @@ const AppRoutes: React.FC = () => {
         <Route path="/attachments/edit/:id" element={<AttachmentsEdit moduleName={'attachments'} />} />
         <Route path="/attachments/show/:id" element={<AttachmentsShow moduleName={'attachments'} />} />
         <Route path="/edit-profile" element={<EditProfile />} />
+        <Route path="/account-settings" element={<AccountSettings />} />
       </Route>
     </Routes>
   );

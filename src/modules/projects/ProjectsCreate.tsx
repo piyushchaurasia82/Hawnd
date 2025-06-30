@@ -1,9 +1,17 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useToast } from '../../components/ui/alert/ToastContext';
+import api from '../../services/api';
 
 interface ProjectsCreateProps {
     moduleName: string;
+}
+
+interface User {
+    id: number;
+    first_name: string;
+    last_name: string;
+    roles?: string[];
 }
 
 const ProjectsCreate: React.FC<ProjectsCreateProps> = ({ moduleName }) => {
@@ -30,20 +38,88 @@ const ProjectsCreate: React.FC<ProjectsCreateProps> = ({ moduleName }) => {
     });
     const [loading, setLoading] = useState(false);
     const [fieldErrors, setFieldErrors] = useState<{ [key: string]: string }>({});
-    const [users, setUsers] = useState<{ id: number; first_name: string; last_name: string }[]>([]);
+    const [users, setUsers] = useState<User[]>([]);
+    const [filteredUsers, setFilteredUsers] = useState<User[]>([]);
 
     // Get API base URL from env
     const API_BASE_URL = import.meta.env.VITE_API_BASE_URL;
 
+    // Allowed roles for project owners
+    const ALLOWED_ROLES = ['Admin', 'Manager', 'Project Lead'];
+
     useEffect(() => {
-        // Fetch users for Project Owner dropdown
-        fetch(`${API_BASE_URL}/api/projectmanagement/users/`)
-            .then(res => res.json())
-            .then(data => {
-                setUsers(Array.isArray(data) ? data : []);
-            })
-            .catch(() => setUsers([]));
-    }, []);
+        // Fetch users, user_roles, and roles for Project Owner dropdown
+        const fetchUsersWithRoles = async () => {
+            try {
+                const [usersRes, userRolesRes, rolesRes] = await Promise.all([
+                    fetch(`${API_BASE_URL}/api/projectmanagement/users/`),
+                    fetch(`${API_BASE_URL}/api/projectmanagement/user_roles/`),
+                    api.get('/api/projectmanagement/roles/')
+                ]);
+
+                let usersData = await usersRes.json();
+                let userRolesData = await userRolesRes.json();
+                let rolesData = rolesRes.data.data || rolesRes.data.roles || rolesRes.data;
+
+                // Debug logs
+                console.log('Users API:', usersData);
+                console.log('UserRoles API:', userRolesData);
+                console.log('Roles API:', rolesData);
+
+                // Handle common API response shapes
+                usersData = usersData.data || usersData.users || usersData;
+                userRolesData = userRolesData.data || userRolesData.user_roles || userRolesData;
+
+                // If roles API failed or returned an error, fallback to showing all users
+                if (!rolesData || rolesData.error) {
+                    console.warn('Roles API failed or unauthorized. Showing all users in project owner dropdown.');
+                    setUsers(usersData);
+                    setFilteredUsers(usersData);
+                    return;
+                }
+
+                // Allowed role names
+                const ALLOWED_ROLE_NAMES = ['Admin', 'Manager', 'Project Lead'];
+
+                // Create a map of role_id to role name
+                const roleIdToName = new Map();
+                rolesData.forEach((role: any) => {
+                    if (role.id && (role.name || role.description)) {
+                        roleIdToName.set(role.id, (role.name || role.description).trim());
+                    }
+                });
+
+                // Create a map of user_id to array of role names
+                const userIdToRoleNames = new Map();
+                userRolesData.forEach((ur: any) => {
+                    const roleName = roleIdToName.get(ur.role_id);
+                    if (roleName) {
+                        if (!userIdToRoleNames.has(ur.user_id)) {
+                            userIdToRoleNames.set(ur.user_id, []);
+                        }
+                        userIdToRoleNames.get(ur.user_id).push(roleName);
+                    }
+                });
+
+                // Filter users: include if any of their roles matches allowed names
+                const filtered = usersData.filter((user: any) => {
+                    const userRoles = userIdToRoleNames.get(user.id) || [];
+                    return userRoles.some((roleName: string) =>
+                        ALLOWED_ROLE_NAMES.some(allowed => roleName.toLowerCase() === allowed.toLowerCase())
+                    );
+                });
+                setUsers(usersData);
+                setFilteredUsers(filtered);
+
+            } catch (error) {
+                console.error('Error fetching users with roles:', error);
+                setUsers([]);
+                setFilteredUsers([]);
+            }
+        };
+
+        fetchUsersWithRoles();
+    }, [API_BASE_URL]);
 
     const handleQuickChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
         setQuickForm({ ...quickForm, [e.target.name]: e.target.value });
@@ -161,6 +237,10 @@ const ProjectsCreate: React.FC<ProjectsCreateProps> = ({ moduleName }) => {
         }
     };
 
+    const handleCancel = () => {
+        navigate('/projects');
+    };
+
     return (
         <div className="p-4">
             <div className="text-[16px] text-black mb-4">Dashboard / Project Management / Create Project</div>
@@ -208,7 +288,7 @@ const ProjectsCreate: React.FC<ProjectsCreateProps> = ({ moduleName }) => {
                             onChange={handleQuickChange}
                         >
                             <option value="">Select an owner</option>
-                            {users.map(user => {
+                            {filteredUsers.map(user => {
                                 const fullName = `${user.first_name} ${user.last_name}`.trim();
                                 return (
                                     <option key={user.id} value={fullName}>{fullName}</option>
@@ -235,13 +315,24 @@ const ProjectsCreate: React.FC<ProjectsCreateProps> = ({ moduleName }) => {
                             </button>
                         </div>
                         {fieldErrors.internal_external && <div className="text-red-500 text-sm mt-1">{fieldErrors.internal_external}</div>}
-                        <button
-                            type="submit"
-                            className="bg-orange-500 text-white px-8 py-2 rounded font-semibold text-[16px] hover:bg-orange-600"
-                            disabled={loading}
-                        >
-                            {loading ? 'Creating...' : 'Create Project'}
-                        </button>
+                        <div className="flex justify-end mt-8 gap-4">
+                            <button
+                                type="button"
+                                className="bg-[#F1F1F1] text-black px-8 py-2 rounded font-semibold text-[16px] hover:bg-gray-200"
+                                onClick={handleCancel}
+                                disabled={loading}
+                            >
+                                Cancel
+                            </button>
+                            <button
+                                type="submit"
+                                className="bg-orange-500 text-white px-8 py-2 rounded font-semibold text-[16px] hover:bg-orange-600 flex items-center justify-center min-w-[120px]"
+                                disabled={loading}
+                            >
+                                {loading ? <span className="loader mr-2"></span> : null}
+                                {loading ? 'Submitting...' : 'Submit'}
+                            </button>
+                        </div>
                     </div>
                 </form>
             )}
@@ -274,7 +365,7 @@ const ProjectsCreate: React.FC<ProjectsCreateProps> = ({ moduleName }) => {
                                 onChange={handleDetailedChange}
                             >
                                 <option value="">Select an owner</option>
-                                {users.map(user => {
+                                {filteredUsers.map(user => {
                                     const fullName = `${user.first_name} ${user.last_name}`.trim();
                                     return (
                                         <option key={user.id} value={fullName}>{fullName}</option>
@@ -342,7 +433,7 @@ const ProjectsCreate: React.FC<ProjectsCreateProps> = ({ moduleName }) => {
                             <input
                                 type="text"
                                 name="integrationTag"
-                                placeholder="Enter version control note"
+                                placeholder="Select status"
                                 className="w-full bg-[#F1F1F1] rounded px-4 py-3 text-black border-0"
                                 value={detailedForm.integrationTag}
                                 onChange={handleDetailedChange}
@@ -350,14 +441,21 @@ const ProjectsCreate: React.FC<ProjectsCreateProps> = ({ moduleName }) => {
                         </div>
                         <div className="flex flex-col justify-end">
                             <label className="block mb-2 font-semibold">Client Access</label>
-                            <div className="flex items-center h-full">
-                                <input
-                                    type="checkbox"
-                                    name="clientAccess"
-                                    checked={detailedForm.clientAccess}
-                                    onChange={e => setDetailedForm({ ...detailedForm, clientAccess: e.target.checked })}
-                                    className="w-5 h-5 accent-orange-500"
-                                />
+                            <div className="flex gap-0 overflow-hidden border border-orange-500 w-fit">
+                                <button
+                                    type="button"
+                                    className={`py-1 px-6 font-semibold text-[16px] transition-all ${detailedForm.clientAccess ? 'bg-orange-500 text-white' : 'bg-white text-orange-500'} border-none outline-none`}
+                                    onClick={() => setDetailedForm(prev => ({ ...prev, clientAccess: true }))}
+                                >
+                                    Yes
+                                </button>
+                                <button
+                                    type="button"
+                                    className={`py-1 px-6 font-semibold text-[16px] transition-all ${!detailedForm.clientAccess ? 'bg-orange-500 text-white' : 'bg-white text-orange-500'} border-none outline-none`}
+                                    onClick={() => setDetailedForm(prev => ({ ...prev, clientAccess: false }))}
+                                >
+                                    No
+                                </button>
                             </div>
                         </div>
                         <div className="flex flex-col justify-end">
@@ -394,7 +492,15 @@ const ProjectsCreate: React.FC<ProjectsCreateProps> = ({ moduleName }) => {
                         />
                         <div className="text-right text-sm text-gray-500 mt-1">Upload Files</div>
                     </div>
-                    <div className="flex justify-end mt-8">
+                    <div className="flex justify-end mt-8 gap-4">
+                        <button
+                            type="button"
+                            className="bg-[#F1F1F1] text-black px-8 py-2 rounded font-semibold text-[16px] hover:bg-gray-200"
+                            onClick={handleCancel}
+                            disabled={loading}
+                        >
+                            Cancel
+                        </button>
                         <button
                             type="submit"
                             className="bg-orange-500 text-white px-8 py-2 rounded font-semibold text-[16px] hover:bg-orange-600 flex items-center justify-center min-w-[120px]"

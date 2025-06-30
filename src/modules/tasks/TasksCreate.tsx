@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { FiCalendar, FiClock } from 'react-icons/fi';
 import { useLocation, useParams, useNavigate } from 'react-router-dom';
 import { DateRange } from 'react-date-range';
+import type { Range } from 'react-date-range';
 import 'react-date-range/dist/styles.css';
 import 'react-date-range/dist/theme/default.css';
 import { format } from 'date-fns';
@@ -49,10 +50,10 @@ const TasksCreate: React.FC = () => {
     project_id: '',
   });
   const [showRange, setShowRange] = useState(false);
-  const [dateRange, setDateRange] = useState([
+  const [dateRange, setDateRange] = useState<Range[]>([
     {
-      startDate: form.start_date ? new Date(form.start_date) : null,
-      endDate: form.due_date ? new Date(form.due_date) : null,
+      startDate: form.start_date ? new Date(form.start_date) : undefined,
+      endDate: form.due_date ? new Date(form.due_date) : undefined,
       key: 'selection',
     },
   ]);
@@ -68,8 +69,8 @@ const TasksCreate: React.FC = () => {
     const endDate = params.get('endDate') || '';
     setForm(f => ({ ...f, start_date: startDate, due_date: endDate }));
     setDateRange([{
-      startDate: startDate ? new Date(startDate) : null,
-      endDate: endDate ? new Date(endDate) : null,
+      startDate: startDate ? new Date(startDate) : undefined,
+      endDate: endDate ? new Date(endDate) : undefined,
       key: 'selection',
     }]);
   }, [location.search]);

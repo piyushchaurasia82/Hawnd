@@ -4,7 +4,6 @@ import { ChevronDownIcon, HorizontaLDots, TableIcon } from "../icons";
 import { useSidebar } from "../context/SidebarContext";
 import modules from "../config/loadModules";
 import {
-  UserIcon,
   TaskIcon,
   GroupIcon,
   ListIcon,
@@ -15,6 +14,7 @@ import {
   TimeIcon,
   FileIcon,
 } from '../icons';
+import { Users as LucideUsers, User as LucideUser, Plus as LucidePlus, FileText as LucideFileText } from 'lucide-react';
 
 type NavItem = {
   icon?: React.ReactNode;
@@ -23,11 +23,12 @@ type NavItem = {
   pro?: boolean;
   new?: boolean;
   subItems?: NavItem[];
+  highlight?: boolean;
 };
 
 // Icon map for modules
 const iconMap: Record<string, React.ReactNode> = {
-  users: <UserIcon />,
+  users: <LucideUsers size={20} />,
   roles: <GroupIcon />,
   permissions: <LockIcon />,
   role_permissions: <PlugInIcon />,
@@ -51,6 +52,39 @@ const jsonNavItems: NavItem[] = Object.entries(modules).map(([key, resource]) =>
     { name: `Create ${resource.displayName.slice(0, -1)}`, path: `/${key}/create` },
   ],
 }));
+
+// Find the users nav item in jsonNavItems and replace it with a custom one
+const customUsersNav: NavItem = {
+  icon: <LucideUsers size={20} />,
+  name: 'Users',
+  subItems: [
+    {
+      icon: <LucideUser size={18} />,
+      name: 'User Directories',
+      path: '/users',
+    },
+    {
+      icon: <LucidePlus size={16} />,
+      name: 'Create New Role',
+      path: '/roles/create',
+    },
+    {
+      icon: <LucidePlus size={16} className="opacity-70" />,
+      name: 'Create New User',
+      path: '/users/create',
+    },
+    {
+      icon: <LucideFileText size={18} />,
+      name: 'Audit Logs',
+      path: '/audit-logs',
+      highlight: true,
+    },
+  ],
+};
+
+const navItemsWithCustomUsers = jsonNavItems.map(item =>
+  item.name === 'Users' ? customUsersNav : item
+);
 
 const AppSidebar: React.FC = () => {
   const { isExpanded, isMobileOpen, isHovered, setIsHovered } = useSidebar();
@@ -136,7 +170,7 @@ const AppSidebar: React.FC = () => {
 
   return (
     <aside
-      className={`fixed mt-16 flex flex-col lg:mt-0 top-0 px-5 left-0 bg-[#FCFAF7] h-screen transition-all text-black-100 duration-300 ease-in-out z-50 border-r border-gray-200 
+      className={`fixed mt-16 flex flex-col lg:mt-0 top-0 px-5 left-0 bg-white h-screen transition-all text-black-100 duration-300 ease-in-out z-50 border-r border-gray-200 
         ${
           isExpanded || isMobileOpen
             ? "w-[290px]"
@@ -190,7 +224,7 @@ const AppSidebar: React.FC = () => {
                   <HorizontaLDots className="size-6" />
                 )}
               </h2>
-              {renderMenuItems(jsonNavItems, "main")}
+              {renderMenuItems(navItemsWithCustomUsers, "main")}
             </div>
           </div>
         </nav>

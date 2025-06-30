@@ -1,8 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import api from '../../services/api';
-import modules from '../../config/loadModules';
-import type { ModuleConfig } from '../../config/types';
 
 const MultiSelectDropdown = ({ options, selectedValues, onChange, label, disabled }: {
     options: { value: string | number; label: string }[];

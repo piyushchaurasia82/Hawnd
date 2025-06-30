@@ -21,6 +21,7 @@
     "@react-oauth/google": "^0.12.2",
     "@tailwindcss/postcss": "^4.1.5",
     "@types/flatpickr": "^3.1.4",
+    "@types/react-date-range": "^1.4.10",
     "apexcharts": "^4.7.0",
     "axios": "^1.9.0",
     "chart.js": "^4.5.0",
