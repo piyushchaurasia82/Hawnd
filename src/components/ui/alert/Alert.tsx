@@ -142,7 +142,7 @@ const Alert: React.FC<AlertProps> = ({
 
   return (
     <div
-      className={`relative w-full rounded-lg border p-3 ${variantClasses[variant].container}`}
+      className={`relative rounded-lg border p-3 ${variantClasses[variant].container}`}
     >
       {/* Close button */}
       {onClose && (

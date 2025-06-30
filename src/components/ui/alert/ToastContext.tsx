@@ -77,7 +77,7 @@ export const ToastProvider: React.FC<{ children: ReactNode }> = ({ children }) =
       {children}
       {/* Toast/blur wrapper: fixed, top-right, width fits toast */}
       {toasts.length > 0 && (
-        <div className="fixed top-6 right-6 z-[99999999998] w-[350px]" style={{ pointerEvents: 'none' }}>
+        <div className="fixed top-6 right-6 z-[99999999998]" style={{ pointerEvents: 'none' }}>
           {/* Blur overlay, fills parent */}
           <div
             className="absolute inset-0 rounded-lg"
