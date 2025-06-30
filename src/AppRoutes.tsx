@@ -49,10 +49,9 @@ import AttachmentsShow from './modules/attachments/AttachmentsShow';
 import ForgotPassword from './components/auth/ForgotPassword';
 import Dashboard from './components/Dashboard';
 import EditProfile from './pages/EditProfile';
+import AccountSettings from './pages/AccountSettings';
 import { tokenManager } from './services/api';
 import ProjectTasks from './modules/projects/ProjectTasks';
-import AuditLogsList from './modules/audit_logs/AuditLogsList';
-import AccountSettings from './pages/AccountSettings';
 
 // ProtectedRoute: Prevents authenticated users from accessing login page
 const ProtectedRoute: React.FC<{ children: React.ReactNode }> = ({ children }) => {
@@ -113,14 +112,14 @@ const AppRoutes: React.FC = () => {
         <Route path="/role_permissions/show/:id" element={<RolePermissionsShow moduleName={'role_permissions'} />} />
         <Route path="/users" element={<UsersList />} />
         <Route path="/users/create" element={<UsersCreate />} />
-        <Route path="/users/edit/:id" element={<UsersEdit moduleName="users" />} />
-        <Route path="/users/show/:id" element={<UsersShow moduleName="users" />} />
+        <Route path="/users/edit/:id" element={<UsersEdit moduleName={'users'} />} />
+        <Route path="/users/show/:id" element={<UsersShow moduleName={'users'} />} />
         <Route path="/user_roles" element={<UserRolesList moduleName={'user_roles'} />} />
         <Route path="/user_roles/create" element={<UserRolesCreate />} />
         <Route path="/user_roles/edit/:id" element={<UserRolesEdit moduleName={'user_roles'} />} />
         <Route path="/user_roles/show/:id" element={<UserRolesShow moduleName={'user_roles'} />} />
         <Route path="/projects" element={<ProjectsList moduleName={'projects'} />} />
-        <Route path="/projects/create" element={<ProjectsCreate />} />
+        <Route path="/projects/create" element={<ProjectsCreate moduleName={'projects'} />} />
         <Route path="/projects/edit/:id" element={<ProjectsEdit moduleName={'projects'} />} />
         <Route path="/projects/show/:id" element={<ProjectsShow moduleName={'projects'} />} />
         <Route path="/projects/:id/tasks" element={<ProjectTasks />} />
@@ -128,8 +127,9 @@ const AppRoutes: React.FC = () => {
         <Route path="/project_members/create" element={<ProjectMembersCreate moduleName={'project_members'} />} />
         <Route path="/project_members/edit/:id" element={<ProjectMembersEdit moduleName={'project_members'} />} />
         <Route path="/project_members/show/:id" element={<ProjectMembersShow moduleName={'project_members'} />} />
-        <Route path="/tasks" element={<TasksList moduleName={'tasks'} />} />
+        <Route path="/tasks" element={<TasksList />} />
         <Route path="/tasks/create" element={<TasksCreate />} />
+        <Route path="/tasks/create/:id" element={<TasksCreate />} />
         <Route path="/tasks/edit/:id" element={<TasksEdit moduleName={'tasks'} />} />
         <Route path="/tasks/show/:id" element={<TasksShow moduleName={'tasks'} />} />
         <Route path="/comments" element={<CommentsList moduleName={'comments'} />} />
@@ -146,7 +146,6 @@ const AppRoutes: React.FC = () => {
         <Route path="/attachments/show/:id" element={<AttachmentsShow moduleName={'attachments'} />} />
         <Route path="/edit-profile" element={<EditProfile />} />
         <Route path="/account-settings" element={<AccountSettings />} />
-        <Route path="/audit-logs" element={<AuditLogsList />} />
       </Route>
     </Routes>
   );

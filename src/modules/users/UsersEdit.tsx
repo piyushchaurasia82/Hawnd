@@ -181,17 +181,6 @@ const UsersEdit: React.FC<{ moduleName: string }> = ({ moduleName }) => {
                 `${config.apiBaseUrl}${config.endpoints.update.url.replace(':id', id!)}/`,
                 payload
             );
-            // Fetch all user_roles for this user and delete each one individually
-            const userRolesRes = await api.get('/api/projectmanagement/user_roles/');
-            const userRolesToDelete = (userRolesRes.data.data || userRolesRes.data.user_roles || userRolesRes.data)
-                .filter((ur: any) => String(ur.user_id) === String(id));
-            await Promise.all(userRolesToDelete.map((ur: any) =>
-                api.delete(`/api/projectmanagement/user_roles/${ur.id}/`)
-            ));
-            // Assign new roles
-            await Promise.all(selectedRoles.map(roleId =>
-                api.post('/api/projectmanagement/user_roles/', { user_id: id, role_id: roleId })
-            ));
             navigate(`/${moduleName}`);
         } catch (err: any) {
             setError('Error updating user. Please try again.');
@@ -292,10 +281,25 @@ const UsersEdit: React.FC<{ moduleName: string }> = ({ moduleName }) => {
                 </div>
                 <div className="flex items-center gap-4 mb-8">
                     <span className="block font-semibold mb-1">Status</span>
-                    <OrangeToggle checked={formData.is_active !== false} onChange={v => handleChange('is_active', v)} />
+                    <div className="flex gap-0 overflow-hidden border border-orange-500 w-fit">
+                        <button
+                            type="button"
+                            className={`py-1 px-6 font-semibold text-[16px] transition-all ${formData.is_active !== false ? 'bg-orange-500 text-white' : 'bg-white text-orange-500'} border-none outline-none`}
+                            onClick={() => handleChange('is_active', true)}
+                        >
+                            Active
+                        </button>
+                        <button
+                            type="button"
+                            className={`py-1 px-6 font-semibold text-[16px] transition-all ${formData.is_active === false ? 'bg-orange-500 text-white' : 'bg-white text-orange-500'} border-none outline-none`}
+                            onClick={() => handleChange('is_active', false)}
+                        >
+                            Inactive
+                        </button>
+                    </div>
                 </div>
                 {error && <div className="text-red-600 mb-4">{error}</div>}
-                <div className="flex gap-4">
+                <div className="flex gap-4 justify-end">
                     <button
                         type="submit"
                         className="bg-orange-600 text-white rounded px-6 py-2 font-semibold hover:bg-gray-800 disabled:opacity-60"

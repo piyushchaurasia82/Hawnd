@@ -50,7 +50,13 @@ const AuthPage: React.FC = () => {
       });
       if (response.data.status === 'success') {
         if (response.data.data && response.data.data.access && response.data.data.refresh) {
-          tokenManager.setTokens(response.data.data.access, response.data.data.refresh, { username });
+          const decoded = decodeJwt(response.data.data.access);
+          const userId = decoded && (decoded.id || decoded.user_id || decoded.sub);
+          tokenManager.setTokens(
+            response.data.data.access,
+            response.data.data.refresh,
+            { id: userId, username }
+          );
         }
         navigate('/');
         return;

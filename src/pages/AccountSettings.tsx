@@ -15,6 +15,8 @@ const AccountSettings: React.FC = () => {
     firstName: '',
     lastName: '',
     isActive: true,
+    email: '',
+    hashed_password: '',
   });
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
@@ -37,12 +39,19 @@ const AccountSettings: React.FC = () => {
   const token = tokenManager.getAccessToken();
   const [lastChangedPassword, setLastChangedPassword] = useState('');
 
-  useEffect(() => {
-    const fetchUser = async () => {
-      setLoading(true);
-      setError('');
-      try {
-        // Get username from tokenManager
+  // Refactored fetchUser to support fetching by user ID or username
+  const fetchUser = async (idOverride: string | null = null) => {
+    setLoading(true);
+    setError('');
+    try {
+      let user = null;
+      let userId = idOverride || form.id;
+      if (userId) {
+        // Fetch by ID if available
+        const userRes = await api.get(`/api/projectmanagement/users/${userId}/`);
+        user = userRes.data.data || userRes.data;
+      } else {
+        // Fallback to username (first load)
         let username = null;
         const userData = tokenManager.getUserData();
         if (userData && userData.username) {
@@ -57,12 +66,8 @@ const AccountSettings: React.FC = () => {
           }
         }
         if (!username) throw new Error('Username not found in token');
-        // Fetch user by username
         const userRes = await api.get(`/api/projectmanagement/users/?username=${encodeURIComponent(username)}`);
-        // Try to get the user from the response (array or data field)
-        let user = null;
         if (Array.isArray(userRes.data)) {
-          // Find the user with exact username match (case-sensitive)
           user = userRes.data.find((u: any) => u.username === username);
         } else if (userRes.data.data && Array.isArray(userRes.data.data)) {
           user = userRes.data.data.find((u: any) => u.username === username);
@@ -71,20 +76,25 @@ const AccountSettings: React.FC = () => {
         } else {
           user = userRes.data;
         }
-        if (!user || !user.id) throw new Error('User not found');
-        setForm({
-          id: user.id,
-          username: user.username || '',
-          firstName: user.first_name || '',
-          lastName: user.last_name || '',
-          isActive: user.is_active === true || user.is_active === 'true' || user.is_active === 'True' || user.is_active === 1,
-        });
-      } catch (err: any) {
-        setError(err.message || 'Failed to load user data.');
-      } finally {
-        setLoading(false);
       }
-    };
+      if (!user || !user.id) throw new Error('User not found');
+      setForm({
+        id: user.id,
+        username: user.username || '',
+        firstName: user.first_name || '',
+        lastName: user.last_name || '',
+        isActive: user.is_active === true || user.is_active === 'true' || user.is_active === 'True' || user.is_active === 1,
+        email: user.email || '',
+        hashed_password: user.hashed_password || '',
+      });
+    } catch (err: any) {
+      setError(err.message || 'Failed to load user data.');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
     fetchUser();
   }, []);
 
@@ -128,9 +138,12 @@ const AccountSettings: React.FC = () => {
         first_name: form.firstName,
         last_name: form.lastName,
         is_active: form.isActive ? 'True' : 'False',
+        email: form.email,
+        hashed_password: form.hashed_password,
       };
       await api.put(`/api/projectmanagement/users/${form.id}/`, payload);
       setSuccess('Account settings updated successfully.');
+      await fetchUser(form.id || null); // Reload user details after save using ID
     } catch (err: any) {
       setError(err.message || 'Failed to update account settings.');
     } finally {
@@ -228,9 +241,9 @@ const AccountSettings: React.FC = () => {
                 type="text"
                 name="username"
                 value={form.username}
-                onChange={handleChange}
                 placeholder="Enter user name"
                 className="w-full rounded-lg border border-gray-200 bg-gray-100 px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-orange-400"
+                disabled
               />
             </div>
             <div>

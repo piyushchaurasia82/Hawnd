@@ -1,5 +1,12 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { FiCalendar, FiClock } from 'react-icons/fi';
+import { useLocation, useParams, useNavigate } from 'react-router-dom';
+import { DateRange } from 'react-date-range';
+import type { Range } from 'react-date-range';
+import 'react-date-range/dist/styles.css';
+import 'react-date-range/dist/theme/default.css';
+import { format } from 'date-fns';
+import { useToast } from '../../components/ui/alert/ToastContext';
 
 const assignees = [
   { id: 1, name: 'Alex' },
@@ -14,15 +21,21 @@ const priorities = ['Low', 'Medium', 'High'];
 const statuses = ['To Do', 'In Progress', 'Done'];
 
 const TasksCreate: React.FC = () => {
+  const location = useLocation();
+  const { id: projectId } = useParams<{ id: string }>();
+  const { showToast } = useToast();
+  const navigate = useNavigate();
   const [tab, setTab] = useState<'quick' | 'detailed'>('quick');
   const [quickForm, setQuickForm] = useState({
     title: '',
     assignee: '',
+    project_id: '',
   });
   const [form, setForm] = useState({
     title: '',
     assignee: '',
-    date: '',
+    start_date: '',
+    due_date: '',
     estimated: '',
     description: '',
     priority: '',
@@ -34,7 +47,165 @@ const TasksCreate: React.FC = () => {
     notifyStatus: false,
     notifyComment: false,
     notifySubmission: false,
+    project_id: '',
   });
+  const [showRange, setShowRange] = useState(false);
+  const [dateRange, setDateRange] = useState<Range[]>([
+    {
+      startDate: form.start_date ? new Date(form.start_date) : undefined,
+      endDate: form.due_date ? new Date(form.due_date) : undefined,
+      key: 'selection',
+    },
+  ]);
+  const [loading, setLoading] = useState(false);
+  const [fieldErrors, setFieldErrors] = useState<{ [key: string]: string }>({});
+  const [users, setUsers] = useState<{ id: number; first_name: string; last_name: string }[]>([]);
+  const [projects, setProjects] = useState<{ id: number; project_title: string }[]>([]);
+
+  // Read startDate and endDate from query params
+  React.useEffect(() => {
+    const params = new URLSearchParams(location.search);
+    const startDate = params.get('startDate') || '';
+    const endDate = params.get('endDate') || '';
+    setForm(f => ({ ...f, start_date: startDate, due_date: endDate }));
+    setDateRange([{
+      startDate: startDate ? new Date(startDate) : undefined,
+      endDate: endDate ? new Date(endDate) : undefined,
+      key: 'selection',
+    }]);
+  }, [location.search]);
+
+  useEffect(() => {
+    const API_BASE_URL = import.meta.env.VITE_API_BASE_URL;
+    fetch(`${API_BASE_URL}/api/projectmanagement/users/`)
+      .then(res => res.json())
+      .then(data => {
+        setUsers(Array.isArray(data) ? data : []);
+      })
+      .catch(() => setUsers([]));
+    // Fetch projects if no projectId
+    if (!projectId) {
+      fetch(`${API_BASE_URL}/api/projectmanagement/projects/`)
+        .then(res => res.json())
+        .then(data => {
+          setProjects(Array.isArray(data.data) ? data.data : []);
+        })
+        .catch(() => setProjects([]));
+    }
+  }, [projectId]);
+
+  // Detailed form submit handler
+  const handleDetailedSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setFieldErrors({});
+    // Validation
+    const errors: { [key: string]: string } = {};
+    if (!form.title) errors.title = 'Task Title is required';
+    if (!form.assignee) errors.assignee = 'Assignee is required';
+    if (!form.project_id) errors.project_id = 'Project is required';
+    if (Object.keys(errors).length > 0) {
+      setFieldErrors(errors);
+      showToast({ type: 'error', title: 'Validation Error', message: 'Please fill all required fields.' });
+      return;
+    }
+    setLoading(true);
+    try {
+      const API_BASE_URL = import.meta.env.VITE_API_BASE_URL;
+      let payload: any = {
+        project_id: projectId ? Number(projectId) : form.project_id ? Number(form.project_id) : undefined,
+        task_title: form.title,
+        assignees: form.assignee,
+        date: form.start_date ? new Date(form.start_date).toISOString() : undefined,
+        start_date: form.start_date ? new Date(form.start_date).toISOString() : undefined,
+        due_date: form.due_date ? new Date(form.due_date).toISOString() : undefined,
+        estimated_time: form.estimated ? parseFloat(form.estimated) : undefined,
+        description: form.description,
+        priority: form.priority,
+        status: form.status,
+        reviewer_id: form.reviewer ? Number(form.reviewer) : undefined,
+        start_after_id: form.startAfter ? Number(form.startAfter) : undefined,
+        blocked_by: form.blockedBy,
+        status_change_notification: form.notifyStatus ? 'YES' : 'NO',
+        on_comment_notification: form.notifyComment ? 'YES' : 'NO',
+        reviewer_on_submission_notification: form.notifySubmission ? 'YES' : 'NO',
+      };
+      payload = Object.fromEntries(Object.entries(payload).filter(([_, v]) => v !== '' && v !== undefined && v !== null));
+      const res = await fetch(`${API_BASE_URL}/api/projectmanagement/tasks/`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload),
+      });
+      if (!res.ok) throw new Error('Failed to create task');
+      showToast({ type: 'success', title: 'Success', message: 'Task created successfully!' });
+      navigate(-1);
+    } catch (err: any) {
+      showToast({ type: 'error', title: 'Error', message: err.message || 'Error occurred' });
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // Quick Create submit handler
+  const handleQuickSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setFieldErrors({});
+    // Validation
+    const errors: { [key: string]: string } = {};
+    if (!quickForm.title) errors.title = 'Task Title is required';
+    if (!quickForm.assignee) errors.assignee = 'Assignee is required';
+    if (!quickForm.project_id) errors.project_id = 'Project is required';
+    if (Object.keys(errors).length > 0) {
+      setFieldErrors(errors);
+      showToast({ type: 'error', title: 'Validation Error', message: 'Please fill all required fields.' });
+      return;
+    }
+    setLoading(true);
+    try {
+      const API_BASE_URL = import.meta.env.VITE_API_BASE_URL;
+      let payload: any = {
+        project_id: projectId ? Number(projectId) : quickForm.project_id ? Number(quickForm.project_id) : undefined,
+        task_title: quickForm.title,
+        assignees: quickForm.assignee,
+      };
+      payload = Object.fromEntries(Object.entries(payload).filter(([_, v]) => v !== '' && v !== undefined && v !== null));
+      const res = await fetch(`${API_BASE_URL}/api/projectmanagement/tasks/`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload),
+      });
+      if (!res.ok) throw new Error('Failed to create task');
+      showToast({ type: 'success', title: 'Success', message: 'Task created successfully!' });
+      navigate(-1);
+    } catch (err: any) {
+      showToast({ type: 'error', title: 'Error', message: err.message || 'Error occurred' });
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleQuickChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
+    setQuickForm({ ...quickForm, [e.target.name]: e.target.value });
+    // Remove error for this field
+    if (fieldErrors[e.target.name]) {
+      setFieldErrors(prev => {
+        const newErrors = { ...prev };
+        delete newErrors[e.target.name];
+        return newErrors;
+      });
+    }
+  };
+
+  const handleDetailedChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) => {
+    setForm({ ...form, [e.target.name]: e.target.value });
+    // Remove error for this field
+    if (fieldErrors[e.target.name]) {
+      setFieldErrors(prev => {
+        const newErrors = { ...prev };
+        delete newErrors[e.target.name];
+        return newErrors;
+      });
+    }
+  };
 
   return (
     <div className="p-4">
@@ -45,13 +216,13 @@ const TasksCreate: React.FC = () => {
       {/* Tabs */}
       <div className="flex border-b mb-6">
         <button
-          className={`px-4 py-2 text-sm font-semibold border-b-2 transition-all duration-150 ${tab === 'quick' ? 'border-orange-500 text-black' : 'border-transparent text-gray-500'}`}
+          className={`pr-4 py-2 text-sm font-semibold border-b-2 transition-all duration-150 ${tab === 'quick' ? 'border-orange-500 text-black' : 'border-transparent text-gray-500'}`}
           onClick={() => setTab('quick')}
         >
           Quick Create
         </button>
         <button
-          className={`px-4 py-2 text-sm font-semibold border-b-2 transition-all duration-150 ${tab === 'detailed' ? 'border-orange-500 text-black' : 'border-transparent text-gray-500'}`}
+          className={`pr-4 py-2 text-sm font-semibold border-b-2 transition-all duration-150 ${tab === 'detailed' ? 'border-orange-500 text-black' : 'border-transparent text-gray-500'}`}
           onClick={() => setTab('detailed')}
         >
           Detailed Create
@@ -59,69 +230,164 @@ const TasksCreate: React.FC = () => {
       </div>
       {/* Tab Content */}
       {tab === 'quick' && (
-        <form className="space-y-6 md:w-[50%]">
+        <form className="space-y-6 md:w-[50%]" onSubmit={handleQuickSubmit}>
+          {!projectId && (
+            <div>
+              <label className="block mb-2 font-medium">
+                Project <span className="text-red-500">*</span>
+              </label>
+              <select
+                name="project_id"
+                className="w-full bg-[#F3F3F3] rounded px-4 py-3 text-black outline-none"
+                value={quickForm.project_id || ''}
+                onChange={handleQuickChange}
+              >
+                <option value="">Select project</option>
+                {projects.map(project => (
+                  <option key={project.id} value={project.id}>{project.project_title}</option>
+                ))}
+              </select>
+              {fieldErrors.project_id && <div className="text-red-500 text-sm mt-1">{fieldErrors.project_id}</div>}
+            </div>
+          )}
           <div>
-            <label className="block mb-2 font-medium">Task Title</label>
+            <label className="block mb-2 font-medium">
+              Task Title <span className="text-red-500">*</span>
+            </label>
             <input
+              name="title"
               className="w-full bg-[#F3F3F3] rounded px-4 py-3 text-black placeholder:text-gray-500 outline-none"
               placeholder="Enter task title"
               value={quickForm.title}
-              onChange={e => setQuickForm({ ...quickForm, title: e.target.value })}
+              onChange={handleQuickChange}
             />
+            {fieldErrors.title && <div className="text-red-500 text-sm mt-1">{fieldErrors.title}</div>}
           </div>
           <div>
-            <label className="block mb-2 font-medium">Assignee</label>
+            <label className="block mb-2 font-medium">
+              Assignee <span className="text-red-500">*</span>
+            </label>
             <select
+              name="assignee"
               className="w-full bg-[#F3F3F3] rounded px-4 py-3 text-black outline-none"
               value={quickForm.assignee}
-              onChange={e => setQuickForm({ ...quickForm, assignee: e.target.value })}
+              onChange={handleQuickChange}
             >
               <option value="">Select assignee</option>
-              {assignees.map(a => (
-                <option key={a.id} value={a.name}>{a.name}</option>
-              ))}
+              {users.map(user => {
+                const fullName = `${user.first_name} ${user.last_name}`.trim();
+                return (
+                  <option key={user.id} value={user.id}>{fullName}</option>
+                );
+              })}
             </select>
+            {fieldErrors.assignee && <div className="text-red-500 text-sm mt-1">{fieldErrors.assignee}</div>}
           </div>
-          <button className="bg-orange-500 text-white font-semibold rounded px-6 py-2 mt-2 hover:bg-orange-600">Add Task</button>
+          <button className="bg-orange-500 text-white font-semibold rounded px-6 py-2 mt-2 hover:bg-orange-600" type="submit" disabled={loading}>
+            {loading ? 'Submitting...' : 'Add Task'}
+          </button>
         </form>
       )}
       {tab === 'detailed' && (
-        <form className="space-y-8">
+        <form className="space-y-8" onSubmit={handleDetailedSubmit}>
           {/* Basic Information */}
           <div>
             <div className="font-bold text-[17px] mb-4">Basic Information</div>
-            <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-4">
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
+              {!projectId && (
+                <div>
+                  <label className="block mb-2 font-medium text-[15px]">
+                    Project <span className="text-red-500">*</span>
+                  </label>
+                  <select
+                    name="project_id"
+                    className="w-full bg-[#F3F3F3] rounded px-4 py-3 text-black outline-none text-[15px]"
+                    value={form.project_id || ''}
+                    onChange={handleDetailedChange}
+                  >
+                    <option value="">Select project</option>
+                    {projects.map(project => (
+                      <option key={project.id} value={project.id}>{project.project_title}</option>
+                    ))}
+                  </select>
+                  {fieldErrors.project_id && <div className="text-red-500 text-sm mt-1">{fieldErrors.project_id}</div>}
+                </div>
+              )}
               <div>
-                <label className="block mb-2 font-medium text-[15px]">Task Title</label>
-                <input className="w-full bg-[#F3F3F3] rounded px-4 py-3 text-black placeholder:text-gray-500 outline-none text-[15px]" placeholder="Enter task title" value={form.title} onChange={e => setForm({ ...form, title: e.target.value })} />
+                <label className="block mb-2 font-medium text-[15px]">
+                  Task Title <span className="text-red-500">*</span>
+                </label>
+                <input
+                  name="title"
+                  className="w-full bg-[#F3F3F3] rounded px-4 py-3 text-black placeholder:text-gray-500 outline-none text-[15px]"
+                  placeholder="Enter task title"
+                  value={form.title}
+                  onChange={handleDetailedChange}
+                />
+                {fieldErrors.title && <div className="text-red-500 text-sm mt-1">{fieldErrors.title}</div>}
               </div>
               <div>
-                <label className="block mb-2 font-medium text-[15px]">Assignees</label>
-                <select className="w-full bg-[#F3F3F3] rounded px-4 py-3 text-black outline-none text-[15px]" value={form.assignee} onChange={e => setForm({ ...form, assignee: e.target.value })}>
+                <label className="block mb-2 font-medium text-[15px]">
+                  Assignees <span className="text-red-500">*</span>
+                </label>
+                <select
+                  name="assignee"
+                  className="w-full bg-[#F3F3F3] rounded px-4 py-3 text-black outline-none text-[15px]"
+                  value={form.assignee}
+                  onChange={handleDetailedChange}
+                >
                   <option value="">Select assignee</option>
-                  {assignees.map(a => (
-                    <option key={a.id} value={a.name}>{a.name}</option>
-                  ))}
+                  {users.map(user => {
+                    const fullName = `${user.first_name} ${user.last_name}`.trim();
+                    return (
+                      <option key={user.id} value={user.id}>{fullName}</option>
+                    );
+                  })}
                 </select>
+                {fieldErrors.assignee && <div className="text-red-500 text-sm mt-1">{fieldErrors.assignee}</div>}
               </div>
-              <div>
+              <div className="">
                 <label className="block mb-2 font-medium text-[15px]">Date</label>
-                <div className="relative">
-                  <input type="date" className="w-full bg-[#F3F3F3] rounded px-4 py-3 pr-10 text-black outline-none text-[15px]" value={form.date} onChange={e => setForm({ ...form, date: e.target.value })} />
-                  <FiCalendar className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none" size={18} />
+                <div className="flex gap-2">
+                  <input
+                    readOnly
+                    className="w-full bg-[#F3F3F3] rounded px-4 py-3 text-black placeholder:text-gray-500 outline-none text-[15px] cursor-pointer"
+                    placeholder="Start date - Due date"
+                    value={
+                      form.start_date && form.due_date
+                        ? `${format(new Date(form.start_date), 'yyyy-MM-dd')} → ${format(new Date(form.due_date), 'yyyy-MM-dd')}`
+                        : ''
+                    }
+                    onClick={() => setShowRange(true)}
+                  />
                 </div>
-              </div>
-              <div>
-                <label className="block mb-2 font-medium text-[15px]">Estimated Time</label>
-                <div className="relative">
-                  <input type="text" className="w-full bg-[#F3F3F3] rounded px-4 py-3 pr-10 text-black outline-none text-[15px]" placeholder="Enter estimated time" value={form.estimated} onChange={e => setForm({ ...form, estimated: e.target.value })} />
-                  <FiClock className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none" size={18} />
-                </div>
+                {showRange && (
+                  <div className="absolute z-50 mt-2">
+                    <DateRange
+                      editableDateInputs={true}
+                      onChange={item => {
+                        setDateRange([item.selection]);
+                        setForm(f => ({
+                          ...f,
+                          start_date: item.selection.startDate ? format(item.selection.startDate, 'yyyy-MM-dd') : '',
+                          due_date: item.selection.endDate ? format(item.selection.endDate, 'yyyy-MM-dd') : '',
+                        }));
+                      }}
+                      moveRangeOnFirstSelection={false}
+                      ranges={dateRange}
+                      onRangeFocusChange={() => {}}
+                      showMonthAndYearPickers={true}
+                    />
+                    <div className="flex justify-end mt-2">
+                      <button type="button" className="px-4 py-2 rounded bg-orange-500 text-white" onClick={() => setShowRange(false)}>Done</button>
+                    </div>
+                  </div>
+                )}
               </div>
             </div>
             <div>
               <label className="block mb-2 font-medium text-[15px]">Description</label>
-              <textarea className="w-full bg-[#F3F3F3] rounded px-4 py-3 text-black outline-none text-[15px] min-h-[90px]" rows={4} placeholder="" value={form.description} onChange={e => setForm({ ...form, description: e.target.value })} />
+              <textarea className="w-full bg-[#F3F3F3] rounded px-4 py-3 text-black outline-none text-[15px] min-h-[90px]" rows={4} placeholder="" value={form.description} onChange={handleDetailedChange} />
               <div className="text-right text-xs text-gray-400 mt-1 font-semibold">Upload Files</div>
             </div>
           </div>
@@ -131,21 +397,21 @@ const TasksCreate: React.FC = () => {
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
               <div>
                 <label className="block mb-2 font-medium text-[15px]">Priority</label>
-                <select className="w-full bg-[#F3F3F3] rounded px-4 py-3 text-black outline-none text-[15px]" value={form.priority} onChange={e => setForm({ ...form, priority: e.target.value })}>
+                <select className="w-full bg-[#F3F3F3] rounded px-4 py-3 text-black outline-none text-[15px]" value={form.priority} onChange={handleDetailedChange}>
                   <option value="">Select priority</option>
                   {priorities.map(p => <option key={p}>{p}</option>)}
                 </select>
               </div>
               <div>
                 <label className="block mb-2 font-medium text-[15px]">Status</label>
-                <select className="w-full bg-[#F3F3F3] rounded px-4 py-3 text-black outline-none text-[15px]" value={form.status} onChange={e => setForm({ ...form, status: e.target.value })}>
+                <select className="w-full bg-[#F3F3F3] rounded px-4 py-3 text-black outline-none text-[15px]" value={form.status} onChange={handleDetailedChange}>
                   <option value="">Select status</option>
                   {statuses.map(s => <option key={s}>{s}</option>)}
                 </select>
               </div>
               <div>
                 <label className="block mb-2 font-medium text-[15px]">Reviewer/Approver</label>
-                <select className="w-full bg-[#F3F3F3] rounded px-4 py-3 text-black outline-none text-[15px]" value={form.reviewer} onChange={e => setForm({ ...form, reviewer: e.target.value })}>
+                <select className="w-full bg-[#F3F3F3] rounded px-4 py-3 text-black outline-none text-[15px]" value={form.reviewer} onChange={handleDetailedChange}>
                   <option value="">Select Reviewer/Approver</option>
                   {reviewers.map(r => <option key={r.id} value={r.name}>{r.name}</option>)}
                 </select>
@@ -158,7 +424,7 @@ const TasksCreate: React.FC = () => {
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
               <div>
                 <label className="block mb-2 font-medium text-[15px]">Start After</label>
-                <input className="w-full bg-[#F3F3F3] rounded px-4 py-3 text-black outline-none text-[15px]" placeholder="Select Start After" value={form.startAfter} onChange={e => setForm({ ...form, startAfter: e.target.value })} />
+                <input className="w-full bg-[#F3F3F3] rounded px-4 py-3 text-black outline-none text-[15px]" placeholder="Select Start After" value={form.startAfter} onChange={handleDetailedChange} />
               </div>
               <div>
                 <label className="block mb-2 font-medium text-[15px]">Blocked By</label>
@@ -181,15 +447,15 @@ const TasksCreate: React.FC = () => {
             </div>
             <div className="ml-2 space-y-2">
               <label className="flex items-center gap-2 text-[15px]">
-                <input type="checkbox" className="accent-orange-500 w-4 h-4" checked={form.notifyStatus} onChange={e => setForm({ ...form, notifyStatus: e.target.checked })} />
+                <input type="checkbox" className="accent-orange-500 w-4 h-4" checked={form.notifyStatus} onChange={handleDetailedChange} />
                 Notify on status change
               </label>
               <label className="flex items-center gap-2 text-[15px]">
-                <input type="checkbox" className="accent-orange-500 w-4 h-4" checked={form.notifyComment} onChange={e => setForm({ ...form, notifyComment: e.target.checked })} />
+                <input type="checkbox" className="accent-orange-500 w-4 h-4" checked={form.notifyComment} onChange={handleDetailedChange} />
                 Notify on comment
               </label>
               <label className="flex items-center gap-2 text-[15px]">
-                <input type="checkbox" className="accent-orange-500 w-4 h-4" checked={form.notifySubmission} onChange={e => setForm({ ...form, notifySubmission: e.target.checked })} />
+                <input type="checkbox" className="accent-orange-500 w-4 h-4" checked={form.notifySubmission} onChange={handleDetailedChange} />
                 Notify reviewer on submission
               </label>
             </div>
@@ -205,7 +471,9 @@ const TasksCreate: React.FC = () => {
           {/* Actions */}
           <div className="flex justify-between items-center mt-4">
             <button type="button" className="text-black font-semibold underline text-[15px]">Save as Draft</button>
-            <button type="submit" className="bg-orange-500 text-white font-semibold rounded px-6 py-2 hover:bg-orange-600 text-[15px]">Submit</button>
+            <button type="submit" className="bg-orange-500 text-white font-semibold rounded px-6 py-2 hover:bg-orange-600 text-[15px]" disabled={loading}>
+              {loading ? 'Submitting...' : 'Submit'}
+            </button>
           </div>
         </form>
       )}

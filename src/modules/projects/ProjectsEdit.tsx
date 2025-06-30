@@ -1,18 +1,14 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import api from '../../services/api';
 import GenericForm from '../../components/GenericForm';
 import modules from '../../config/loadModules';
 import type { ModuleConfig } from '../../config/types';
 
-interface ProjectsEditProps {
-    moduleName: string;
-}
-
-const ProjectsEdit: React.FC<ProjectsEditProps> = ({ moduleName }) => {
+const ProjectsEdit: React.FC<{ moduleName: string }> = ({ moduleName }) => {
     const { id } = useParams<{ id: string }>();
-    const config: ModuleConfig | undefined = moduleName ? modules[moduleName] : undefined;
     const navigate = useNavigate();
+    const config: ModuleConfig | undefined = moduleName ? modules[moduleName] : undefined;
 
     if (!config) return (
         <div className="text-lg font-medium text-red-600">Module not found</div>

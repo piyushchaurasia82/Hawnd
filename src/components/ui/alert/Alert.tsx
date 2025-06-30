@@ -1,4 +1,5 @@
 import { Link } from "react-router-dom";
+import React, { useEffect, useRef } from "react";
 
 interface AlertProps {
   variant: "success" | "error" | "warning" | "info"; // Alert type
@@ -7,6 +8,8 @@ interface AlertProps {
   showLink?: boolean; // Whether to show the "Learn More" link
   linkHref?: string; // Link URL
   linkText?: string; // Link text
+  duration?: number; // Duration in ms for the progress bar
+  onClose?: () => void; // Optional close handler
 }
 
 const Alert: React.FC<AlertProps> = ({
@@ -16,38 +19,64 @@ const Alert: React.FC<AlertProps> = ({
   showLink = false,
   linkHref = "#",
   linkText = "Learn more",
+  duration = 5000,
+  onClose,
 }) => {
-  // Tailwind classes for each variant
+  // Enhanced Tailwind classes for each variant with better visibility
   const variantClasses = {
     success: {
       container:
-        "border-success-500 bg-success-50 dark:border-success-500/30 dark:bg-success-500/15",
-      icon: "text-success-500",
+        "border-green-500 bg-green-50 dark:border-green-500/30 dark:bg-green-500/15 shadow-lg",
+      icon: "text-green-600",
+      title: "text-green-800",
+      message: "text-green-700",
+      bar: "bg-green-500",
     },
     error: {
       container:
-        "border-error-500 bg-error-50 dark:border-error-500/30 dark:bg-error-500/15",
-      icon: "text-error-500",
+        "border-red-500 bg-red-50 dark:border-red-500/30 dark:bg-red-500/15 shadow-lg",
+      icon: "text-red-600",
+      title: "text-red-800",
+      message: "text-red-700",
+      bar: "bg-red-500",
     },
     warning: {
       container:
-        "border-warning-500 bg-warning-50 dark:border-warning-500/30 dark:bg-warning-500/15",
-      icon: "text-warning-500",
+        "border-yellow-500 bg-yellow-50 dark:border-yellow-500/30 dark:bg-yellow-500/15 shadow-lg",
+      icon: "text-yellow-600",
+      title: "text-yellow-800",
+      message: "text-yellow-700",
+      bar: "bg-yellow-500",
     },
     info: {
       container:
-        "border-blue-light-500 bg-blue-light-50 dark:border-blue-light-500/30 dark:bg-blue-light-500/15",
-      icon: "text-blue-light-500",
+        "border-blue-500 bg-blue-50 dark:border-blue-500/30 dark:bg-blue-500/15 shadow-lg",
+      icon: "text-blue-600",
+      title: "text-blue-800",
+      message: "text-blue-700",
+      bar: "bg-blue-500",
     },
   };
+
+  // Progress bar animation
+  const barRef = useRef<HTMLDivElement>(null);
+  useEffect(() => {
+    if (barRef.current) {
+      barRef.current.style.width = '100%';
+      barRef.current.style.transition = `width ${duration}ms linear`;
+      setTimeout(() => {
+        if (barRef.current) barRef.current.style.width = '0%';
+      }, 10); // slight delay to trigger transition
+    }
+  }, [duration]);
 
   // Icon for each variant
   const icons = {
     success: (
       <svg
         className="fill-current"
-        width="24"
-        height="24"
+        width="28"
+        height="28"
         viewBox="0 0 24 24"
         xmlns="http://www.w3.org/2000/svg"
       >
@@ -61,8 +90,8 @@ const Alert: React.FC<AlertProps> = ({
     error: (
       <svg
         className="fill-current"
-        width="24"
-        height="24"
+        width="28"
+        height="28"
         viewBox="0 0 24 24"
         fill="none"
         xmlns="http://www.w3.org/2000/svg"
@@ -78,8 +107,8 @@ const Alert: React.FC<AlertProps> = ({
     warning: (
       <svg
         className="fill-current"
-        width="24"
-        height="24"
+        width="28"
+        height="28"
         viewBox="0 0 24 24"
         fill="none"
         xmlns="http://www.w3.org/2000/svg"
@@ -95,8 +124,8 @@ const Alert: React.FC<AlertProps> = ({
     info: (
       <svg
         className="fill-current"
-        width="24"
-        height="24"
+        width="28"
+        height="28"
         viewBox="0 0 24 24"
         fill="none"
         xmlns="http://www.w3.org/2000/svg"
@@ -113,29 +142,42 @@ const Alert: React.FC<AlertProps> = ({
 
   return (
     <div
-      className={`rounded-xl border p-4 ${variantClasses[variant].container}`}
+      className={`relative w-full rounded-lg border p-3 ${variantClasses[variant].container}`}
     >
-      <div className="flex items-start gap-3">
-        <div className={`-mt-0.5 ${variantClasses[variant].icon}`}>
+      {/* Close button */}
+      {onClose && (
+        <button
+          onClick={onClose}
+          className="absolute top-2 right-2 text-gray-400 hover:text-gray-700 p-1 rounded-full focus:outline-none"
+          aria-label="Close"
+        >
+          <svg width="18" height="18" viewBox="0 0 20 20" fill="none"><path d="M6 6L14 14M6 14L14 6" stroke="currentColor" strokeWidth="2" strokeLinecap="round"/></svg>
+        </button>
+      )}
+      <div className="flex items-start gap-2">
+        <div className={`mt-0.5 ${variantClasses[variant].icon}`}>
           {icons[variant]}
         </div>
-
-        <div>
-          <h4 className="mb-1 text-sm font-semibold text-gray-800 dark:text-white/90">
-            {title}
-          </h4>
-
-          <p className="text-sm text-gray-500 dark:text-gray-400">{message}</p>
-
+        <div className="flex-1">
+          <h4 className={`mb-1 text-sm font-semibold ${variantClasses[variant].title}`}>{title}</h4>
+          <p className={`text-xs leading-relaxed ${variantClasses[variant].message}`}>{message}</p>
           {showLink && (
             <Link
               to={linkHref}
-              className="inline-block mt-3 text-sm font-medium text-gray-500 underline dark:text-gray-400"
+              className="inline-block mt-2 text-xs font-medium text-gray-500 underline dark:text-gray-400 hover:text-gray-700"
             >
               {linkText}
             </Link>
           )}
         </div>
+      </div>
+      {/* Progress Bar */}
+      <div className="w-full h-0.5 mt-2 bg-gray-200 rounded overflow-hidden">
+        <div
+          ref={barRef}
+          className={`h-0.5 ${variantClasses[variant].bar}`}
+          style={{ width: '100%' }}
+        ></div>
       </div>
     </div>
   );
