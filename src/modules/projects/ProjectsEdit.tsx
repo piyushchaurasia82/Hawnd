@@ -10,7 +10,6 @@ const ProjectsEdit: React.FC = () => {
         title: '',
         owner: '',
         startDate: '',
-        endDate: '',
         description: '',
         status: '',
         priority: '',
@@ -38,19 +37,32 @@ const ProjectsEdit: React.FC = () => {
             fetch(`${API_BASE_URL}/api/projectmanagement/projects/${id}/`)
                 .then(res => res.json())
                 .then(data => {
+                    const project = data.data;
                     setDetailedForm({
-                        title: data.project_title || '',
-                        owner: data.project_owner || '',
-                        startDate: data.start_date ? data.start_date.slice(0, 10) : '',
-                        endDate: data.end_date ? data.end_date.slice(0, 10) : '',
-                        description: data.description || '',
-                        status: data.status || '',
-                        priority: data.priority || '',
-                        tags: data.document_tagging || '',
-                        integrationTag: data.integration_tag || '',
-                        clientAccess: !!data.client_access,
-                        type: data.internal_external ? (data.internal_external.charAt(0).toUpperCase() + data.internal_external.slice(1).toLowerCase()) : 'Internal',
+                        title: project.project_title || '',
+                        owner: project.project_owner || '',
+                        startDate: project.start_date ? project.start_date.slice(0, 10) : '',
+                        description: project.description || '',
+                        status: project.status || '',
+                        priority: project.priority || '',
+                        tags: project.document_tagging || '',
+                        integrationTag: project.integration_tag || '',
+                        clientAccess: !!project.client_access,
+                        type: project.internal_external ? (project.internal_external.charAt(0).toUpperCase() + project.internal_external.slice(1).toLowerCase()) : 'Internal',
                     });
+                    // Ensure current owner is in users list
+                    if (project.project_owner) {
+                        setUsers(prevUsers => {
+                            const exists = prevUsers.some(u => `${u.first_name} ${u.last_name}`.trim() === project.project_owner);
+                            if (!exists) {
+                                return [
+                                    { id: -1, first_name: project.project_owner.split(' ')[0] || project.project_owner, last_name: project.project_owner.split(' ').slice(1).join(' ') || '' },
+                                    ...prevUsers
+                                ];
+                            }
+                            return prevUsers;
+                        });
+                    }
                 })
                 .catch(() => showToast({ type: 'error', title: 'Error', message: 'Failed to fetch project data.' }))
                 .finally(() => setLoading(false));
@@ -82,7 +94,6 @@ const ProjectsEdit: React.FC = () => {
             project_title: detailedForm.title,
             project_owner: detailedForm.owner,
             start_date: detailedForm.startDate,
-            end_date: detailedForm.endDate,
             description: detailedForm.description,
             status: detailedForm.status,
             priority: detailedForm.priority,
