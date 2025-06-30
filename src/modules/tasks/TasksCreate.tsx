@@ -1,6 +1,6 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { FiCalendar, FiClock } from 'react-icons/fi';
-import { useLocation, useParams } from 'react-router-dom';
+import { useLocation, useParams, useNavigate } from 'react-router-dom';
 import { DateRange } from 'react-date-range';
 import type { Range } from 'react-date-range';
 import 'react-date-range/dist/styles.css';
@@ -24,10 +24,12 @@ const TasksCreate: React.FC = () => {
   const location = useLocation();
   const { id: projectId } = useParams<{ id: string }>();
   const { showToast } = useToast();
+  const navigate = useNavigate();
   const [tab, setTab] = useState<'quick' | 'detailed'>('quick');
   const [quickForm, setQuickForm] = useState({
     title: '',
     assignee: '',
+    project_id: '',
   });
   const [form, setForm] = useState({
     title: '',
@@ -45,6 +47,7 @@ const TasksCreate: React.FC = () => {
     notifyStatus: false,
     notifyComment: false,
     notifySubmission: false,
+    project_id: '',
   });
   const [showRange, setShowRange] = useState(false);
   const [dateRange, setDateRange] = useState<Range[]>([
@@ -56,6 +59,8 @@ const TasksCreate: React.FC = () => {
   ]);
   const [loading, setLoading] = useState(false);
   const [fieldErrors, setFieldErrors] = useState<{ [key: string]: string }>({});
+  const [users, setUsers] = useState<{ id: number; first_name: string; last_name: string }[]>([]);
+  const [projects, setProjects] = useState<{ id: number; project_title: string }[]>([]);
 
   // Read startDate and endDate from query params
   React.useEffect(() => {
@@ -70,6 +75,25 @@ const TasksCreate: React.FC = () => {
     }]);
   }, [location.search]);
 
+  useEffect(() => {
+    const API_BASE_URL = import.meta.env.VITE_API_BASE_URL;
+    fetch(`${API_BASE_URL}/api/projectmanagement/users/`)
+      .then(res => res.json())
+      .then(data => {
+        setUsers(Array.isArray(data) ? data : []);
+      })
+      .catch(() => setUsers([]));
+    // Fetch projects if no projectId
+    if (!projectId) {
+      fetch(`${API_BASE_URL}/api/projectmanagement/projects/`)
+        .then(res => res.json())
+        .then(data => {
+          setProjects(Array.isArray(data.data) ? data.data : []);
+        })
+        .catch(() => setProjects([]));
+    }
+  }, [projectId]);
+
   // Detailed form submit handler
   const handleDetailedSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -78,6 +102,7 @@ const TasksCreate: React.FC = () => {
     const errors: { [key: string]: string } = {};
     if (!form.title) errors.title = 'Task Title is required';
     if (!form.assignee) errors.assignee = 'Assignee is required';
+    if (!form.project_id) errors.project_id = 'Project is required';
     if (Object.keys(errors).length > 0) {
       setFieldErrors(errors);
       showToast({ type: 'error', title: 'Validation Error', message: 'Please fill all required fields.' });
@@ -86,8 +111,8 @@ const TasksCreate: React.FC = () => {
     setLoading(true);
     try {
       const API_BASE_URL = import.meta.env.VITE_API_BASE_URL;
-      const payload = {
-        project_id: projectId ? Number(projectId) : undefined,
+      let payload: any = {
+        project_id: projectId ? Number(projectId) : form.project_id ? Number(form.project_id) : undefined,
         task_title: form.title,
         assignees: form.assignee,
         date: form.start_date ? new Date(form.start_date).toISOString() : undefined,
@@ -104,6 +129,7 @@ const TasksCreate: React.FC = () => {
         on_comment_notification: form.notifyComment ? 'YES' : 'NO',
         reviewer_on_submission_notification: form.notifySubmission ? 'YES' : 'NO',
       };
+      payload = Object.fromEntries(Object.entries(payload).filter(([_, v]) => v !== '' && v !== undefined && v !== null));
       const res = await fetch(`${API_BASE_URL}/api/projectmanagement/tasks/`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -111,11 +137,73 @@ const TasksCreate: React.FC = () => {
       });
       if (!res.ok) throw new Error('Failed to create task');
       showToast({ type: 'success', title: 'Success', message: 'Task created successfully!' });
-      // Optionally, redirect or reset form here
+      navigate(-1);
     } catch (err: any) {
       showToast({ type: 'error', title: 'Error', message: err.message || 'Error occurred' });
     } finally {
       setLoading(false);
+    }
+  };
+
+  // Quick Create submit handler
+  const handleQuickSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setFieldErrors({});
+    // Validation
+    const errors: { [key: string]: string } = {};
+    if (!quickForm.title) errors.title = 'Task Title is required';
+    if (!quickForm.assignee) errors.assignee = 'Assignee is required';
+    if (!quickForm.project_id) errors.project_id = 'Project is required';
+    if (Object.keys(errors).length > 0) {
+      setFieldErrors(errors);
+      showToast({ type: 'error', title: 'Validation Error', message: 'Please fill all required fields.' });
+      return;
+    }
+    setLoading(true);
+    try {
+      const API_BASE_URL = import.meta.env.VITE_API_BASE_URL;
+      let payload: any = {
+        project_id: projectId ? Number(projectId) : quickForm.project_id ? Number(quickForm.project_id) : undefined,
+        task_title: quickForm.title,
+        assignees: quickForm.assignee,
+      };
+      payload = Object.fromEntries(Object.entries(payload).filter(([_, v]) => v !== '' && v !== undefined && v !== null));
+      const res = await fetch(`${API_BASE_URL}/api/projectmanagement/tasks/`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload),
+      });
+      if (!res.ok) throw new Error('Failed to create task');
+      showToast({ type: 'success', title: 'Success', message: 'Task created successfully!' });
+      navigate(-1);
+    } catch (err: any) {
+      showToast({ type: 'error', title: 'Error', message: err.message || 'Error occurred' });
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleQuickChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
+    setQuickForm({ ...quickForm, [e.target.name]: e.target.value });
+    // Remove error for this field
+    if (fieldErrors[e.target.name]) {
+      setFieldErrors(prev => {
+        const newErrors = { ...prev };
+        delete newErrors[e.target.name];
+        return newErrors;
+      });
+    }
+  };
+
+  const handleDetailedChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) => {
+    setForm({ ...form, [e.target.name]: e.target.value });
+    // Remove error for this field
+    if (fieldErrors[e.target.name]) {
+      setFieldErrors(prev => {
+        const newErrors = { ...prev };
+        delete newErrors[e.target.name];
+        return newErrors;
+      });
     }
   };
 
@@ -142,16 +230,36 @@ const TasksCreate: React.FC = () => {
       </div>
       {/* Tab Content */}
       {tab === 'quick' && (
-        <form className="space-y-6 md:w-[50%]">
+        <form className="space-y-6 md:w-[50%]" onSubmit={handleQuickSubmit}>
+          {!projectId && (
+            <div>
+              <label className="block mb-2 font-medium">
+                Project <span className="text-red-500">*</span>
+              </label>
+              <select
+                name="project_id"
+                className="w-full bg-[#F3F3F3] rounded px-4 py-3 text-black outline-none"
+                value={quickForm.project_id || ''}
+                onChange={handleQuickChange}
+              >
+                <option value="">Select project</option>
+                {projects.map(project => (
+                  <option key={project.id} value={project.id}>{project.project_title}</option>
+                ))}
+              </select>
+              {fieldErrors.project_id && <div className="text-red-500 text-sm mt-1">{fieldErrors.project_id}</div>}
+            </div>
+          )}
           <div>
             <label className="block mb-2 font-medium">
               Task Title <span className="text-red-500">*</span>
             </label>
             <input
+              name="title"
               className="w-full bg-[#F3F3F3] rounded px-4 py-3 text-black placeholder:text-gray-500 outline-none"
               placeholder="Enter task title"
               value={quickForm.title}
-              onChange={e => setQuickForm({ ...quickForm, title: e.target.value })}
+              onChange={handleQuickChange}
             />
             {fieldErrors.title && <div className="text-red-500 text-sm mt-1">{fieldErrors.title}</div>}
           </div>
@@ -160,18 +268,24 @@ const TasksCreate: React.FC = () => {
               Assignee <span className="text-red-500">*</span>
             </label>
             <select
+              name="assignee"
               className="w-full bg-[#F3F3F3] rounded px-4 py-3 text-black outline-none"
               value={quickForm.assignee}
-              onChange={e => setQuickForm({ ...quickForm, assignee: e.target.value })}
+              onChange={handleQuickChange}
             >
               <option value="">Select assignee</option>
-              {assignees.map(a => (
-                <option key={a.id} value={a.name}>{a.name}</option>
-              ))}
+              {users.map(user => {
+                const fullName = `${user.first_name} ${user.last_name}`.trim();
+                return (
+                  <option key={user.id} value={user.id}>{fullName}</option>
+                );
+              })}
             </select>
             {fieldErrors.assignee && <div className="text-red-500 text-sm mt-1">{fieldErrors.assignee}</div>}
           </div>
-          <button className="bg-orange-500 text-white font-semibold rounded px-6 py-2 mt-2 hover:bg-orange-600">Add Task</button>
+          <button className="bg-orange-500 text-white font-semibold rounded px-6 py-2 mt-2 hover:bg-orange-600" type="submit" disabled={loading}>
+            {loading ? 'Submitting...' : 'Add Task'}
+          </button>
         </form>
       )}
       {tab === 'detailed' && (
@@ -180,22 +294,55 @@ const TasksCreate: React.FC = () => {
           <div>
             <div className="font-bold text-[17px] mb-4">Basic Information</div>
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
+              {!projectId && (
+                <div>
+                  <label className="block mb-2 font-medium text-[15px]">
+                    Project <span className="text-red-500">*</span>
+                  </label>
+                  <select
+                    name="project_id"
+                    className="w-full bg-[#F3F3F3] rounded px-4 py-3 text-black outline-none text-[15px]"
+                    value={form.project_id || ''}
+                    onChange={handleDetailedChange}
+                  >
+                    <option value="">Select project</option>
+                    {projects.map(project => (
+                      <option key={project.id} value={project.id}>{project.project_title}</option>
+                    ))}
+                  </select>
+                  {fieldErrors.project_id && <div className="text-red-500 text-sm mt-1">{fieldErrors.project_id}</div>}
+                </div>
+              )}
               <div>
                 <label className="block mb-2 font-medium text-[15px]">
                   Task Title <span className="text-red-500">*</span>
                 </label>
-                <input className="w-full bg-[#F3F3F3] rounded px-4 py-3 text-black placeholder:text-gray-500 outline-none text-[15px]" placeholder="Enter task title" value={form.title} onChange={e => setForm({ ...form, title: e.target.value })} />
+                <input
+                  name="title"
+                  className="w-full bg-[#F3F3F3] rounded px-4 py-3 text-black placeholder:text-gray-500 outline-none text-[15px]"
+                  placeholder="Enter task title"
+                  value={form.title}
+                  onChange={handleDetailedChange}
+                />
                 {fieldErrors.title && <div className="text-red-500 text-sm mt-1">{fieldErrors.title}</div>}
               </div>
               <div>
                 <label className="block mb-2 font-medium text-[15px]">
                   Assignees <span className="text-red-500">*</span>
                 </label>
-                <select className="w-full bg-[#F3F3F3] rounded px-4 py-3 text-black outline-none text-[15px]" value={form.assignee} onChange={e => setForm({ ...form, assignee: e.target.value })}>
+                <select
+                  name="assignee"
+                  className="w-full bg-[#F3F3F3] rounded px-4 py-3 text-black outline-none text-[15px]"
+                  value={form.assignee}
+                  onChange={handleDetailedChange}
+                >
                   <option value="">Select assignee</option>
-                  {assignees.map(a => (
-                    <option key={a.id} value={a.name}>{a.name}</option>
-                  ))}
+                  {users.map(user => {
+                    const fullName = `${user.first_name} ${user.last_name}`.trim();
+                    return (
+                      <option key={user.id} value={user.id}>{fullName}</option>
+                    );
+                  })}
                 </select>
                 {fieldErrors.assignee && <div className="text-red-500 text-sm mt-1">{fieldErrors.assignee}</div>}
               </div>
@@ -240,7 +387,7 @@ const TasksCreate: React.FC = () => {
             </div>
             <div>
               <label className="block mb-2 font-medium text-[15px]">Description</label>
-              <textarea className="w-full bg-[#F3F3F3] rounded px-4 py-3 text-black outline-none text-[15px] min-h-[90px]" rows={4} placeholder="" value={form.description} onChange={e => setForm({ ...form, description: e.target.value })} />
+              <textarea className="w-full bg-[#F3F3F3] rounded px-4 py-3 text-black outline-none text-[15px] min-h-[90px]" rows={4} placeholder="" value={form.description} onChange={handleDetailedChange} />
               <div className="text-right text-xs text-gray-400 mt-1 font-semibold">Upload Files</div>
             </div>
           </div>
@@ -250,21 +397,21 @@ const TasksCreate: React.FC = () => {
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
               <div>
                 <label className="block mb-2 font-medium text-[15px]">Priority</label>
-                <select className="w-full bg-[#F3F3F3] rounded px-4 py-3 text-black outline-none text-[15px]" value={form.priority} onChange={e => setForm({ ...form, priority: e.target.value })}>
+                <select className="w-full bg-[#F3F3F3] rounded px-4 py-3 text-black outline-none text-[15px]" value={form.priority} onChange={handleDetailedChange}>
                   <option value="">Select priority</option>
                   {priorities.map(p => <option key={p}>{p}</option>)}
                 </select>
               </div>
               <div>
                 <label className="block mb-2 font-medium text-[15px]">Status</label>
-                <select className="w-full bg-[#F3F3F3] rounded px-4 py-3 text-black outline-none text-[15px]" value={form.status} onChange={e => setForm({ ...form, status: e.target.value })}>
+                <select className="w-full bg-[#F3F3F3] rounded px-4 py-3 text-black outline-none text-[15px]" value={form.status} onChange={handleDetailedChange}>
                   <option value="">Select status</option>
                   {statuses.map(s => <option key={s}>{s}</option>)}
                 </select>
               </div>
               <div>
                 <label className="block mb-2 font-medium text-[15px]">Reviewer/Approver</label>
-                <select className="w-full bg-[#F3F3F3] rounded px-4 py-3 text-black outline-none text-[15px]" value={form.reviewer} onChange={e => setForm({ ...form, reviewer: e.target.value })}>
+                <select className="w-full bg-[#F3F3F3] rounded px-4 py-3 text-black outline-none text-[15px]" value={form.reviewer} onChange={handleDetailedChange}>
                   <option value="">Select Reviewer/Approver</option>
                   {reviewers.map(r => <option key={r.id} value={r.name}>{r.name}</option>)}
                 </select>
@@ -277,28 +424,11 @@ const TasksCreate: React.FC = () => {
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
               <div>
                 <label className="block mb-2 font-medium text-[15px]">Start After</label>
-                <input className="w-full bg-[#F3F3F3] rounded px-4 py-3 text-black outline-none text-[15px]" placeholder="Select Start After" value={form.startAfter} onChange={e => setForm({ ...form, startAfter: e.target.value })} />
+                <input className="w-full bg-[#F3F3F3] rounded px-4 py-3 text-black outline-none text-[15px]" placeholder="Select Start After" value={form.startAfter} onChange={handleDetailedChange} />
               </div>
-              <div className="md:col-span-2 flex flex-col md:flex-row gap-4">
-                <div className="flex-1">
-                  <label className="block mb-2 font-medium text-[15px]">Blocked By</label>
-                  <input className="w-full bg-[#F3F3F3] rounded px-4 py-3 text-black outline-none text-[15px]" placeholder="Select Blocked By" value={form.blockedBy} onChange={e => setForm({ ...form, blockedBy: e.target.value })} />
-                </div>
-                <div className="flex-1">
-                  <label className="block mb-2 font-medium text-[15px]">Estimated Time</label>
-                  <div className="relative">
-                    <input
-                      className="w-full bg-[#F3F3F3] rounded px-4 py-3 pr-10 text-black outline-none text-[15px] placeholder:text-gray-500"
-                      placeholder="Enter estimated time"
-                      value={form.estimated}
-                      onChange={e => setForm({ ...form, estimated: e.target.value })}
-                    />
-                    <span className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-500 pointer-events-none">
-                      {/* @ts-ignore */}
-                      {require('../../icons').TimeIcon && React.createElement(require('../../icons').TimeIcon, { width: 20, height: 20 })}
-                    </span>
-                  </div>
-                </div>
+              <div>
+                <label className="block mb-2 font-medium text-[15px]">Blocked By</label>
+                <input className="w-full bg-[#F3F3F3] rounded px-4 py-3 text-black outline-none text-[15px]" placeholder="Select Blocked By" value={form.blockedBy} onChange={e => setForm({ ...form, blockedBy: e.target.value })} />
               </div>
             </div>
           </div>
@@ -317,15 +447,15 @@ const TasksCreate: React.FC = () => {
             </div>
             <div className="ml-2 space-y-2">
               <label className="flex items-center gap-2 text-[15px]">
-                <input type="checkbox" className="accent-orange-500 w-4 h-4" checked={form.notifyStatus} onChange={e => setForm({ ...form, notifyStatus: e.target.checked })} />
+                <input type="checkbox" className="accent-orange-500 w-4 h-4" checked={form.notifyStatus} onChange={handleDetailedChange} />
                 Notify on status change
               </label>
               <label className="flex items-center gap-2 text-[15px]">
-                <input type="checkbox" className="accent-orange-500 w-4 h-4" checked={form.notifyComment} onChange={e => setForm({ ...form, notifyComment: e.target.checked })} />
+                <input type="checkbox" className="accent-orange-500 w-4 h-4" checked={form.notifyComment} onChange={handleDetailedChange} />
                 Notify on comment
               </label>
               <label className="flex items-center gap-2 text-[15px]">
-                <input type="checkbox" className="accent-orange-500 w-4 h-4" checked={form.notifySubmission} onChange={e => setForm({ ...form, notifySubmission: e.target.checked })} />
+                <input type="checkbox" className="accent-orange-500 w-4 h-4" checked={form.notifySubmission} onChange={handleDetailedChange} />
                 Notify reviewer on submission
               </label>
             </div>

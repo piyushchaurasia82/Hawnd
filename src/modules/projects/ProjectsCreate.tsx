@@ -187,10 +187,12 @@ const ProjectsCreate: React.FC<ProjectsCreateProps> = ({ moduleName }) => {
         }
         setLoading(true);
         try {
+            // Only send keys with data
+            let payload = Object.fromEntries(Object.entries(data).filter(([_, v]) => v !== '' && v !== undefined && v !== null));
             const res = await fetch(`${API_BASE_URL}/api/projectmanagement/projects/`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify(data),
+                body: JSON.stringify(payload),
             });
             if (!res.ok) throw new Error('Failed to create project');
             showToast({ type: 'success', title: 'Success', message: 'Project created successfully!' });
@@ -218,10 +220,12 @@ const ProjectsCreate: React.FC<ProjectsCreateProps> = ({ moduleName }) => {
         }
         setLoading(true);
         try {
+            // Only send keys with data
+            let payload = Object.fromEntries(Object.entries(data).filter(([_, v]) => v !== '' && v !== undefined && v !== null));
             const res = await fetch(`${API_BASE_URL}/api/projectmanagement/projects/`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify(data),
+                body: JSON.stringify(payload),
             });
             if (!res.ok) throw new Error('Failed to create project');
             showToast({ type: 'success', title: 'Success', message: 'Project created successfully!' });

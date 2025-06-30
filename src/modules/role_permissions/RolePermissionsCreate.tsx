@@ -186,41 +186,43 @@ const RolePermissionsCreate: React.FC<RolePermissionsCreateProps> = ({ moduleNam
     };
 
     return (
-        <div className="p-5 max-w-7xl mx-auto">
-            <h1 className="text-2xl font-bold mb-3">Create Role Permission</h1>
-            <div className="border-b border-gray-200 mb-4">
-                <nav className="flex space-x-8 text-sm" aria-label="Tabs">
-                    {/* No tabs, but keep structure for consistency */}
-                </nav>
-            </div>
+        <div className="p-8 max-w-7xl">
+            <h1 className="text-2xl font-bold mb-8">Create Role Permission</h1>
             <form onSubmit={handleSubmit}>
-                <div className="mb-3">
-                    <label className="block font-semibold mb-1 text-m" htmlFor="role">Role</label>
-                    <SingleSelectDropdown
-                        options={roles.map((role) => ({ value: role.id, label: role.name }))}
-                        selectedValue={formData.role}
-                        onChange={(value) => setFormData((prev) => ({ ...prev, role: value }))}
-                        label="Role"
-                    />
+                <div className="flex flex-row gap-4 items-start mb-0">
+                    <div style={{ width: 420 }}>
+                        <SingleSelectDropdown
+                            options={roles.map(r => ({ value: r.id, label: r.name }))}
+                            selectedValue={formData.role}
+                            onChange={val => setFormData(prev => ({ ...prev, role: val }))}
+                            label="Role"
+                        />
+                    </div>
+                    <div style={{ width: 420 }}>
+                        <MultiSelectDropdown
+                            options={permissions.map(p => ({ value: p.id, label: p.code_name }))}
+                            selectedValues={formData.permission}
+                            onChange={handleMultiSelect}
+                            label="Permissions"
+                        />
+                    </div>
                 </div>
-                <div className="mb-4">
-                    <label className="block font-semibold mb-1 text-m" htmlFor="permission">Permissions</label>
-                    <MultiSelectDropdown
-                        options={permissions.map((perm) => ({ value: perm.id, label: perm.code_name }))}
-                        selectedValues={formData.permission}
-                        onChange={handleMultiSelect}
-                        label="Permissions"
-                    />
-                </div>
-                <div className="flex justify-end">
+                <div className="flex flex-row gap-2 mt-8">
+                    <button
+                        type="button"
+                        className="bg-gray-100 text-black px-6 py-2 rounded mr-2 border border-gray-200 hover:bg-gray-200"
+                        onClick={() => navigate(`/${moduleName}`)}
+                    >
+                        Cancel
+                    </button>
                     <button
                         type="submit"
-                        className="bg-orange-500 text-white font-bold rounded px-5 py-2 text-sm shadow hover:bg-orange-600 transition"
+                        className="bg-orange-400 text-white px-6 py-2 rounded hover:bg-orange-500 font-semibold"
+                        disabled={!formData.role || formData.permission.length === 0}
                     >
                         Create Role Permission
                     </button>
                 </div>
-                {error && <div className="text-red-600 mt-2 text-xs">{error}</div>}
             </form>
         </div>
     );
