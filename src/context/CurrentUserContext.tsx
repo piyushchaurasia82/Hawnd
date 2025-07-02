@@ -1,6 +1,7 @@
 import React, { createContext, useContext, useEffect, useState } from 'react';
 import type { ReactNode } from 'react';
 import api, { tokenManager } from '../services/api';
+import { useNavigate } from 'react-router-dom';
 
 interface CurrentUser {
   id: string;
@@ -31,27 +32,14 @@ export const CurrentUserProvider = ({ children }: { children: ReactNode }) => {
   const [user, setUser] = useState<CurrentUser | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
+  const navigate = useNavigate();
 
   const fetchUser = async () => {
     setLoading(true);
     setError('');
     try {
-      // Try to get user ID from token or user_data
-      let userId = null;
-      const userData = tokenManager.getUserData();
-      if (userData && userData.id) {
-        userId = userData.id;
-      } else {
-        const token = tokenManager.getAccessToken();
-        if (token) {
-          try {
-            const payload = JSON.parse(atob(token.split('.')[1]));
-            userId = payload.id || payload.user_id || payload.sub;
-          } catch {}
-        }
-      }
-      if (!userId) throw new Error('User ID not found in token');
-      const res = await api.get(`/api/projectmanagement/users/${userId}/`);
+      // Fetch the current user using the get-profile API
+      const res = await api.get('/api/projectmanagement/get-profile/');
       const u = res.data.data || res.data;
       setUser({
         id: u.id,
@@ -62,6 +50,14 @@ export const CurrentUserProvider = ({ children }: { children: ReactNode }) => {
         isActive: u.is_active === true || u.is_active === 'true' || u.is_active === 'True' || u.is_active === 1,
       });
     } catch (err: any) {
+      // If error is 401, log out
+      if (err?.response?.status === 401) {
+        tokenManager.clearTokens();
+        if (window.location.pathname !== '/auth') {
+          navigate('/auth', { replace: true });
+        }
+        return;
+      }
       setError(err.message || 'Failed to load user data.');
       setUser(null);
     } finally {
@@ -70,7 +66,13 @@ export const CurrentUserProvider = ({ children }: { children: ReactNode }) => {
   };
 
   useEffect(() => {
-    fetchUser();
+    // Only fetch user if not on auth or forgot-password page
+    if (
+      window.location.pathname !== '/auth' &&
+      window.location.pathname !== '/forgot-password'
+    ) {
+      fetchUser();
+    }
   }, []);
 
   return (

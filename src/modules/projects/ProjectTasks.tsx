@@ -4,6 +4,7 @@ import { useNavigate, useParams } from 'react-router-dom';
 import { format } from 'date-fns';
 import type { ModuleConfig } from '../../config/types';
 import modules from '../../config/loadModules';
+import api from '../../services/api';
 
 interface Task {
     id: number;
@@ -15,6 +16,7 @@ interface Task {
     description: string;
     assigned_to_id?: number;
     created_by_id?: number;
+    task_title?: string;
     // Add more fields as needed
 }
 interface ProjectTakProps {
@@ -40,11 +42,9 @@ const ProjectTasks: React.FC<ProjectTakProps> = ({ moduleName }) => {
     useEffect(() => {
         if (!id) return;
         setLoading(true);
-        fetch(`${API_BASE_URL}/api/projectmanagement/tasks/?project_id=${id}`)
-            .then(res => res.json())
-            
-            .then(data => {
-                setTasks(data.data || []);
+        api.get(`${API_BASE_URL}/api/projectmanagement/tasks/?project_id=${id}`)
+            .then(res => {
+                setTasks(res.data.data || []);
             })
             .catch(() => setTasks([]))
             .finally(() => setLoading(false));

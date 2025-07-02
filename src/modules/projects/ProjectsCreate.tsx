@@ -52,23 +52,19 @@ const ProjectsCreate: React.FC<ProjectsCreateProps> = ({ moduleName }) => {
         const fetchUsersWithRoles = async () => {
             try {
                 const [usersRes, userRolesRes, rolesRes] = await Promise.all([
-                    fetch(`${API_BASE_URL}/api/projectmanagement/users/`),
-                    fetch(`${API_BASE_URL}/api/projectmanagement/user_roles/`),
+                    api.get(`${API_BASE_URL}/api/projectmanagement/users/`),
+                    api.get(`${API_BASE_URL}/api/projectmanagement/user_roles/`),
                     api.get('/api/projectmanagement/roles/')
                 ]);
 
-                let usersData = await usersRes.json();
-                let userRolesData = await userRolesRes.json();
+                let usersData = usersRes.data.data || usersRes.data.users || usersRes.data;
+                let userRolesData = userRolesRes.data.data || userRolesRes.data.user_roles || userRolesRes.data;
                 let rolesData = rolesRes.data.data || rolesRes.data.roles || rolesRes.data;
 
                 // Debug logs
                 console.log('Users API:', usersData);
                 console.log('UserRoles API:', userRolesData);
                 console.log('Roles API:', rolesData);
-
-                // Handle common API response shapes
-                usersData = usersData.data || usersData.users || usersData;
-                userRolesData = userRolesData.data || userRolesData.user_roles || userRolesData;
 
                 // If roles API failed or returned an error, fallback to showing all users
                 if (!rolesData || rolesData.error) {
@@ -189,12 +185,7 @@ const ProjectsCreate: React.FC<ProjectsCreateProps> = ({ moduleName }) => {
         try {
             // Only send keys with data
             let payload = Object.fromEntries(Object.entries(data).filter(([_, v]) => v !== '' && v !== undefined && v !== null));
-            const res = await fetch(`${API_BASE_URL}/api/projectmanagement/projects/`, {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify(payload),
-            });
-            if (!res.ok) throw new Error('Failed to create project');
+            await api.post(`${API_BASE_URL}/api/projectmanagement/projects/`, payload);
             showToast({ type: 'success', title: 'Success', message: 'Project created successfully!' });
             navigate(-1);
         } catch (err: any) {
@@ -222,12 +213,7 @@ const ProjectsCreate: React.FC<ProjectsCreateProps> = ({ moduleName }) => {
         try {
             // Only send keys with data
             let payload = Object.fromEntries(Object.entries(data).filter(([_, v]) => v !== '' && v !== undefined && v !== null));
-            const res = await fetch(`${API_BASE_URL}/api/projectmanagement/projects/`, {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify(payload),
-            });
-            if (!res.ok) throw new Error('Failed to create project');
+            await api.post(`${API_BASE_URL}/api/projectmanagement/projects/`, payload);
             showToast({ type: 'success', title: 'Success', message: 'Project created successfully!' });
             navigate(-1);
         } catch (err: any) {

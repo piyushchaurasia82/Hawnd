@@ -1,6 +1,7 @@
-import React from 'react';
+import React, { useEffect } from 'react';
 import BarChartOne from './charts/bar/BarChartOne';
 import { tokenManager } from '../services/api';
+import { useNavigate } from 'react-router-dom';
 
 const mockTeamPerformance = [
   { name: 'Jessica Wagner', role: 'UX/UI Designer', tasksCompleted: 32, tasksInProgress: 4, lastActive: 'Just now' },
@@ -19,6 +20,40 @@ const mockApprovalQueue = [
 ];
 
 const Dashboard: React.FC = () => {
+  const navigate = useNavigate();
+
+  useEffect(() => {
+    const token = tokenManager.getAccessToken();
+    // Use the same isTokenExpired logic as in tokenManager
+    function decodeJwt(token: string) {
+      if (!token) return null;
+      try {
+        const base64Url = token.split('.')[1];
+        const base64 = base64Url.replace(/-/g, '+').replace(/_/g, '/');
+        const jsonPayload = decodeURIComponent(
+          atob(base64)
+            .split('')
+            .map(c => '%' + ('00' + c.charCodeAt(0).toString(16)).slice(-2))
+            .join('')
+        );
+        return JSON.parse(jsonPayload);
+      } catch (error) {
+        return null;
+      }
+    }
+    function isTokenExpired(token: string, thresholdMinutes: number = 0) {
+      const decoded = decodeJwt(token);
+      if (!decoded || !decoded.exp) return true;
+      const expiryTime = decoded.exp * 1000;
+      const currentTime = Date.now();
+      return expiryTime <= currentTime;
+    }
+    if (!token || isTokenExpired(token, 0)) {
+      tokenManager.clearTokens();
+      navigate('/auth', { replace: true });
+    }
+  }, [navigate]);
+
   return (
     <div className="p-8 bg-[#FAFAFA] min-h-screen">
       {/* Welcome Header */}

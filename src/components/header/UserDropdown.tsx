@@ -4,11 +4,20 @@ import { Dropdown } from "../ui/dropdown/Dropdown";
 import { useNavigate } from "react-router-dom";
 import { UserIcon } from '../../icons';
 import { tokenManager } from '../../services/api';
+import { useCurrentUser } from '../../context/CurrentUserContext';
+import { useToast } from '../ui/alert/ToastContext';
 
 export default function UserDropdown() {
   const [isOpen, setIsOpen] = useState(false);
   const navigate = useNavigate();
   const [showSignOutConfirm, setShowSignOutConfirm] = useState(false);
+  const { user } = useCurrentUser();
+  const { showToast } = useToast();
+
+  function getInitials(first: string | undefined, last: string | undefined) {
+    if (!first && !last) return '?';
+    return `${first?.[0] || ''}${last?.[0] || ''}`.toUpperCase();
+  }
 
   function toggleDropdown() {
     setIsOpen(!isOpen);
@@ -23,7 +32,6 @@ export default function UserDropdown() {
     localStorage.removeItem('access_token');
     localStorage.removeItem('refresh_token');
     localStorage.removeItem('session_token');
-    setShowSignOutConfirm(false);
     if (window.setBlurSidebarToggle) window.setBlurSidebarToggle(false);
     closeDropdown();
     navigate('/auth');
@@ -55,7 +63,13 @@ export default function UserDropdown() {
         className="flex items-center text-gray-700 dropdown-toggle"
       >
         <span className="block mr-1 font-medium text-theme-sm">
-          <UserIcon className="w-6 h-6" />
+          {user ? (
+            <span className="h-8 w-8 rounded-full bg-orange-500 flex items-center justify-center text-white font-bold text-base">
+              {getInitials(user.firstName, user.lastName)}
+            </span>
+          ) : (
+            <span className="h-8 w-8 rounded-full bg-orange-500 flex items-center justify-center text-white font-bold text-base">?</span>
+          )}
         </span>
         <svg
           className={`stroke-gray-500 transition-transform duration-200 ${
@@ -92,30 +106,6 @@ export default function UserDropdown() {
         </div>
 
         <ul className="flex flex-col gap-1 pt-4 pb-3 border-b border-gray-200">
-          <li>
-            <DropdownItem
-              onItemClick={handleEditProfile}
-              tag="button"
-              className="flex items-center gap-3 px-3 py-2 font-medium text-gray-700 rounded-lg group text-theme-sm hover:bg-gray-100 hover:text-gray-700"
-            >
-              <svg
-                className="fill-gray-500 group-hover:fill-gray-700"
-                width="24"
-                height="24"
-                viewBox="0 0 24 24"
-                fill="none"
-                xmlns="http://www.w3.org/2000/svg"
-              >
-                <path
-                  fillRule="evenodd"
-                  clipRule="evenodd"
-                  d="M12 3.5C7.30558 3.5 3.5 7.30558 3.5 12C3.5 14.1526 4.3002 16.1184 5.61936 17.616C6.17279 15.3096 8.24852 13.5955 10.7246 13.5955H13.2746C15.7509 13.5955 17.8268 15.31 18.38 17.6167C19.6996 16.119 20.5 14.153 20.5 12C20.5 7.30558 16.6944 3.5 12 3.5ZM17.0246 18.8566V18.8455C17.0246 16.7744 15.3457 15.0955 13.2746 15.0955H10.7246C8.65354 15.0955 6.97461 16.7744 6.97461 18.8455V18.856C8.38223 19.8895 10.1198 20.5 12 20.5C13.8798 20.5 15.6171 19.8898 17.0246 18.8566ZM2 12C2 6.47715 6.47715 2 12 2C17.5228 2 22 6.47715 22 12C22 17.5228 17.5228 22 12 22C6.47715 22 2 17.5228 2 12ZM11.9991 7.25C10.8847 7.25 9.98126 8.15342 9.98126 9.26784C9.98126 10.3823 10.8847 11.2857 11.9991 11.2857C13.1135 11.2857 14.0169 10.3823 14.0169 9.26784C14.0169 8.15342 13.1135 7.25 11.9991 7.25ZM8.48126 9.26784C8.48126 7.32499 10.0563 5.75 11.9991 5.75C13.9419 5.75 15.5169 7.32499 15.5169 9.26784C15.5169 11.2107 13.9419 12.7857 11.9991 12.7857C10.0563 12.7857 8.48126 11.2107 8.48126 9.26784Z"
-                  fill=""
-                />
-              </svg>
-              Edit profile
-            </DropdownItem>
-          </li>
           <li>
             <DropdownItem
               onItemClick={handleAccountSettings}
@@ -167,7 +157,36 @@ export default function UserDropdown() {
           </li>
         </ul>
         <button
-          onClick={() => setShowSignOutConfirm(true)}
+          onClick={() => {
+            let toastId: number | null = null;
+            const removeSelf = () => {
+              if (toastId !== null) {
+                const evt = new CustomEvent('toast:remove', { detail: { id: toastId } });
+                window.dispatchEvent(evt);
+              }
+            };
+            toastId = showToast({
+              type: 'warning',
+              title: 'Confirm Sign Out',
+              message: 'Are you sure you want to sign out?',
+              duration: 8000,
+              actions: [
+                {
+                  label: 'Sign out',
+                  variant: 'danger',
+                  onClick: () => {
+                    removeSelf();
+                    handleSignOut();
+                  },
+                },
+                {
+                  label: 'Cancel',
+                  variant: 'default',
+                  onClick: removeSelf,
+                },
+              ],
+            });
+          }}
           className="flex items-center gap-3 px-3 py-2 mt-3 font-medium text-gray-700 rounded-lg group text-theme-sm hover:bg-gray-100 hover:text-gray-700"
         >
           <svg
@@ -188,30 +207,6 @@ export default function UserDropdown() {
           Sign out
         </button>
       </Dropdown>
-
-      {/* Sign Out Confirmation Modal */}
-      {showSignOutConfirm && (
-        <div className="fixed inset-0 flex items-center justify-center z-50 bg-transparent backdrop-blur-sm">
-          <div className="bg-white bg-opacity-90 p-6 rounded-lg shadow-xl max-w-sm w-full text-center border border-gray-300">
-            <h3 className="text-xl font-semibold mb-4 text-gray-800">Confirm Sign Out</h3>
-            <p className="mb-6 text-gray-700">Are you sure you want to sign out?</p>
-            <div className="flex justify-center gap-4">
-              <button
-                onClick={handleSignOut}
-                className="px-6 py-2 bg-red-500 text-white rounded-md hover:bg-red-600 transition-colors"
-              >
-                Yes, Sign Out
-              </button>
-              <button
-                onClick={() => setShowSignOutConfirm(false)}
-                className="px-6 py-2 bg-gray-300 text-gray-800 rounded-md hover:bg-gray-400 transition-colors"
-              >
-                Cancel
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
     </div>
   );
 }

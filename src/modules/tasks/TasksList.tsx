@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
+import api from '../../services/api';
 
 const statusColors: Record<string, string> = {
   'In Progress': 'bg-orange-500 text-white',
@@ -25,10 +26,9 @@ const TasksList: React.FC = () => {
   useEffect(() => {
     setLoading(true);
     setError(null);
-    fetch(`${API_BASE_URL}/api/projectmanagement/tasks/`)
-      .then(res => res.json())
-      .then(data => {
-        setTasks(data.data || data.tasks || data || []);
+    api.get(`${API_BASE_URL}/api/projectmanagement/tasks/`)
+      .then(res => {
+        setTasks(res.data.data || res.data.tasks || res.data || []);
       })
       .catch(() => setError('Failed to load tasks.'))
       .finally(() => setLoading(false));

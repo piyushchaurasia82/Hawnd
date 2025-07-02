@@ -1,12 +1,12 @@
 import React, { useState, useEffect } from 'react';
 import { FiCalendar, FiClock } from 'react-icons/fi';
 import { useLocation, useParams, useNavigate } from 'react-router-dom';
-import { DateRange } from 'react-date-range';
-import type { Range } from 'react-date-range';
+import { DateRange, Range, RangeKeyDict } from 'react-date-range';
 import 'react-date-range/dist/styles.css';
 import 'react-date-range/dist/theme/default.css';
 import { format } from 'date-fns';
 import { useToast } from '../../components/ui/alert/ToastContext';
+import api from '../../services/api';
 
 const assignees = [
   { id: 1, name: 'Alex' },
@@ -20,9 +20,10 @@ const reviewers = [
 const priorities = ['Low', 'Medium', 'High'];
 const statuses = ['To Do', 'In Progress', 'Done'];
 
-interface DateRangeSelection extends Range {
-  startDate: Date | undefined;
-  endDate: Date | undefined;
+// Local type for date range selection
+interface DateRangeSelection {
+  startDate?: Date;
+  endDate?: Date;
   key: string;
 }
 
@@ -61,13 +62,15 @@ const TasksCreate: React.FC = () => {
     {
       startDate: form.start_date ? new Date(form.start_date) : undefined,
       endDate: form.due_date ? new Date(form.due_date) : undefined,
-      key: 'selection'
-    }
+      key: 'selection',
+    },
   ]);
   const [loading, setLoading] = useState(false);
   const [fieldErrors, setFieldErrors] = useState<{ [key: string]: string }>({});
   const [users, setUsers] = useState<{ id: number; first_name: string; last_name: string }[]>([]);
   const [projects, setProjects] = useState<{ id: number; project_title: string }[]>([]);
+
+  const API_BASE_URL = import.meta.env.VITE_API_BASE_URL;
 
   // Read startDate and endDate from query params
   React.useEffect(() => {
@@ -75,27 +78,28 @@ const TasksCreate: React.FC = () => {
     const startDate = params.get('startDate') || '';
     const endDate = params.get('endDate') || '';
     setForm(f => ({ ...f, start_date: startDate, due_date: endDate }));
-    setDateRange([{
-      startDate: startDate ? new Date(startDate) : undefined,
-      endDate: endDate ? new Date(endDate) : undefined,
-      key: 'selection',
-    }]);
+    setDateRange([
+      {
+        startDate: startDate ? new Date(startDate) : undefined,
+        endDate: endDate ? new Date(endDate) : undefined,
+        key: 'selection',
+      },
+    ]);
   }, [location.search]);
 
   useEffect(() => {
-    const API_BASE_URL = import.meta.env.VITE_API_BASE_URL;
-    fetch(`${API_BASE_URL}/api/projectmanagement/users/`)
-      .then(res => res.json())
-      .then(data => {
+    // Fetch users and projects using api instance
+    api.get(`${API_BASE_URL}/api/projectmanagement/users/`)
+      .then(res => {
+        const data = res.data.data || res.data.users || res.data;
         setUsers(Array.isArray(data) ? data : []);
       })
       .catch(() => setUsers([]));
-    // Fetch projects if no projectId
     if (!projectId) {
-      fetch(`${API_BASE_URL}/api/projectmanagement/projects/`)
-        .then(res => res.json())
-        .then(data => {
-          setProjects(Array.isArray(data.data) ? data.data : []);
+      api.get(`${API_BASE_URL}/api/projectmanagement/projects/`)
+        .then(res => {
+          const data = res.data.data || res.data.projects || res.data;
+          setProjects(Array.isArray(data) ? data : []);
         })
         .catch(() => setProjects([]));
     }
@@ -105,50 +109,26 @@ const TasksCreate: React.FC = () => {
   const handleDetailedSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setFieldErrors({});
-    // Validation
+    const data = mapDetailedToApi();
     const errors: { [key: string]: string } = {};
-    if (!form.title) errors.title = 'Task Title is required';
-    if (!form.assignee) errors.assignee = 'Assignee is required';
-    if (!form.project_id) errors.project_id = 'Project is required';
+    if (!data.task_title) errors.task_title = 'Task Title is required';
+    if (!data.project_id) errors.project_id = 'Project is required';
     if (Object.keys(errors).length > 0) {
-      setFieldErrors(errors);
-      showToast({ type: 'error', title: 'Validation Error', message: 'Please fill all required fields.' });
-      return;
+        setFieldErrors(errors);
+        showToast({ type: 'error', title: 'Validation Error', message: 'Please fill all required fields.' });
+        return;
     }
     setLoading(true);
     try {
-      const API_BASE_URL = import.meta.env.VITE_API_BASE_URL;
-      let payload: any = {
-        project_id: projectId ? Number(projectId) : form.project_id ? Number(form.project_id) : undefined,
-        task_title: form.title,
-        assignees: form.assignee,
-        date: form.start_date ? new Date(form.start_date).toISOString() : undefined,
-        start_date: form.start_date ? new Date(form.start_date).toISOString() : undefined,
-        due_date: form.due_date ? new Date(form.due_date).toISOString() : undefined,
-        estimated_time: form.estimated ? parseFloat(form.estimated) : undefined,
-        description: form.description,
-        priority: form.priority,
-        status: form.status,
-        reviewer_id: form.reviewer ? Number(form.reviewer) : undefined,
-        start_after_id: form.startAfter ? Number(form.startAfter) : undefined,
-        blocked_by: form.blockedBy,
-        status_change_notification: form.notifyStatus ? 'YES' : 'NO',
-        on_comment_notification: form.notifyComment ? 'YES' : 'NO',
-        reviewer_on_submission_notification: form.notifySubmission ? 'YES' : 'NO',
-      };
-      payload = Object.fromEntries(Object.entries(payload).filter(([_, v]) => v !== '' && v !== undefined && v !== null));
-      const res = await fetch(`${API_BASE_URL}/api/projectmanagement/tasks/`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(payload),
-      });
-      if (!res.ok) throw new Error('Failed to create task');
-      showToast({ type: 'success', title: 'Success', message: 'Task created successfully!' });
-      navigate(-1);
+        // Only send keys with data
+        let payload = Object.fromEntries(Object.entries(data).filter(([_, v]) => v !== '' && v !== undefined && v !== null));
+        await api.post(`${API_BASE_URL}/api/projectmanagement/tasks/`, payload);
+        showToast({ type: 'success', title: 'Success', message: 'Task created successfully!' });
+        navigate(-1);
     } catch (err: any) {
-      showToast({ type: 'error', title: 'Error', message: err.message || 'Error occurred' });
+        showToast({ type: 'error', title: 'Error', message: err.message || 'Error occurred' });
     } finally {
-      setLoading(false);
+        setLoading(false);
     }
   };
 
@@ -168,19 +148,13 @@ const TasksCreate: React.FC = () => {
     }
     setLoading(true);
     try {
-      const API_BASE_URL = import.meta.env.VITE_API_BASE_URL;
       let payload: any = {
         project_id: projectId ? Number(projectId) : quickForm.project_id ? Number(quickForm.project_id) : undefined,
         task_title: quickForm.title,
         assignees: quickForm.assignee,
       };
       payload = Object.fromEntries(Object.entries(payload).filter(([_, v]) => v !== '' && v !== undefined && v !== null));
-      const res = await fetch(`${API_BASE_URL}/api/projectmanagement/tasks/`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(payload),
-      });
-      if (!res.ok) throw new Error('Failed to create task');
+      await api.post(`${API_BASE_URL}/api/projectmanagement/tasks/`, payload);
       showToast({ type: 'success', title: 'Success', message: 'Task created successfully!' });
       if(projectId || quickForm.project_id){
         navigate(`/projects/${projectId || quickForm.project_id}/tasks`);
@@ -188,7 +162,6 @@ const TasksCreate: React.FC = () => {
       else{
         navigate(`/projects`);
       }
-      
     } catch (err: any) {
       showToast({ type: 'error', title: 'Error', message: err.message || 'Error occurred' });
     } finally {
@@ -229,6 +202,28 @@ const TasksCreate: React.FC = () => {
       });
     }
   };
+
+  // Map detailed form to API payload
+  function mapDetailedToApi() {
+    return {
+      project_id: projectId ? Number(projectId) : form.project_id ? Number(form.project_id) : undefined,
+      task_title: form.title,
+      assignees: form.assignee,
+      start_date: form.start_date,
+      due_date: form.due_date,
+      estimated: form.estimated,
+      description: form.description,
+      priority: form.priority,
+      status: form.status,
+      reviewer: form.reviewer,
+      start_after: form.startAfter,
+      blocked_by: form.blockedBy,
+      override_notifications: form.overrideNotifications,
+      notify_status: form.notifyStatus,
+      notify_comment: form.notifyComment,
+      notify_submission: form.notifySubmission,
+    };
+  }
 
   return (
     <div className="p-4">
@@ -404,12 +399,13 @@ const TasksCreate: React.FC = () => {
                   <div className="absolute z-50 mt-2">
                     <DateRange
                       editableDateInputs={true}
-                      onChange={(item: { selection: DateRangeSelection }) => {
-                        setDateRange([item.selection]);
+                      onChange={(ranges: any) => {
+                        const selection = ranges.selection as DateRangeSelection;
+                        setDateRange([selection]);
                         setForm(f => ({
                           ...f,
-                          start_date: item.selection.startDate ? format(item.selection.startDate, 'yyyy-MM-dd') : '',
-                          due_date: item.selection.endDate ? format(item.selection.endDate, 'yyyy-MM-dd') : '',
+                          start_date: selection.startDate ? format(selection.startDate, 'yyyy-MM-dd') : '',
+                          due_date: selection.endDate ? format(selection.endDate, 'yyyy-MM-dd') : '',
                         }));
                       }}
                       moveRangeOnFirstSelection={false}
@@ -506,6 +502,7 @@ const TasksCreate: React.FC = () => {
             </div>
           </div>
           {/* Notification Control */}
+          {false && (
           <div>
             <div className="font-bold text-[17px] mb-4">Notification Control</div>
             <div className="flex items-center bg-[#F3F3F3] rounded px-4 py-3 mb-2 justify-between">
@@ -551,6 +548,7 @@ const TasksCreate: React.FC = () => {
               </label>
             </div>
           </div>
+          )}
           {/* Activity & Edit History */}
           <div>
             <div className="font-bold text-[17px] mb-4">Activity & Edit History</div>

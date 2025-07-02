@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useToast } from '../../components/ui/alert/ToastContext';
+import api from '../../services/api';
 
 const ProjectsEdit: React.FC = () => {
     const { id } = useParams<{ id: string }>();
@@ -25,19 +26,22 @@ const ProjectsEdit: React.FC = () => {
 
     useEffect(() => {
         // Fetch users for Project Owner dropdown
-        fetch(`${API_BASE_URL}/api/projectmanagement/users/`)
-            .then(res => res.json())
-            .then(data => {
-                setUsers(Array.isArray(data) ? data : []);
-            })
-            .catch(() => setUsers([]));
+        const fetchUsers = async () => {
+            try {
+                const usersRes = await api.get(`${API_BASE_URL}/api/projectmanagement/users/`);
+                setUsers(Array.isArray(usersRes.data) ? usersRes.data : usersRes.data.data || usersRes.data.users || []);
+            } catch {
+                setUsers([]);
+            }
+        };
+        fetchUsers();
         // Fetch project data
         if (id) {
             setLoading(true);
-            fetch(`${API_BASE_URL}/api/projectmanagement/projects/${id}/`)
-                .then(res => res.json())
-                .then(data => {
-                    const project = data.data;
+            const fetchProject = async () => {
+                try {
+                    const projectRes = await api.get(`${API_BASE_URL}/api/projectmanagement/projects/${id}/`);
+                    const project = projectRes.data.data;
                     setDetailedForm({
                         title: project.project_title || '',
                         owner: project.project_owner || '',
@@ -63,11 +67,26 @@ const ProjectsEdit: React.FC = () => {
                             return prevUsers;
                         });
                     }
-                })
-                .catch(() => showToast({ type: 'error', title: 'Error', message: 'Failed to fetch project data.' }))
-                .finally(() => setLoading(false));
+                } catch {
+                    setDetailedForm({
+                        title: '',
+                        owner: '',
+                        startDate: '',
+                        description: '',
+                        status: '',
+                        priority: '',
+                        tags: '',
+                        integrationTag: '',
+                        clientAccess: false,
+                        type: 'Internal',
+                    });
+                } finally {
+                    setLoading(false);
+                }
+            };
+            fetchProject();
         }
-    }, [id, API_BASE_URL]);
+    }, [API_BASE_URL, id]);
 
     const handleDetailedChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) => {
         setDetailedForm({ ...detailedForm, [e.target.name]: e.target.value });
@@ -114,12 +133,7 @@ const ProjectsEdit: React.FC = () => {
         setLoading(true);
         try {
             let payload = Object.fromEntries(Object.entries(data).filter(([_, v]) => v !== '' && v !== undefined && v !== null));
-            const res = await fetch(`${API_BASE_URL}/api/projectmanagement/projects/${id}/`, {
-                method: 'PUT',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify(payload),
-            });
-            if (!res.ok) throw new Error('Failed to update project');
+            await api.put(`${API_BASE_URL}/api/projectmanagement/projects/${id}/`, payload);
             showToast({ type: 'success', title: 'Success', message: 'Project updated successfully!' });
             navigate(-1);
         } catch (err: any) {

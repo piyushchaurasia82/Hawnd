@@ -30,10 +30,16 @@ const TimeLogsCreate: React.FC = () => {
     // Calculate total hours if start and end time are set
     useEffect(() => {
         if (form.start_time && form.end_time) {
-            const start = new Date(form.start_time);
-            const end = new Date(form.end_time);
-            const diff = (end.getTime() - start.getTime()) / (1000 * 60 * 60);
+            // Parse 'HH:mm' format
+            const [startHour, startMinute] = form.start_time.split(':').map(Number);
+            const [endHour, endMinute] = form.end_time.split(':').map(Number);
+            const start = startHour * 60 + startMinute;
+            const end = endHour * 60 + endMinute;
+            let diff = (end - start) / 60;
+            if (diff < 0) diff += 24; // handle overnight times
             setForm(f => ({ ...f, total_hours: diff > 0 ? diff.toFixed(2) : '' }));
+        } else {
+            setForm(f => ({ ...f, total_hours: '' }));
         }
     }, [form.start_time, form.end_time]);
 
@@ -152,7 +158,7 @@ const TimeLogsCreate: React.FC = () => {
                         <label className="block mb-2 font-semibold">Start Time <span className="text-red-500">*</span></label>
                         <div className="relative">
                             <input
-                                type="datetime-local"
+                                type="time"
                                 name="start_time"
                                 value={form.start_time}
                                 onChange={handleChange}
@@ -167,7 +173,7 @@ const TimeLogsCreate: React.FC = () => {
                         <label className="block mb-2 font-semibold">End Time <span className="text-red-500">*</span></label>
                         <div className="relative">
                             <input
-                                type="datetime-local"
+                                type="time"
                                 name="end_time"
                                 value={form.end_time}
                                 onChange={handleChange}
