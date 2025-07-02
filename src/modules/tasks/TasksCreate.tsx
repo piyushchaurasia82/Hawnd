@@ -306,9 +306,25 @@ const TasksCreate: React.FC = () => {
             </select>
             {fieldErrors.assignee && <div className="text-red-500 text-sm mt-1">{fieldErrors.assignee}</div>}
           </div>
-          <button className="bg-orange-500 text-white font-semibold rounded px-6 py-2 mt-2 hover:bg-orange-600" type="submit" disabled={loading}>
-            {loading ? 'Submitting...' : 'Add Task'}
-          </button>
+          <div className="flex gap-4 mt-4">
+            <button
+              type="button"
+              className="bg-gray-300 text-black font-semibold rounded px-6 py-2 hover:bg-gray-400"
+              onClick={() => {
+                if (projectId || quickForm.project_id) {
+                  navigate(`/projects/${projectId || quickForm.project_id}/tasks`);
+                } else {
+                  navigate('/projects');
+                }
+              }}
+              disabled={loading}
+            >
+              Cancel
+            </button>
+            <button className="bg-orange-500 text-white font-semibold rounded px-6 py-2 hover:bg-orange-600" type="submit" disabled={loading}>
+              {loading ? 'Submitting...' : 'Add Task'}
+            </button>
+          </div>
         </form>
       )}
       {tab === 'detailed' && (
@@ -544,11 +560,27 @@ const TasksCreate: React.FC = () => {
             </div>
           </div>
           {/* Actions */}
-          <div className="flex justify-between items-center mt-4">
+          <div className="flex justify-between items-center mt-4 gap-4">
             <button type="button" className="text-black font-semibold underline text-[15px]">Save as Draft</button>
-            <button type="submit" className="bg-orange-500 text-white font-semibold rounded px-6 py-2 hover:bg-orange-600 text-[15px]" disabled={loading}>
-              {loading ? 'Submitting...' : 'Submit'}
-            </button>
+            <div className="flex gap-4">
+              <button
+                type="button"
+                className="bg-gray-300 text-black font-semibold rounded px-6 py-2 hover:bg-gray-400"
+                onClick={() => {
+                  if (projectId || form.project_id) {
+                    navigate(`/projects/${projectId || form.project_id}/tasks`);
+                  } else {
+                    navigate('/projects');
+                  }
+                }}
+                disabled={loading}
+              >
+                Cancel
+              </button>
+              <button type="submit" className="bg-orange-500 text-white font-semibold rounded px-6 py-2 hover:bg-orange-600 text-[15px]" disabled={loading}>
+                {loading ? 'Submitting...' : 'Submit'}
+              </button>
+            </div>
           </div>
         </form>
       )}

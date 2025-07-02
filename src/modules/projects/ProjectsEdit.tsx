@@ -279,7 +279,15 @@ const ProjectsEdit: React.FC = () => {
                     />
                     <div className="text-right text-sm text-gray-500 mt-1">Upload Files</div>
                 </div>
-                <div className="flex justify-end mt-8">
+                <div className="flex justify-end mt-8 gap-4">
+                    <button
+                        type="button"
+                        className="bg-gray-300 text-black px-8 py-2 rounded font-semibold text-[16px] hover:bg-gray-400 flex items-center justify-center min-w-[120px]"
+                        onClick={() => navigate('/projects')}
+                        disabled={loading}
+                    >
+                        Cancel
+                    </button>
                     <button
                         type="submit"
                         className="bg-orange-500 text-white px-8 py-2 rounded font-semibold text-[16px] hover:bg-orange-600 flex items-center justify-center min-w-[120px]"

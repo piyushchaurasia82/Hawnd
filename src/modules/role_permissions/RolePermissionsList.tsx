@@ -319,7 +319,6 @@ const RolePermissionsList: React.FC<RolePermissionsListProps> = ({ moduleName })
 
       {/* List Section */}
       <div className="bg-white rounded-lg p-6 border border-gray-200">
-        {loading && <LoadingSpinner />}
         <div className="flex flex-col sm:flex-row sm:items-center gap-4 mb-4">
           <div className="relative">
             <button className="border rounded px-4 py-2 bg-gray-50" onClick={() => setAllRolesDropdown(!allRolesDropdown)}>
@@ -408,14 +407,6 @@ const RolePermissionsList: React.FC<RolePermissionsListProps> = ({ moduleName })
                     {item.permissionObjs.map((permObj, idx) => (
                       <span key={permObj!.code_name} title={permObj!.description || permObj!.code_name} className="inline-block mr-1 bg-gray-50 px-2 py-1 rounded text-xs border align-middle">
                         {truncateWords(permObj!.code_name)}{idx < item.permissionObjs.length - 1 ? ', ' : ''}
-                        <button
-                          className="ml-1 text-red-500 hover:text-red-700"
-                          title="Remove permission from role"
-                          onClick={() => handleDeleteRolePermission(item.role, permObj!.code_name)}
-                          style={{ verticalAlign: 'middle' }}
-                        >
-                          ×
-                        </button>
                       </span>
                     ))}
                   </td>

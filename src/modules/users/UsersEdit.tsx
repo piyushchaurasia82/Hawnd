@@ -8,6 +8,7 @@ import TextArea from '../../components/form/input/TextArea';
 import Checkbox from '../../components/form/input/Checkbox';
 import type { ModuleConfig, Field } from '../../config/types';
 import { usePasswordChange } from '../../pages/AccountSettings';
+import { useToast } from '../../components/ui/alert/ToastContext';
 
 const OrangeToggle = ({ checked, onChange }: { checked: boolean; onChange: (v: boolean) => void }) => (
   <label className="inline-flex items-center cursor-pointer">
@@ -100,6 +101,7 @@ const UsersEdit: React.FC<{ moduleName: string }> = ({ moduleName }) => {
     const config: ModuleConfig | undefined = moduleName ? modules[moduleName] : undefined;
     const navigate = useNavigate();
     const { lastChangedPassword } = usePasswordChange();
+    const { showToast } = useToast();
 
     const [formData, setFormData] = useState<{ [key: string]: any }>({});
     const [loading, setLoading] = useState(true);
@@ -177,10 +179,39 @@ const UsersEdit: React.FC<{ moduleName: string }> = ({ moduleName }) => {
             // Always include is_active as string in the payload
             const payload = { ...formData };
             payload.is_active = formData.is_active ? "true" : "false";
+
+            // 1. Fetch current user_roles for this user
+            const userRolesRes = await api.get('/api/projectmanagement/user_roles/');
+            const allUserRoles = userRolesRes.data.data || userRolesRes.data.user_roles || userRolesRes.data;
+            const currentUserRoles = allUserRoles.filter((ur: any) => String(ur.user_id) === String(id));
+            const currentRoleIds = currentUserRoles.map((ur: any) => String(ur.role_id));
+
+            // 2. Add new roles
+            const rolesToAdd = selectedRoles.filter(roleId => !currentRoleIds.includes(String(roleId)));
+            await Promise.all(rolesToAdd.map(roleId =>
+                api.post('/api/projectmanagement/user_roles/', {
+                    user_id: id,
+                    role_id: roleId
+                })
+            ));
+
+            // 3. Remove deselected roles
+            const rolesToRemove = currentUserRoles.filter((ur: any) => !selectedRoles.includes(String(ur.role_id)));
+            await Promise.all(rolesToRemove.map((ur: any) =>
+                api.delete(`/api/projectmanagement/user_roles/${ur.id}/`)
+            ));
+
+            // 4. Update user details
             await api.put(
                 `${config.apiBaseUrl}${config.endpoints.update.url.replace(':id', id!)}/`,
                 payload
             );
+            showToast({
+                type: 'success',
+                title: 'User Updated',
+                message: 'The user has been updated successfully.',
+                duration: 5000
+            });
             navigate(`/${moduleName}`);
         } catch (err: any) {
             setError('Error updating user. Please try again.');

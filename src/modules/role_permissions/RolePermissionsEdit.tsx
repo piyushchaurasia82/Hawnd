@@ -21,12 +21,13 @@ interface Permission {
     description?: string;
 }
 
-const MultiSelectDropdown = ({ options, selectedValues, onChange, label, disabled }: {
+const MultiSelectDropdown = ({ options, selectedValues, onChange, label, disabled, inputClassName }: {
     options: { value: number; label: string }[];
     selectedValues: number[];
     onChange: (values: number[]) => void;
     label?: string;
     disabled?: boolean;
+    inputClassName?: string;
 }) => {
     const [open, setOpen] = useState(false);
     const ref = React.useRef<HTMLDivElement>(null);
@@ -72,7 +73,7 @@ const MultiSelectDropdown = ({ options, selectedValues, onChange, label, disable
                                 type="checkbox"
                                 checked={selectedValues.includes(option.value)}
                                 onChange={() => handleSelect(option.value)}
-                                className="h-4 w-4 text-blue-600 border-gray-300 rounded mr-2"
+                                className={`h-4 w-4 text-blue-600 border-gray-300 rounded mr-2 ${inputClassName || ''}`}
                                 disabled={disabled}
                             />
                             <span>{option.label}</span>
@@ -174,19 +175,19 @@ const RolePermissionsEdit: React.FC<RolePermissionsEditProps> = ({ moduleName })
     }
 
     return (
-        <div className="p-8 max-w-4xl mx-auto">
-            <h1 className="text-2xl font-bold mb-6">Edit Role Permissions</h1>
+        <div className="p-8">
+            <h1 className="text-2xl font-bold mb-8 text-left">Edit Role Permissions</h1>
             {success && (
                 <div className="mb-4 p-2 bg-green-100 text-green-800 rounded border border-green-300">
                     Permissions updated successfully! Redirecting to list...
                 </div>
             )}
             <form onSubmit={handleUpdate}>
-                <div className="flex flex-row gap-4 mb-6">
-                    <div style={{ width: 420 }}>
-                        <label className="block mb-2 font-medium">Role<span className="text-red-500">*</span></label>
+                <div className="flex flex-row gap-8 mb-8 items-start">
+                    <div className="flex-1 min-w-[260px] max-w-md">
+                        <label className="block mb-2 font-medium text-left">Role<span className="text-red-500">*</span></label>
                         <select
-                            className="w-full border rounded px-3 py-2 bg-gray-100"
+                            className="w-full border rounded px-3 h-12 bg-gray-100 text-left"
                             value={selectedRole}
                             onChange={e => setSelectedRole(Number(e.target.value))}
                             disabled
@@ -197,28 +198,28 @@ const RolePermissionsEdit: React.FC<RolePermissionsEditProps> = ({ moduleName })
                             ))}
                         </select>
                     </div>
-                    <div style={{ width: 420 }}>
-                        <label className="block mb-2 font-medium">Permissions<span className="text-red-500">*</span></label>
+                    <div className="flex-1 min-w-[260px] max-w-md">
+                        <label className="block mb-2 font-medium text-left">Permissions<span className="text-red-500">*</span></label>
                         <MultiSelectDropdown
                             options={permissions.map(p => ({ value: p.id, label: p.code_name }))}
                             selectedValues={selectedPermissions}
                             onChange={setSelectedPermissions}
                             label="Permissions"
+                            inputClassName="h-12"
                         />
                     </div>
                 </div>
-                <div className="flex gap-2 mt-6">
+                <div className="flex justify-end gap-4 mt-8">
                     <button
                         type="button"
-                        className="bg-gray-100 text-black px-6 py-2 rounded border border-gray-200 hover:bg-gray-200"
+                        className="bg-gray-200 text-gray-800 px-6 py-2 rounded hover:bg-gray-300 font-semibold"
                         onClick={() => navigate('/role_permissions')}
                     >
                         Cancel
                     </button>
                     <button
                         type="submit"
-                        className="bg-orange-400 text-white px-6 py-2 rounded hover:bg-orange-500 font-semibold"
-                        disabled={!selectedRole || selectedPermissions.length === 0}
+                        className="bg-orange-500 text-white px-6 py-2 rounded hover:bg-orange-600 font-semibold"
                     >
                         Update
                     </button>

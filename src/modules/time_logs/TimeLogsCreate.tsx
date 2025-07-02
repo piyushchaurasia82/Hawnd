@@ -205,13 +205,23 @@ const TimeLogsCreate: React.FC = () => {
                     />
                 </div>
                 {error && <div className="text-red-500 text-sm mt-2">{error}</div>}
-                <button
+                <div className="flex justify-end gap-4">
+                  <button
+                    type="button"
+                    className="bg-gray-300 text-black font-semibold rounded px-6 py-2 mt-2 hover:bg-gray-400"
+                    onClick={() => navigate('/time_logs')}
+                    disabled={loading}
+                  >
+                    Cancel
+                  </button>
+                  <button
                     type="submit"
                     className="bg-orange-500 text-white font-semibold rounded px-6 py-2 mt-2 hover:bg-orange-600"
                     disabled={loading}
-                >
+                  >
                     {loading ? 'Submitting...' : 'Create Time Log'}
-                </button>
+                  </button>
+                </div>
             </form>
         </div>
     );

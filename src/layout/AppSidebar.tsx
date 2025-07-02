@@ -44,14 +44,16 @@ const iconMap: Record<string, React.ReactNode> = {
 };
 
 // Dynamically generate navigation items
-const jsonNavItems: NavItem[] = Object.entries(modules).map(([key, resource]) => ({
-  icon: iconMap[key] || iconMap.default,
-  name: resource.displayName,
-  subItems: [
-    { name: `List ${resource.displayName}`, path: `/${key}` },
-    { name: `Create ${resource.displayName.slice(0, -1)}`, path: `/${key}/create` },
-  ],
-}));
+const jsonNavItems: NavItem[] = Object.entries(modules)
+  .filter(([key]) => key !== 'roles' && key !== 'permissions' && key !== 'project_members' && key !== 'comments' && key !== 'user_roles')
+  .map(([key, resource]) => ({
+    icon: iconMap[key] || iconMap.default,
+    name: resource.displayName,
+    subItems: [
+      { name: `List ${resource.displayName}`, path: `/${key}` },
+      { name: `Create ${resource.displayName.slice(0, -1)}`, path: `/${key}/create` },
+    ],
+  }));
 
 // Find the users nav item in jsonNavItems and replace it with a custom one
 const customUsersNav: NavItem = {
@@ -74,6 +76,11 @@ const customUsersNav: NavItem = {
       path: '/users/create',
     },
     {
+      icon: <LockIcon />,
+      name: 'Create Permission',
+      path: '/permissions/create',
+    },
+    {
       icon: <LucideFileText size={18} />,
       name: 'Audit Logs',
       path: '/audit-logs',
@@ -82,9 +89,15 @@ const customUsersNav: NavItem = {
   ],
 };
 
-const navItemsWithCustomUsers = jsonNavItems.map(item =>
+const dashboardNav: NavItem = {
+  icon: <TableIcon />,
+  name: 'Dashboard',
+  path: '/',
+};
+
+const navItemsWithCustomUsers = [dashboardNav, ...jsonNavItems.map(item =>
   item.name === 'Users' ? customUsersNav : item
-);
+)];
 
 const AppSidebar: React.FC = () => {
   const { isExpanded, isMobileOpen, isHovered, setIsHovered } = useSidebar();
@@ -108,7 +121,9 @@ const AppSidebar: React.FC = () => {
       {items.map((nav, index) => {
         const submenuPath = [...parentPath, `${menuType}-${index}`].join("");
         const isSubmenuOpen = openSubmenus.includes(submenuPath);
-
+        // Highlight Dashboard as active if current location is '/'
+        const isDashboard = nav.name === 'Dashboard';
+        const isActiveDashboard = isDashboard && window.location.pathname === '/';
         return (
           <li key={nav.name}>
             {nav.subItems ? (
@@ -138,11 +153,17 @@ const AppSidebar: React.FC = () => {
                   />
                 )}
               </button>
-            ) : (
+            ) :
               nav.path && (
                 <Link
                   to={nav.path}
                   className={`menu-item group flex items-center ${
+                    isDashboard
+                      ? isActiveDashboard
+                        ? "menu-item-active bg-brand-50 text-black"
+                        : "menu-item-inactive text-black hover:bg-gray-100"
+                      : ""
+                  } ${
                     !isExpanded && !isHovered ? "lg:justify-center " : "lg:justify-start"
                   }`}
                 >
@@ -152,7 +173,7 @@ const AppSidebar: React.FC = () => {
                   )}
                 </Link>
               )
-            )}
+            }
             {nav.subItems && (isExpanded || isHovered || isMobileOpen) && (
               <div
                 className={`overflow-hidden transition-all duration-300 ${

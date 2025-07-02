@@ -52,6 +52,7 @@ import EditProfile from './pages/EditProfile';
 import AccountSettings from './pages/AccountSettings';
 import { tokenManager } from './services/api';
 import ProjectTasks from './modules/projects/ProjectTasks';
+import AuditLogsList from './modules/audit_logs/AuditLogsList';
 
 // ProtectedRoute: Prevents authenticated users from accessing login page
 const ProtectedRoute: React.FC<{ children: React.ReactNode }> = ({ children }) => {
@@ -144,6 +145,7 @@ const AppRoutes: React.FC = () => {
         <Route path="/attachments/create" element={<AttachmentsCreate moduleName={'attachments'} />} />
         <Route path="/attachments/edit/:id" element={<AttachmentsEdit moduleName={'attachments'} />} />
         <Route path="/attachments/show/:id" element={<AttachmentsShow moduleName={'attachments'} />} />
+        <Route path="/audit-logs" element={<AuditLogsList />} />
         <Route path="/edit-profile" element={<EditProfile />} />
         <Route path="/account-settings" element={<AccountSettings />} />
       </Route>

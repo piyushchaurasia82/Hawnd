@@ -20,8 +20,6 @@ const ProjectsList: React.FC<ProjectsListProps> = ({ moduleName }) => {
     const [statusFilter, setStatusFilter] = useState('');
     const [priorityFilter, setPriorityFilter] = useState('');
     const [typeFilter, setTypeFilter] = useState('');
-    const [deleteModalOpen, setDeleteModalOpen] = useState(false);
-    const [projectToDelete, setProjectToDelete] = useState<number | null>(null);
     const [projects, setProjects] = useState<any[]>([]);
     const [filteredProjects, setFilteredProjects] = useState<any[]>([]);
     const [loading, setLoading] = useState(true);
@@ -96,30 +94,36 @@ const ProjectsList: React.FC<ProjectsListProps> = ({ moduleName }) => {
         navigate(`/${moduleName}/edit/${id}`);
     };
 
-    const handleDelete = async (id: number) => {
-        // Set the project to delete and open the confirmation modal
-        setProjectToDelete(id);
-        setDeleteModalOpen(true);
-    };
-
-    const confirmDelete = async () => {
-        if (!projectToDelete) return;
-        setDeleteModalOpen(false); // Close modal immediately
-        setProjectToDelete(null);
-        setTimeout(async () => {
+    const handleDelete = (id: number) => {
+        let toastId: number | null = null;
+        const removeSelf = () => {
+            if (toastId !== null) {
+                const evt = new CustomEvent('toast:remove', { detail: { id: toastId } });
+                window.dispatchEvent(evt);
+            }
+        };
+        toastId = showToast({
+            type: 'warning',
+            title: 'Confirm Deletion',
+            message: 'Are you sure you want to delete this project? This action cannot be undone.',
+            duration: 8000,
+            actions: [
+                {
+                    label: 'Delete',
+                    variant: 'danger',
+                    onClick: async () => {
+                        removeSelf();
             try {
                 await api.delete(
-                    `${config.apiBaseUrl}${config.endpoints.delete.url.replace(':id', projectToDelete.toString())}/`
+                                `${config.apiBaseUrl}${config.endpoints.delete.url.replace(':id', id.toString())}/`
                 );
-                // Save toast to localStorage and reload (do not call showToast)
-                localStorage.setItem('app_last_toast', JSON.stringify({
+                            showToast({
                   type: 'success',
-                  title: 'Project Deleted Successfully',
+                                title: 'Project Deleted',
                   message: 'The project has been permanently removed from the system.',
-                  duration: 5000,
-                  shownAt: Date.now()
-                }));
-                window.location.reload();
+                                duration: 5000
+                            });
+                            fetchProjects();
             } catch (error: any) {
                 showToast({
                     type: 'error',
@@ -128,7 +132,15 @@ const ProjectsList: React.FC<ProjectsListProps> = ({ moduleName }) => {
                     duration: 5000
                 });
             }
-        }, 100);
+                    }
+                },
+                {
+                    label: 'Cancel',
+                    variant: 'default',
+                    onClick: removeSelf
+                }
+            ]
+        });
     };
 
     const handleShow = (id: number) => {
@@ -322,21 +334,6 @@ const ProjectsList: React.FC<ProjectsListProps> = ({ moduleName }) => {
                     </table>
                 </div>
             )}
-
-            {/* Custom Confirmation Modal */}
-            <ConfirmationModal
-                isOpen={deleteModalOpen}
-                onClose={() => {
-                    setDeleteModalOpen(false);
-                    setProjectToDelete(null);
-                }}
-                onConfirm={confirmDelete}
-                title="Delete Project"
-                message="Are you sure you want to delete this project? This action cannot be undone and will permanently remove the project and all associated data including tasks, comments, and attachments."
-                confirmText="Delete Project"
-                cancelText="Cancel"
-                variant="danger"
-            />
         </div>
     );
 };

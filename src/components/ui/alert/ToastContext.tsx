@@ -2,6 +2,12 @@ import React, { createContext, useContext, useState, useCallback, useEffect } fr
 import type { ReactNode } from 'react';
 import Alert from './Alert';
 
+interface ToastAction {
+  label: string;
+  onClick: () => void;
+  variant?: 'primary' | 'danger' | 'default';
+}
+
 export type ToastType = 'success' | 'error' | 'warning' | 'info';
 
 interface Toast {
@@ -10,10 +16,11 @@ interface Toast {
   title: string;
   message: string;
   duration?: number;
+  actions?: ToastAction[];
 }
 
 interface ToastContextProps {
-  showToast: (toast: Omit<Toast, 'id'>) => void;
+  showToast: (toast: Omit<Toast, 'id'>) => number;
 }
 
 const ToastContext = createContext<ToastContextProps | undefined>(undefined);
@@ -45,6 +52,18 @@ export const ToastProvider: React.FC<{ children: ReactNode }> = ({ children }) =
     setTimeout(() => {
       setToasts((prev) => prev.filter((t) => t.id !== newToast.id));
     }, toast.duration || 5000);
+    return newToast.id;
+  }, []);
+
+  // Listen for toast:remove events
+  React.useEffect(() => {
+    const handler = (e: any) => {
+      if (e.detail && typeof e.detail.id === 'number') {
+        setToasts((prev) => prev.filter((t) => t.id !== e.detail.id));
+      }
+    };
+    window.addEventListener('toast:remove', handler);
+    return () => window.removeEventListener('toast:remove', handler);
   }, []);
 
   // On mount, show toast from localStorage if present and not expired
@@ -100,6 +119,7 @@ export const ToastProvider: React.FC<{ children: ReactNode }> = ({ children }) =
                   message={toast.message}
                   duration={toast.duration}
                   onClose={() => removeToast(toast.id)}
+                  actions={toast.actions}
                 />
               </div>
             ))}

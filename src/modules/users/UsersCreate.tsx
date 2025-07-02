@@ -81,7 +81,7 @@ const UsersCreate: React.FC = () => {
   const [firstName, setFirstName] = useState('');
   const [lastName, setLastName] = useState('');
   const [projects, setProjects] = useState<{ value: string; label: string }[]>([]);
-  const [tasks, setTasks] = useState<{ value: string; label: string }[]>([]);
+  const [tasks, setTasks] = useState<{ value: string; label: string; project_id?: string | number }[]>([]);
   const [selectedProjects, setSelectedProjects] = useState<string[]>([]);
   const [selectedTasks, setSelectedTasks] = useState<string[]>([]);
   const [isActive, setIsActive] = useState(true);
@@ -97,8 +97,8 @@ const UsersCreate: React.FC = () => {
           api.get('/api/projectmanagement/tasks/'),
         ]);
         setRolesOptions((rolesRes.data.data || rolesRes.data.roles || rolesRes.data).map((r: any) => ({ value: r.id, label: r.name || r.description })));
-        setProjects((projectsRes.data.data || projectsRes.data.projects || projectsRes.data).map((p: any) => ({ value: p.id, label: p.name })));
-        setTasks((tasksRes.data.data || tasksRes.data.tasks || tasksRes.data).map((t: any) => ({ value: t.id, label: t.name })));
+        setProjects((projectsRes.data.data || projectsRes.data.projects || projectsRes.data).map((p: any) => ({ value: p.id, label: p.project_title })));
+        setTasks((tasksRes.data.data || tasksRes.data.tasks || tasksRes.data).map((t: any) => ({ value: t.id, label: t.task_title || t.name, project_id: t.project_id })));
       } catch (e) {
         // fallback to empty
       }
@@ -195,11 +195,19 @@ const UsersCreate: React.FC = () => {
       // Assign tasks if selected
       if (selectedTasks.length > 0) {
         try {
-          await Promise.all(selectedTasks.map(taskId =>
-            api.put(`/api/projectmanagement/tasks/${taskId}/`, { 
-              assigned_to_id: userId 
-            })
-          ));
+          await Promise.all(selectedTasks.map(async (taskId) => {
+            // Fetch current task details
+            const taskRes = await api.get(`/api/projectmanagement/tasks/${taskId}/`);
+            const taskData = taskRes.data.data || taskRes.data;
+            // Build payload with all required fields
+            const payload = {
+              project_id: taskData.project_id ?? null,
+              task_title: taskData.task_title ?? '',
+              assignees: taskData.assignees ?? '',
+              assigned_to_id: userId
+            };
+            await api.put(`/api/projectmanagement/tasks/${taskId}/`, payload);
+          }));
           console.log('Tasks assigned successfully');
         } catch (taskError) {
           console.warn('Failed to assign some tasks:', taskError);
@@ -222,7 +230,7 @@ const UsersCreate: React.FC = () => {
       
       // Navigate back to user list after a short delay
       setTimeout(() => {
-        navigate('/users');
+        navigate('/users', { state: { userCreated: true } });
       }, 2000);
       
     } catch (error: any) {
@@ -322,7 +330,7 @@ const UsersCreate: React.FC = () => {
               />
               <button
                 type="button"
-                className="absolute right-4 inset-y-0 flex items-center bg-transparent border-0 p-0 m-0"
+                className="absolute right-4 inset-y-2 flex items-center bg-transparent border-0 p-0 m-0"
                 tabIndex={-1}
                 onClick={() => setShowPassword((v) => !v)}
                 aria-label={showPassword ? 'Hide password' : 'Show password'}
@@ -357,7 +365,8 @@ const UsersCreate: React.FC = () => {
         {/* Roles */}
         <div className="mb-8">
           <h2 className="text-lg font-bold mb-4">Assign Roles</h2>
-          <div className="max-w-xs relative">
+          <div className="w-1/3">
+            <label className="block font-semibold mb-1">Assign Roles</label>
             <MultiSelectDropdown
               options={rolesOptions}
               selectedValues={selectedRoles}
@@ -373,11 +382,11 @@ const UsersCreate: React.FC = () => {
             <div>
               <label className="block font-semibold mb-1">Assign Projects</label>
               <select
-                multiple
                 className="w-full rounded bg-gray-100 h-12 p-3 text-sm placeholder-gray-400"
-                value={selectedProjects}
-                onChange={e => setSelectedProjects(Array.from(e.target.selectedOptions, option => option.value))}
+                value={selectedProjects[0] || ''}
+                onChange={e => setSelectedProjects(e.target.value ? [e.target.value] : [])}
               >
+                <option value="">Select a project</option>
                 {projects.map(opt => (
                   <option key={opt.value} value={opt.value}>{opt.label}</option>
                 ))}
@@ -386,14 +395,17 @@ const UsersCreate: React.FC = () => {
             <div>
               <label className="block font-semibold mb-1">Assign Tasks (Optional)</label>
               <select
-                multiple
                 className="w-full rounded bg-gray-100 h-12 p-3 text-sm placeholder-gray-400"
-                value={selectedTasks}
-                onChange={e => setSelectedTasks(Array.from(e.target.selectedOptions, option => option.value))}
+                value={selectedTasks[0] || ''}
+                onChange={e => setSelectedTasks(e.target.value ? [e.target.value] : [])}
+                disabled={!selectedProjects[0]}
               >
-                {tasks.map(opt => (
-                  <option key={opt.value} value={opt.value}>{opt.label}</option>
-                ))}
+                <option value="">{selectedProjects[0] ? 'Select a task' : 'Select a project first'}</option>
+                {tasks
+                  .filter(opt => String(opt.project_id) === String(selectedProjects[0]))
+                  .map(opt => (
+                    <option key={opt.value} value={opt.value}>{opt.label}</option>
+                  ))}
               </select>
             </div>
           </div>

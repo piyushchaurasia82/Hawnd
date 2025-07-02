@@ -1,10 +1,11 @@
 import React, { useEffect, useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useLocation } from 'react-router-dom';
 import api from '../../services/api';
 import Button from '../../components/ui/button/Button';
 import Avatar from '../../components/ui/avatar/Avatar';
 import PencilIcon from '../../icons/pencil.svg';
 import TrashIcon from '../../icons/trash.svg';
+import { useToast } from '../../components/ui/alert/ToastContext';
 
 const STATUS_OPTIONS = [
   { label: 'Status', value: '' },
@@ -26,23 +27,30 @@ function getInitials(first: string, last: string) {
 
 const UsersList: React.FC = () => {
   const navigate = useNavigate();
+  const location = useLocation();
+  const { showToast } = useToast();
   const [users, setUsers] = useState<any[]>([]);
   const [userRoles, setUserRoles] = useState<any[]>([]);
   const [roles, setRoles] = useState<any[]>([]);
+  const [projects, setProjects] = useState<any[]>([]);
+  const [projectMembers, setProjectMembers] = useState<any[]>([]);
   const [loading, setLoading] = useState(false);
   const [search, setSearch] = useState('');
   const [role, setRole] = useState('');
   const [status, setStatus] = useState('');
   const [project, setProject] = useState('');
+  const [userDeleted, setUserDeleted] = useState(false);
 
   const fetchUsers = async () => {
     setLoading(true);
     try {
       console.log('Fetching users from project management system...');
-      const [usersRes, userRolesRes, rolesRes] = await Promise.all([
+      const [usersRes, userRolesRes, rolesRes, projectsRes, projectMembersRes] = await Promise.all([
         api.get('/api/projectmanagement/users/'),
         api.get('/api/projectmanagement/user_roles/'),
         api.get('/api/projectmanagement/roles/'),
+        api.get('/api/projectmanagement/projects/'),
+        api.get('/api/projectmanagement/project_members/'),
       ]);
       
       console.log('Users response:', usersRes.data);
@@ -57,14 +65,24 @@ const UsersList: React.FC = () => {
       console.log('Processed user roles data:', userRolesData);
       console.log('Processed roles data:', rolesData);
       
+      const projectsData = projectsRes.data.data || projectsRes.data.projects || projectsRes.data;
+      const projectMembersData = projectMembersRes.data.data || projectMembersRes.data.project_members || projectMembersRes.data;
+      
+      console.log('Processed projects data:', projectsData);
+      console.log('Processed project members data:', projectMembersData);
+      
       setUsers(usersData || []);
       setUserRoles(userRolesData || []);
       setRoles(rolesData || []);
+      setProjects(projectsData || []);
+      setProjectMembers(projectMembersData || []);
     } catch (e) {
       console.error('Error fetching users:', e);
       setUsers([]);
       setUserRoles([]);
       setRoles([]);
+      setProjects([]);
+      setProjectMembers([]);
     } finally {
       setLoading(false);
     }
@@ -86,25 +104,86 @@ const UsersList: React.FC = () => {
     // eslint-disable-next-line
   }, []);
 
+  useEffect(() => {
+    if (location.state && location.state.userCreated) {
+      showToast({
+        type: 'success',
+        title: 'User Created',
+        message: 'The user has been created successfully.',
+        duration: 5000
+      });
+      window.history.replaceState({}, document.title);
+    }
+  }, [location.state, showToast]);
+
+  useEffect(() => {
+    if (userDeleted) {
+      showToast({
+        type: 'success',
+        title: 'User Deleted',
+        message: 'The user has been deleted successfully.',
+        duration: 5000
+      });
+      setUserDeleted(false);
+    }
+  }, [userDeleted, showToast]);
+
   const handleEdit = (id: number) => {
     navigate(`/users/edit/${id}`);
   };
 
-  const handleDelete = async (id: number) => {
-    if (window.confirm('Are you sure you want to delete this user?')) {
-      try {
-        await api.delete(`/api/projectmanagement/users/${id}/`);
-        fetchUsers();
-      } catch (e) {
-        alert('Failed to delete user.');
+  const handleDelete = (id: number) => {
+    let toastId: number | null = null;
+    const removeSelf = () => {
+      if (toastId !== null) {
+        const evt = new CustomEvent('toast:remove', { detail: { id: toastId } });
+        window.dispatchEvent(evt);
       }
-    }
+    };
+    toastId = showToast({
+      type: 'warning',
+      title: 'Confirm Deletion',
+      message: 'Are you sure you want to delete this user? This action cannot be undone.',
+      duration: 8000,
+      actions: [
+        {
+          label: 'Delete',
+          variant: 'danger',
+          onClick: async () => {
+            removeSelf();
+            try {
+              await api.delete(`/api/projectmanagement/users/${id}/`);
+              setUserDeleted(true);
+              fetchUsers();
+            } catch (e: any) {
+              showToast({
+                type: 'error',
+                title: 'Delete Failed',
+                message: e.response?.data?.message || 'Failed to delete the user. Please try again.',
+                duration: 5000
+              });
+            }
+          }
+        },
+        {
+          label: 'Cancel',
+          variant: 'default',
+          onClick: removeSelf
+        }
+      ]
+    });
   };
 
   // Helper to get all role names for a user
   const getUserRoleNames = (userId: number) => {
     const assignedRoleIds = userRoles.filter((ur: any) => ur.user_id === userId).map((ur: any) => ur.role_id);
     return roles.filter((r: any) => assignedRoleIds.includes(r.id)).map((r: any) => r.name);
+  };
+
+  // Helper to get all project titles for a user
+  const getUserProjectTitles = (userId: number) => {
+    const assignedProjectIds = projectMembers.filter((pm: any) => pm.user_id === userId).map((pm: any) => pm.project_id);
+    return projects.filter((p: any) => assignedProjectIds.includes(p.id)).map((p: any) => p.project_title);
   };
 
   // Dynamic role options
@@ -195,15 +274,16 @@ const UsersList: React.FC = () => {
               <th className="px-6 py-3 text-left font-medium">Name</th>
               <th className="px-6 py-3 text-left font-medium">Email</th>
               <th className="px-6 py-3 text-left font-medium">Role</th>
+              <th className="px-6 py-3 text-left font-medium">Projects</th>
               <th className="px-6 py-3 text-left font-medium">Status</th>
               <th className="px-6 py-3 text-left font-medium">Actions</th>
             </tr>
           </thead>
           <tbody>
             {loading ? (
-              <tr><td colSpan={5} className="text-center py-8">Loading...</td></tr>
+              <tr><td colSpan={6} className="text-center py-8">Loading...</td></tr>
             ) : filteredUsers.length === 0 ? (
-              <tr><td colSpan={5} className="text-center py-8">No users found.</td></tr>
+              <tr><td colSpan={6} className="text-center py-8">No users found.</td></tr>
             ) : (
               filteredUsers.map((user: any) => (
                 <tr key={user.id} className="border-t hover:bg-gray-50 transition">
@@ -226,6 +306,11 @@ const UsersList: React.FC = () => {
                   <td className="px-6 py-4">
                     <span className="inline-block bg-gray-100 rounded px-3 py-1 text-xs font-medium text-gray-800">
                       {getUserRoleNames(user.id).join(', ') || '—'}
+                    </span>
+                  </td>
+                  <td className="px-6 py-4">
+                    <span className="inline-block bg-gray-100 rounded px-3 py-1 text-xs font-medium text-gray-800">
+                      {getUserProjectTitles(user.id).join(', ') || '—'}
                     </span>
                   </td>
                   <td className="px-6 py-4">

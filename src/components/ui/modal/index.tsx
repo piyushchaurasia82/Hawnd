@@ -112,6 +112,17 @@ export const ConfirmationModal: React.FC<ConfirmationModalProps> = ({
   cancelText = 'Cancel',
   variant = 'danger'
 }) => {
+  useEffect(() => {
+    if (isOpen) {
+      window.dispatchEvent(new Event('modal:open'));
+    } else {
+      window.dispatchEvent(new Event('modal:close'));
+    }
+    return () => {
+      window.dispatchEvent(new Event('modal:close'));
+    };
+  }, [isOpen]);
+
   if (!isOpen) return null;
 
   // Button color for danger (delete)

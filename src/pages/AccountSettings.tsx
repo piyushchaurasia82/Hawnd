@@ -3,6 +3,7 @@ import Switch from '../components/form/switch/Switch';
 import { useNavigate } from 'react-router-dom';
 import api from '../services/api';
 import { tokenManager } from '../services/api';
+import { useCurrentUser } from '../context/CurrentUserContext';
 
 // PasswordChangeContext for session-only password sharing
 export const PasswordChangeContext = createContext({ lastChangedPassword: '', setLastChangedPassword: (_pw: string) => {} });
@@ -38,6 +39,7 @@ const AccountSettings: React.FC = () => {
   const [confirmNewPassword, setConfirmNewPassword] = useState('');
   const token = tokenManager.getAccessToken();
   const [lastChangedPassword, setLastChangedPassword] = useState('');
+  const { user: currentUser } = useCurrentUser();
 
   // Refactored fetchUser to support fetching by user ID or username
   const fetchUser = async (idOverride: string | null = null) => {
@@ -95,8 +97,8 @@ const AccountSettings: React.FC = () => {
   };
 
   useEffect(() => {
-    fetchUser();
-  }, []);
+    fetchUser(currentUser?.id || null);
+  }, [currentUser]);
 
   // Fetch email for profile details
   useEffect(() => {

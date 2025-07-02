@@ -1,6 +1,12 @@
 import { Link } from "react-router-dom";
 import React, { useEffect, useRef } from "react";
 
+interface AlertAction {
+  label: string;
+  onClick: () => void;
+  variant?: 'primary' | 'danger' | 'default';
+}
+
 interface AlertProps {
   variant: "success" | "error" | "warning" | "info"; // Alert type
   title: string; // Title of the alert
@@ -10,6 +16,7 @@ interface AlertProps {
   linkText?: string; // Link text
   duration?: number; // Duration in ms for the progress bar
   onClose?: () => void; // Optional close handler
+  actions?: AlertAction[]; // NEW
 }
 
 const Alert: React.FC<AlertProps> = ({
@@ -21,6 +28,7 @@ const Alert: React.FC<AlertProps> = ({
   linkText = "Learn more",
   duration = 5000,
   onClose,
+  actions = [], // NEW
 }) => {
   // Enhanced Tailwind classes for each variant with better visibility
   const variantClasses = {
@@ -168,6 +176,23 @@ const Alert: React.FC<AlertProps> = ({
             >
               {linkText}
             </Link>
+          )}
+          {actions.length > 0 && (
+            <div className="flex gap-2 mt-3">
+              {actions.map((action, idx) => (
+                <button
+                  key={idx}
+                  onClick={action.onClick}
+                  className={`px-4 py-1.5 rounded text-xs font-semibold transition-colors
+                    ${action.variant === 'danger' ? 'bg-red-500 text-white hover:bg-red-600' :
+                      action.variant === 'primary' ? 'bg-blue-500 text-white hover:bg-blue-600' :
+                      'bg-gray-200 text-gray-800 hover:bg-gray-300'}
+                  `}
+                >
+                  {action.label}
+                </button>
+              ))}
+            </div>
           )}
         </div>
       </div>
