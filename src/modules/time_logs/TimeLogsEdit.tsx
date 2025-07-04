@@ -17,6 +17,7 @@ const TimeLogsEdit: React.FC = () => {
         end_time: '',
         total_hours: '',
         description: '',
+        status: '',
     });
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState<string | null>(null);
@@ -35,10 +36,11 @@ const TimeLogsEdit: React.FC = () => {
                         task_id: data.task_id ? String(data.task_id) : '',
                         start_date: data.start_date ? data.start_date.slice(0, 10) : '',
                         end_date: data.end_date ? data.end_date.slice(0, 10) : '',
-                        start_time: data.start_time ? data.start_time.slice(0, 16) : '', // for datetime-local
-                        end_time: data.end_time ? data.end_time.slice(0, 16) : '',
+                        start_time: data.start_time ? data.start_time.slice(11, 16) : '', // HH:mm
+                        end_time: data.end_time ? data.end_time.slice(11, 16) : '',
                         total_hours: data.total_hours !== undefined && data.total_hours !== null ? String(data.total_hours) : '',
                         description: data.description || '',
+                        status: data.status || '',
                     });
                 })
                 .catch(() => setError('Failed to load time log.'));
@@ -48,10 +50,16 @@ const TimeLogsEdit: React.FC = () => {
     // Calculate total hours if start and end time are set
     useEffect(() => {
         if (form.start_time && form.end_time) {
-            const start = new Date(form.start_time);
-            const end = new Date(form.end_time);
-            const diff = (end.getTime() - start.getTime()) / (1000 * 60 * 60);
+            // Parse 'HH:mm' format
+            const [startHour, startMinute] = form.start_time.split(':').map(Number);
+            const [endHour, endMinute] = form.end_time.split(':').map(Number);
+            const start = startHour * 60 + startMinute;
+            const end = endHour * 60 + endMinute;
+            let diff = (end - start) / 60;
+            if (diff < 0) diff += 24; // handle overnight times
             setForm(f => ({ ...f, total_hours: diff > 0 ? diff.toFixed(2) : '' }));
+        } else {
+            setForm(f => ({ ...f, total_hours: '' }));
         }
     }, [form.start_time, form.end_time]);
 
@@ -69,6 +77,7 @@ const TimeLogsEdit: React.FC = () => {
         if (!form.start_time) errors.start_time = 'Start Time is required';
         if (!form.end_time) errors.end_time = 'End Time is required';
         if (!form.total_hours) errors.total_hours = 'Total Hours is required';
+        if (!form.status) errors.status = 'Status is required';
         return errors;
     };
 
@@ -86,8 +95,8 @@ const TimeLogsEdit: React.FC = () => {
         try {
             const userData = JSON.parse(localStorage.getItem('user_data') || '{}');
             // Combine date and time for ISO string
-            const startDateTime = form.start_time ? new Date(form.start_time).toISOString() : '';
-            const endDateTime = form.end_time ? new Date(form.end_time).toISOString() : '';
+            const startDateTime = form.start_date && form.start_time ? new Date(`${form.start_date}T${form.start_time}`).toISOString() : '';
+            const endDateTime = form.end_date && form.end_time ? new Date(`${form.end_date}T${form.end_time}`).toISOString() : '';
             const payload = {
                 user_id: userData.id,
                 task_id: Number(form.task_id),
@@ -97,6 +106,7 @@ const TimeLogsEdit: React.FC = () => {
                 end_time: endDateTime,
                 total_hours: Number(form.total_hours),
                 description: form.description,
+                status: form.status.trim(),
             };
             await api.put(`/api/projectmanagement/time_logs/${id}/`, payload);
             showToast({ type: 'success', title: 'Success', message: 'Time log updated successfully!' });
@@ -111,8 +121,13 @@ const TimeLogsEdit: React.FC = () => {
 
     return (
         <div className="p-6">
-            {/* Breadcrumb */}
-            <div className="text-sm text-gray-600 mb-2">Home / Time Logs / Edit Time Log</div>
+            <nav className="text-sm text-black mb-2 flex items-center gap-1">
+                <span className="hover:underline cursor-pointer text-orange-500" onClick={() => navigate('/')}>Dashboard</span>
+                <span className="mx-1">/</span>
+                <span className="hover:underline cursor-pointer text-orange-500" onClick={() => navigate('/time_logs')}>Time Logs</span>
+                <span className="mx-1">/</span>
+                <span className="font-semibold">Edit Time Log</span>
+            </nav>
             <h1 className="text-2xl font-bold mb-6">Edit Time Log</h1>
             <form className="space-y-6" onSubmit={handleSubmit}>
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
@@ -170,12 +185,11 @@ const TimeLogsEdit: React.FC = () => {
                         <label className="block mb-2 font-semibold">Start Time <span className="text-red-500">*</span></label>
                         <div className="relative">
                             <input
-                                type="datetime-local"
+                                type="time"
                                 name="start_time"
                                 value={form.start_time}
                                 onChange={handleChange}
                                 className="w-full bg-[#F6F2ED] rounded px-4 py-3 text-black outline-none "
-                                
                             />
                         </div>
                         {fieldErrors.start_time && <div className="text-red-500 text-sm mt-1">{fieldErrors.start_time}</div>}
@@ -185,12 +199,11 @@ const TimeLogsEdit: React.FC = () => {
                         <label className="block mb-2 font-semibold">End Time <span className="text-red-500">*</span></label>
                         <div className="relative">
                             <input
-                                type="datetime-local"
+                                type="time"
                                 name="end_time"
                                 value={form.end_time}
                                 onChange={handleChange}
                                 className="w-full bg-[#F6F2ED] rounded px-4 py-3 text-black outline-none "
-                                
                             />
                         </div>
                         {fieldErrors.end_time && <div className="text-red-500 text-sm mt-1">{fieldErrors.end_time}</div>}
@@ -208,6 +221,22 @@ const TimeLogsEdit: React.FC = () => {
                             />
                         </div>
                         {fieldErrors.total_hours && <div className="text-red-500 text-sm mt-1">{fieldErrors.total_hours}</div>}
+                    </div>
+                    {/* Status Dropdown */}
+                    <div>
+                        <label className="block mb-2 font-semibold">Status <span className="text-red-500">*</span></label>
+                        <select
+                            name="status"
+                            value={form.status}
+                            onChange={handleChange}
+                            className="w-full bg-[#F6F2ED] rounded px-4 py-3 text-black outline-none"
+                        >
+                            <option value="">Select Status</option>
+                            <option value="To Do">To Do</option>
+                            <option value="In Progress">In Progress</option>
+                            <option value="Done">Done</option>
+                        </select>
+                        {fieldErrors.status && <div className="text-red-500 text-sm mt-1">{fieldErrors.status}</div>}
                     </div>
                 </div>
                 {/* Description */}

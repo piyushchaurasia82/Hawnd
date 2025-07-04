@@ -152,7 +152,11 @@ const ProjectsList: React.FC<ProjectsListProps> = ({ moduleName }) => {
             {/* Header with title and New Project button */}
             <div className="flex justify-between items-center mb-4">
                 <div>
-                    <div className="text-[16px] text-black mb-4">Dashboard / Project Management</div>
+                    <nav className="text-[16px] text-black mb-4 flex items-center gap-1">
+                        <span className="hover:underline cursor-pointer text-orange-500" onClick={() => navigate('/')}>Dashboard</span>
+                        <span className="mx-1">/</span>
+                        <span className="font-semibold">Project Management</span>
+                    </nav>
                     <h1 className="text-2xl font-bold">Projects</h1>
                 </div>
                 <button

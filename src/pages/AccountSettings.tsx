@@ -4,6 +4,7 @@ import { useNavigate } from 'react-router-dom';
 import api from '../services/api';
 import { tokenManager } from '../services/api';
 import { useCurrentUser } from '../context/CurrentUserContext';
+import { useToast } from '../components/ui/alert/ToastContext';
 
 // PasswordChangeContext for session-only password sharing
 export const PasswordChangeContext = createContext({ lastChangedPassword: '', setLastChangedPassword: (_pw: string) => {} });
@@ -40,6 +41,15 @@ const AccountSettings: React.FC = () => {
   const token = tokenManager.getAccessToken();
   const [lastChangedPassword, setLastChangedPassword] = useState('');
   const { user: currentUser } = useCurrentUser();
+  const [emailToChange, setEmailToChange] = useState('');
+  const [newEmail, setNewEmail] = useState('');
+  const [otp, setOtp] = useState('');
+  const [otpStatus, setOtpStatus] = useState<'idle' | 'pending' | 'sent' | 'verified' | 'error'>('idle');
+  const [otpMsg, setOtpMsg] = useState('');
+  const [otpLoading, setOtpLoading] = useState(false);
+  const [otpTimer, setOtpTimer] = useState(0);
+  const [otpIntervalId, setOtpIntervalId] = useState<NodeJS.Timeout | null>(null);
+  const { showToast } = useToast();
 
   // Refactored fetchUser to support fetching by user ID or username
   const fetchUser = async (idOverride: string | null = null) => {
@@ -114,6 +124,7 @@ const AccountSettings: React.FC = () => {
         const data = response.data;
         if (!data.email) throw new Error('Invalid response format: Email not found in response');
         setProfile({ email: data.email });
+        setEmailToChange(data.email);
       } catch (err: any) {
         setProfileError(err.message || 'Failed to load profile.');
       }
@@ -159,29 +170,71 @@ const AccountSettings: React.FC = () => {
   };
   const handleProfileSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    setShowProfileConfirm(true);
-  };
-  const confirmProfileUpdate = async () => {
-    if (!token) {
-      setProfileError('Please log in to update your profile.');
-      setShowProfileConfirm(false);
-      return;
-    }
     setShowProfileConfirm(false);
     setProfileMsg('');
     setProfileError('');
     setLoading(true);
-    try {
-      const response = await api.put('/api/projectmanagement/update-profile/1/', { email: profile.email }, {
-        headers: { Authorization: `Bearer ${token}` },
-      });
-      const data = response.data;
-      setProfileMsg(data.message || 'Profile updated successfully.');
-    } catch (err: any) {
-      setProfileError(err.message || 'Profile update failed.');
-    } finally {
-      setLoading(false);
+    if (newEmail && newEmail !== form.email) {
+      setOtpStatus('pending');
+      setOtpMsg('');
+      setOtpLoading(true);
+      try {
+        // 1. Verify OTP
+        await api.post('/api/projectmanagement/verify-user-verification-otp/', { email: form.email, otp });
+        setOtpStatus('verified');
+        setOtpMsg('OTP verified. Updating email...');
+        showToast({
+          type: 'success',
+          title: 'OTP Verified',
+          message: 'Your OTP has been verified. Updating email...',
+          duration: 4000
+        });
+        // 2. Update user with new email (send all fields)
+        const updatePayload = {
+          username: form.username,
+          first_name: form.firstName,
+          last_name: form.lastName,
+          is_active: form.isActive ? 'True' : 'False',
+          email: newEmail,
+        };
+        try {
+          const response = await api.put(`/api/projectmanagement/users/${form.id}/`, updatePayload);
+          console.log('Update user response:', response);
+        } catch (err) {
+          console.error('Update user error:', err);
+          throw err;
+        }
+        setForm({ ...form, email: newEmail });
+        setProfile({ ...profile, email: newEmail });
+        setNewEmail('');
+        setOtp('');
+        showToast({
+          type: 'success',
+          title: 'Email Updated',
+          message: 'Your email has been updated successfully.',
+          duration: 5000
+        });
+        // Optionally re-fetch user data for full sync
+        setTimeout(async () => {
+          await fetchUser(form.id || null);
+        }, 500);
+      } catch (err: any) {
+        setOtpStatus('error');
+        setOtpMsg(err.message || 'OTP verification or email update failed.');
+        showToast({
+          type: 'error',
+          title: 'Update Failed',
+          message: err.message || 'OTP verification or email update failed.',
+          duration: 5000
+        });
+        setLoading(false);
+        return;
+      } finally {
+        setOtpLoading(false);
+      }
     }
+    setLoading(false);
+    setProfileMsg('Profile updated successfully.');
   };
   const handlePasswordSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -226,6 +279,53 @@ const AccountSettings: React.FC = () => {
   };
   const toggleOldPasswordVisibility = () => setShowOldPassword(!showOldPassword);
   const toggleNewPasswordVisibility = () => setShowNewPassword(!showNewPassword);
+
+  // Send OTP to current email, require new email to be filled
+  const handleSendOtp = async () => {
+    if (!newEmail) {
+      setOtpStatus('error');
+      setOtpMsg('Please enter a new email.');
+      return;
+    }
+    setOtpStatus('pending');
+    setOtpMsg('');
+    setOtpLoading(true);
+    try {
+      const response = await api.post('/api/projectmanagement/send-user-verification-otp/', { email: form.email });
+      setOtpStatus('sent');
+      setOtpMsg(response.data.message || 'OTP sent to your current email.');
+      showToast({
+        type: 'success',
+        title: 'OTP Sent',
+        message: 'OTP has been sent to your current email.',
+        duration: 5000
+      });
+      setOtpTimer(30);
+      if (otpIntervalId) clearInterval(otpIntervalId);
+      const interval = setInterval(() => {
+        setOtpTimer(prev => {
+          if (prev <= 1) {
+            clearInterval(interval);
+            return 0;
+          }
+          return prev - 1;
+        });
+      }, 1000);
+      setOtpIntervalId(interval);
+    } catch (err: any) {
+      setOtpStatus('error');
+      setOtpMsg(err.message || 'Failed to send OTP.');
+    } finally {
+      setOtpLoading(false);
+    }
+  };
+
+  // Clean up timer on unmount
+  React.useEffect(() => {
+    return () => {
+      if (otpIntervalId) clearInterval(otpIntervalId);
+    };
+  }, [otpIntervalId]);
 
   if (loading) {
     return <div className="p-8 text-center text-lg">Loading...</div>;
@@ -304,29 +404,69 @@ const AccountSettings: React.FC = () => {
           {error && <div className="text-red-600 mt-4">{error}</div>}
           {success && <div className="text-green-600 mt-4">{success}</div>}
           <div className="mt-12 mb-8">
-            <form onSubmit={handleProfileSubmit} className="mb-10">
+            <div className="mb-10">
               <h2 className="text-xl font-semibold text-gray-800 mb-4">Profile Details</h2>
-              <div className="mb-4">
-                <label className="block text-gray-700 mb-1 font-medium">Email</label>
-                <input
-                  type="email"
-                  name="email"
-                  value={profile.email}
-                  onChange={handleProfileChange}
-                  className="w-full border border-gray-300 rounded-md p-2 focus:outline-none focus:ring-2 focus:ring-orange-400"
-                  required
-                />
+              {/* Email Change with OTP UI */}
+              <div className="flex flex-col md:flex-row gap-4 mb-4">
+                <div className="w-full md:w-1/2">
+                  <label className="block text-gray-700 mb-1 font-medium">Current Email</label>
+                  <input
+                    type="email"
+                    name="emailToChange"
+                    value={form.email}
+                    readOnly
+                    className="w-full h-12 bg-gray-100 border border-gray-300 rounded-md text-sm font-medium py-1 px-2 cursor-not-allowed"
+                  />
+                </div>
+                <div className="w-full md:w-1/2 flex flex-col">
+                  <label className="block text-gray-700 mb-1 font-medium">New Email</label>
+                  <div className="relative flex items-center">
+                    <input
+                      type="email"
+                      name="newEmail"
+                      value={newEmail}
+                      onChange={e => setNewEmail(e.target.value)}
+                      placeholder="Enter new email"
+                      className="w-full h-12 bg-white border border-gray-300 rounded-md text-sm font-medium py-1 px-2 pr-28"
+                    />
+                    <button
+                      type="button"
+                      className="absolute right-2 top-1/2 -translate-y-1/2 text-sm bg-orange-500 text-white px-4 py-1 rounded hover:bg-orange-600 transition disabled:opacity-50"
+                      onClick={handleSendOtp}
+                      disabled={otpLoading || !form.email || !newEmail || otpTimer > 0}
+                    >
+                      {otpTimer > 0 ? `Resend OTP in ${otpTimer}s` : (otpStatus === 'sent' || otpStatus === 'verified' ? 'Resend OTP' : 'Send OTP')}
+                    </button>
+                  </div>
+                </div>
               </div>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+                <div>
+                  <label className="block text-gray-700 mb-1 font-medium">Verification Token</label>
+                  <div className="flex items-center bg-gray-100 rounded-md p-3">
+                    <input
+                      type="text"
+                      name="otp"
+                      value={otp}
+                      onChange={e => setOtp(e.target.value)}
+                      placeholder="Enter verification token"
+                      className="flex-1 bg-transparent border-none outline-none text-sm font-medium py-1"
+                    />
+                  </div>
+                </div>
+              </div>
+              {/* End Email Change with OTP UI */}
               {profileMsg && <div className="text-green-600 mb-2">{profileMsg}</div>}
               {profileError && <div className="text-red-600 mb-2">{profileError}</div>}
               <button
-                type="submit"
+                type="button"
                 className="bg-orange-500 text-white px-6 py-2 rounded-md font-semibold hover:bg-orange-600 transition"
                 disabled={loading}
+                onClick={handleProfileSubmit}
               >
                 {loading ? 'Saving...' : 'Save Changes'}
               </button>
-            </form>
+            </div>
             <form onSubmit={handlePasswordSubmit}>
               <h2 className="text-xl font-semibold text-gray-800 mb-4">Change Password</h2>
               <div className="mb-4 relative">
@@ -401,7 +541,7 @@ const AccountSettings: React.FC = () => {
                   <p className="mb-6 text-gray-700">Are you sure you want to save these changes?</p>
                   <div className="flex justify-center gap-4">
                     <button
-                      onClick={confirmProfileUpdate}
+                      onClick={handleProfileSubmit}
                       className="px-6 py-2 bg-orange-500 text-white rounded-md hover:bg-orange-600 font-semibold"
                     >
                       Yes, Save Changes

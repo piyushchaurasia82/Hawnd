@@ -45,15 +45,27 @@ const iconMap: Record<string, React.ReactNode> = {
 
 // Dynamically generate navigation items
 const jsonNavItems: NavItem[] = Object.entries(modules)
-  .filter(([key]) => key !== 'roles' && key !== 'permissions' && key !== 'project_members' && key !== 'comments' && key !== 'user_roles')
-  .map(([key, resource]) => ({
-    icon: iconMap[key] || iconMap.default,
-    name: resource.displayName,
-    subItems: [
-      { name: `List ${resource.displayName}`, path: `/${key}` },
-      { name: `Create ${resource.displayName.slice(0, -1)}`, path: `/${key}/create` },
-    ],
-  }));
+  .filter(([key]) => key !== 'project_members' && key !== 'comments' && key !== 'user_roles' && key !== 'roles' && key !== 'permissions')
+  .map(([key, resource]) => {
+    // Only show 'List' for role_permissions, show both for others
+    if (key === 'role_permissions') {
+      return {
+        icon: iconMap[key] || iconMap.default,
+        name: resource.displayName,
+        subItems: [
+          { name: `List ${resource.displayName}`, path: `/${key}` },
+        ],
+      };
+    }
+    return {
+      icon: iconMap[key] || iconMap.default,
+      name: resource.displayName,
+      subItems: [
+        { name: `List ${resource.displayName}`, path: `/${key}` },
+        { name: `Create ${resource.displayName.slice(0, -1)}`, path: `/${key}/create` },
+      ],
+    };
+  });
 
 // Find the users nav item in jsonNavItems and replace it with a custom one
 const customUsersNav: NavItem = {

@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import Button from '../../components/ui/button/Button';
 import api from '../../services/api';
 import { useCurrentUser } from '../../context/CurrentUserContext';
+import { useNavigate } from 'react-router-dom';
 
 const AuditLogsList: React.FC = () => {
   const [logs, setLogs] = useState<any[]>([]);
@@ -13,6 +14,7 @@ const AuditLogsList: React.FC = () => {
   const paginatedLogs = logs.slice().reverse().slice((page - 1) * logsPerPage, page * logsPerPage);
 
   const { user: currentUser } = useCurrentUser();
+  const navigate = useNavigate();
 
   useEffect(() => {
     const fetchLogs = async () => {
@@ -100,8 +102,10 @@ const AuditLogsList: React.FC = () => {
 
   return (
     <div className="p-8">
-      <nav className="text-sm text-black mb-4">
-        Home / Users / <span className="font-semibold">Audit Logs</span>
+      <nav className="text-[16px] text-black mb-4 flex items-center gap-1">
+        <span className="hover:underline cursor-pointer text-orange-500" onClick={() => navigate('/')}>Dashboard</span>
+        <span className="mx-1">/</span>
+        <span className="font-semibold">Audit Logs</span>
       </nav>
       <div className="flex items-center justify-between mb-4">
         <h1 className="text-3xl font-bold">Audit Logs</h1>

@@ -16,6 +16,7 @@ const TimeLogsCreate: React.FC = () => {
         end_time: '',
         total_hours: '',
         description: '',
+        status: '',
     });
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState<string | null>(null);
@@ -57,6 +58,7 @@ const TimeLogsCreate: React.FC = () => {
         if (!form.start_time) errors.start_time = 'Start Time is required';
         if (!form.end_time) errors.end_time = 'End Time is required';
         if (!form.total_hours) errors.total_hours = 'Total Hours is required';
+        if (!form.status) errors.status = 'Status is required';
         return errors;
     };
 
@@ -85,6 +87,7 @@ const TimeLogsCreate: React.FC = () => {
                 end_time: endDateTime,
                 total_hours: Number(form.total_hours),
                 description: form.description,
+                status: form.status,
             };
             await api.post('/api/projectmanagement/time_logs/', payload);
             showToast({ type: 'success', title: 'Success', message: 'Time log created successfully!' });
@@ -99,8 +102,13 @@ const TimeLogsCreate: React.FC = () => {
 
     return (
         <div className="p-6">
-            {/* Breadcrumb */}
-            <div className="text-sm text-gray-600 mb-2">Home / Time Logs / Create Time Logs</div>
+            <nav className="text-sm text-black mb-2 flex items-center gap-1">
+                <span className="hover:underline cursor-pointer text-orange-500" onClick={() => navigate('/')}>Dashboard</span>
+                <span className="mx-1">/</span>
+                <span className="hover:underline cursor-pointer text-orange-500" onClick={() => navigate('/time_logs')}>Time Logs</span>
+                <span className="mx-1">/</span>
+                <span className="font-semibold">Create Time Log</span>
+            </nav>
             <h1 className="text-2xl font-bold mb-6">Create Time Logs</h1>
             <form className="space-y-6" onSubmit={handleSubmit}>
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
@@ -196,6 +204,22 @@ const TimeLogsCreate: React.FC = () => {
                             />
                         </div>
                         {fieldErrors.total_hours && <div className="text-red-500 text-sm mt-1">{fieldErrors.total_hours}</div>}
+                    </div>
+                    {/* Status Dropdown */}
+                    <div>
+                        <label className="block mb-2 font-semibold">Status <span className="text-red-500">*</span></label>
+                        <select
+                            name="status"
+                            value={form.status}
+                            onChange={handleChange}
+                            className="w-full bg-[#F6F2ED] rounded px-4 py-3 text-black outline-none"
+                        >
+                            <option value="">Select Status</option>
+                            <option value="To Do">To Do</option>
+                            <option value="In Progress">In Progress</option>
+                            <option value="Done">Done</option>
+                        </select>
+                        {fieldErrors.status && <div className="text-red-500 text-sm mt-1">{fieldErrors.status}</div>}
                     </div>
                 </div>
                 {/* Description */}

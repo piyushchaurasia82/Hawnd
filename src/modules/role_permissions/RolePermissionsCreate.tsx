@@ -187,6 +187,14 @@ const RolePermissionsCreate: React.FC<RolePermissionsCreateProps> = ({ moduleNam
 
     return (
         <div className="p-8 max-w-7xl">
+            {/* Breadcrumb */}
+            <div className="text-[16px] text-black mb-4 flex items-center gap-1">
+                <span className="hover:underline cursor-pointer text-orange-500" onClick={() => navigate('/')}>Dashboard</span>
+                <span className="mx-1">/</span>
+                <span className="hover:underline cursor-pointer text-orange-500" onClick={() => navigate('/role_permissions')}>Role Permissions</span>
+                <span className="mx-1">/</span>
+                <span className="text-gray-700">Create Role Permission</span>
+            </div>
             <h1 className="text-2xl font-bold mb-8">Create Role Permission</h1>
             <form onSubmit={handleSubmit}>
                 <div className="flex flex-row gap-4 items-start mb-0">
@@ -200,7 +208,10 @@ const RolePermissionsCreate: React.FC<RolePermissionsCreateProps> = ({ moduleNam
                     </div>
                     <div style={{ width: 420 }}>
                         <MultiSelectDropdown
-                            options={permissions.map(p => ({ value: p.id, label: p.code_name }))}
+                            options={permissions.map(p => ({
+                                value: p.id,
+                                label: p.code_name + (p.description ? ` - ${p.description}` : '')
+                            }))}
                             selectedValues={formData.permission}
                             onChange={handleMultiSelect}
                             label="Permissions"

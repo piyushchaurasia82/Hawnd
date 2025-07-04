@@ -1,5 +1,5 @@
 import type React from "react";
-import { useState } from "react";
+import { useState, useEffect, useRef } from "react";
 
 interface Option {
   value: string;
@@ -24,6 +24,23 @@ const MultiSelect: React.FC<MultiSelectProps> = ({
   const [selectedOptions, setSelectedOptions] =
     useState<string[]>(defaultSelected);
   const [isOpen, setIsOpen] = useState(false);
+  const dropdownRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    function handleClickOutside(event: MouseEvent) {
+      if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node)) {
+        setIsOpen(false);
+      }
+    }
+    if (isOpen) {
+      document.addEventListener("mousedown", handleClickOutside);
+    } else {
+      document.removeEventListener("mousedown", handleClickOutside);
+    }
+    return () => {
+      document.removeEventListener("mousedown", handleClickOutside);
+    };
+  }, [isOpen]);
 
   const toggleDropdown = () => {
     if (!disabled) setIsOpen((prev) => !prev);
@@ -49,30 +66,30 @@ const MultiSelect: React.FC<MultiSelectProps> = ({
   );
 
   return (
-    <div className="w-full">
-      <label className="mb-1.5 block text-sm font-medium text-gray-700 dark:text-gray-400">
+    <div className="w-full" ref={dropdownRef}>
+      <label className="mb-1.5 block text-sm font-medium text-gray-700">
         {label}
       </label>
 
       <div className="relative z-20 inline-block w-full">
         <div className="relative flex flex-col items-center">
-          <div onClick={toggleDropdown} className="w-full">
-            <div className="mb-2 flex h-11 rounded-lg border border-gray-300 py-1.5 pl-3 pr-3 shadow-theme-xs outline-hidden transition focus:border-brand-300 focus:shadow-focus-ring dark:border-gray-700 dark:bg-gray-900 dark:focus:border-brand-300">
-              <div className="flex flex-wrap flex-auto gap-2">
+          <div onClick={toggleDropdown} className="w-full cursor-pointer">
+            <div className={`mb-2 flex h-11 rounded-lg border border-gray-300 py-1.5 pl-3 pr-3 shadow-theme-xs transition focus-within:border-brand-300 focus-within:shadow-focus-ring bg-white ${disabled ? 'bg-gray-100 cursor-not-allowed opacity-60' : ''}`}>
+              <div className="flex flex-wrap flex-auto gap-2 items-center min-h-[1.5rem]">
                 {selectedValuesText.length > 0 ? (
                   selectedValuesText.map((text, index) => (
                     <div
                       key={index}
-                      className="group flex items-center justify-center rounded-full border-[0.7px] border-transparent bg-gray-100 py-1 pl-2.5 pr-2 text-sm text-gray-800 hover:border-gray-200 dark:bg-gray-800 dark:text-white/90 dark:hover:border-gray-800"
+                      className="group flex items-center justify-center rounded-full border-[0.7px] border-transparent bg-gray-100 py-1 pl-2.5 pr-2 text-sm text-gray-800 hover:border-gray-200"
                     >
                       <span className="flex-initial max-w-full">{text}</span>
                       <div className="flex flex-row-reverse flex-auto">
                         <div
-                          onClick={(e) => {
+                          onClick={e => {
                             e.stopPropagation();
                             removeOption(selectedOptions[index]);
                           }}
-                          className="pl-2 text-gray-500 cursor-pointer group-hover:text-gray-400 dark:text-gray-400"
+                          className="pl-2 text-gray-500 cursor-pointer group-hover:text-gray-400"
                         >
                           <svg
                             className="fill-current"
@@ -93,19 +110,16 @@ const MultiSelect: React.FC<MultiSelectProps> = ({
                     </div>
                   ))
                 ) : (
-                  <input
-                    placeholder="Select option"
-                    className="w-full h-full p-1 pr-2 text-sm bg-transparent border-0 outline-hidden appearance-none placeholder:text-gray-800 focus:border-0 focus:outline-hidden focus:ring-0 dark:placeholder:text-white/90"
-                    readOnly
-                    value="Select option"
-                  />
+                  <span className="text-gray-400 text-sm">Select option(s)</span>
                 )}
               </div>
               <div className="flex items-center py-1 pl-1 pr-1 w-7">
                 <button
                   type="button"
                   onClick={toggleDropdown}
-                  className="w-5 h-5 text-gray-700 outline-hidden cursor-pointer focus:outline-hidden dark:text-gray-400"
+                  className="w-5 h-5 text-gray-700 outline-hidden cursor-pointer focus:outline-hidden"
+                  tabIndex={-1}
+                  disabled={disabled}
                 >
                   <svg
                     className={`stroke-current ${isOpen ? "rotate-180" : ""}`}
@@ -130,27 +144,24 @@ const MultiSelect: React.FC<MultiSelectProps> = ({
 
           {isOpen && (
             <div
-              className="absolute left-0 z-40 w-full overflow-y-auto bg-white rounded-lg shadow-sm top-full max-h-select dark:bg-gray-900"
-              onClick={(e) => e.stopPropagation()}
+              className="absolute left-0 z-40 w-full overflow-y-auto bg-white rounded-lg shadow-lg top-full max-h-60 border border-gray-200"
+              onClick={e => e.stopPropagation()}
             >
-              <div className="flex flex-col">
+              <div className="flex flex-col divide-y divide-gray-100">
+                {options.length === 0 && (
+                  <div className="p-3 text-gray-400 text-sm">No options available</div>
+                )}
                 {options.map((option, index) => (
                   <div
                     key={index}
-                    className={`hover:bg-primary/5 w-full cursor-pointer rounded-t border-b border-gray-200 dark:border-gray-800`}
+                    className={`flex items-center gap-2 px-3 py-2 cursor-pointer hover:bg-orange-50 ${selectedOptions.includes(option.value) ? 'bg-orange-100' : ''}`}
                     onClick={() => handleSelect(option.value)}
                   >
-                    <div
-                      className={`relative flex w-full items-center p-2 pl-2 ${
-                        selectedOptions.includes(option.value)
-                          ? "bg-primary/10"
-                          : ""
-                      }`}
-                    >
-                      <div className="mx-2 leading-6 text-gray-800 dark:text-white/90">
-                        {option.text}
-                      </div>
-                    </div>
+                    <span className={`inline-block w-4 h-4 border rounded-sm flex-shrink-0 ${selectedOptions.includes(option.value) ? 'bg-orange-500 border-orange-500' : 'border-gray-300 bg-white'}`}></span>
+                    <span className="flex-1 text-gray-800">{option.text}</span>
+                    {selectedOptions.includes(option.value) && (
+                      <svg className="w-4 h-4 text-orange-500" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" /></svg>
+                    )}
                   </div>
                 ))}
               </div>

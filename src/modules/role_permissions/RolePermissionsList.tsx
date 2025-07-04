@@ -18,7 +18,8 @@ interface Role {
 interface Permission {
   id: number;
   code_name: string;
-  description: string;
+  name?: string;
+  description?: string;
 }
 
 interface RolePermission {
@@ -84,7 +85,7 @@ const RolePermissionsList: React.FC<RolePermissionsListProps> = ({ moduleName })
   
   // Create form states
   const [createSelectedRole, setCreateSelectedRole] = useState<string>("");
-  const [createSelectedPermissions, setCreateSelectedPermissions] = useState<string[]>([]);
+  const [createSelectedPermissions, setCreateSelectedPermissions] = useState<number[]>([]);
   const [isCreatePermissionDropdownOpen, setIsCreatePermissionDropdownOpen] = useState(false);
   
   // List filter states
@@ -112,9 +113,14 @@ const RolePermissionsList: React.FC<RolePermissionsListProps> = ({ moduleName })
       const permissionsData: Permission[] = Array.isArray(permissionsResponse.data)
         ? permissionsResponse.data
         : permissionsResponse.data.data || permissionsResponse.data.permissions || [];
-      const rolePermissionsData: RolePermission[] = Array.isArray(rolePermissionsResponse.data)
+      const rolePermissionsData: RolePermission[] = (Array.isArray(rolePermissionsResponse.data)
         ? rolePermissionsResponse.data
-        : rolePermissionsResponse.data.data || rolePermissionsResponse.data.role_permissions || [];
+        : rolePermissionsResponse.data.data || rolePermissionsResponse.data.role_permissions || [])
+        .map((rp: any) => ({
+          id: rp.id,
+          role: rp.role_id ?? rp.role,
+          permission: rp.permission_id ?? rp.permission
+        }));
       const usersData: User[] = Array.isArray(usersResponse.data)
         ? usersResponse.data
         : usersResponse.data.data || usersResponse.data.users || [];
@@ -140,7 +146,9 @@ const RolePermissionsList: React.FC<RolePermissionsListProps> = ({ moduleName })
   // Group role-permission mappings by role
   const groupedData = roles.map(role => {
     const rolePerms = rolePermissions.filter(rp => rp.role === role.id);
-    const permissionObjs = rolePerms.map(rp => permissions.find(p => p.id === rp.permission)).filter(Boolean);
+    const permissionObjs = rolePerms
+      .map(rp => permissions.find(p => Number(p.id) === Number(rp.permission)))
+      .filter(Boolean);
     const permissionCodes = permissionObjs.map(p => p!.code_name);
     const usersWithRole = userRoles.filter(ur => ur.role_id === role.id).map(ur => ur.user_id);
     return {
@@ -160,11 +168,11 @@ const RolePermissionsList: React.FC<RolePermissionsListProps> = ({ moduleName })
     return matchesRole && matchesPermissions && matchesSearch;
   });
 
-  const handleCreatePermissionToggle = (permission: string) => {
-    setCreateSelectedPermissions(prev => 
-      prev.includes(permission)
-        ? prev.filter(p => p !== permission)
-        : [...prev, permission]
+  const handleCreatePermissionToggle = (permissionId: number) => {
+    setCreateSelectedPermissions(prev =>
+      prev.includes(permissionId)
+        ? prev.filter(p => p !== permissionId)
+        : [...prev, permissionId]
     );
   };
 
@@ -191,9 +199,7 @@ const RolePermissionsList: React.FC<RolePermissionsListProps> = ({ moduleName })
       }
 
       // Find permission IDs from selected permission names
-      const selectedPermissionIds = permissions
-        .filter(p => createSelectedPermissions.includes(p.code_name))
-        .map(p => p.id);
+      const selectedPermissionIds = createSelectedPermissions;
 
       // Prevent duplicate role-permission creation
       const existingMappings = rolePermissions.filter(rp => rp.role === selectedRole.id && selectedPermissionIds.includes(rp.permission));
@@ -202,15 +208,11 @@ const RolePermissionsList: React.FC<RolePermissionsListProps> = ({ moduleName })
         return;
       }
 
-      // Create role permissions for each selected permission
-      const promises = selectedPermissionIds.map(permissionId =>
-        api.post('/api/projectmanagement/role-permissions/', {
-          role: selectedRole.id,
-          permission: permissionId
-        })
-      );
-
-      await Promise.all(promises);
+      // Create role permissions in one request (bulk)
+      await api.post('/api/projectmanagement/role-permissions/', {
+        role_id: selectedRole.id,
+        permission: selectedPermissionIds
+      });
 
       // Clear the create form
       setCreateSelectedRole("");
@@ -247,7 +249,11 @@ const RolePermissionsList: React.FC<RolePermissionsListProps> = ({ moduleName })
   return (
     <div className="p-8">
       {/* Breadcrumb */}
-      <div className="text-xs text-gray-500 mb-4">Role Permissions / Create Role Permission</div>
+      <div className="text-[16px] text-black mb-4 flex items-center gap-1">
+        <span className="hover:underline cursor-pointer text-orange-500" onClick={() => navigate('/')}>Dashboard</span>
+        <span className="mx-1">/</span>
+        <span className="text-gray-700">Role Permissions</span>
+      </div>
       
       {/* Create Role Permission Section */}
       <div className="bg-white rounded-lg p-6 mb-8 border border-gray-200">
@@ -270,28 +276,30 @@ const RolePermissionsList: React.FC<RolePermissionsListProps> = ({ moduleName })
               onClick={() => setIsCreatePermissionDropdownOpen(!isCreatePermissionDropdownOpen)}
             >
               <span className="truncate">
-                {createSelectedPermissions.length === 0 
-                  ? "Select Permissions" 
-                  : `${createSelectedPermissions.length} Permission${createSelectedPermissions.length === 1 ? '' : 's'} selected`}
+                {createSelectedPermissions.length === 0
+                  ? "Select Permissions"
+                  : permissions
+                      .filter(p => createSelectedPermissions.includes(p.id))
+                      .map(p => p.name || p.code_name)
+                      .join(', ')}
               </span>
               <span className="ml-2">▼</span>
             </button>
             {isCreatePermissionDropdownOpen && (
               <div className="absolute z-50 mt-1 w-full bg-white border rounded-md shadow-lg max-h-60 overflow-auto">
                 {permissions.map(permission => (
-                  <div
+                  <label
                     key={permission.id}
-                    className="px-4 py-2 hover:bg-gray-100 cursor-pointer flex items-center"
-                    onClick={() => handleCreatePermissionToggle(permission.code_name)}
+                    className="flex items-center px-4 py-2 hover:bg-gray-100 cursor-pointer text-sm"
                   >
                     <input
                       type="checkbox"
-                      checked={createSelectedPermissions.includes(permission.code_name)}
-                      onChange={() => {}}
+                      checked={createSelectedPermissions.includes(permission.id)}
+                      onChange={() => handleCreatePermissionToggle(permission.id)}
                       className="mr-3"
                     />
-                    <span>{permission.code_name}</span>
-                  </div>
+                    <span className="font-semibold">{permission.name || permission.code_name}</span>
+                  </label>
                 ))}
               </div>
             )}
@@ -398,45 +406,58 @@ const RolePermissionsList: React.FC<RolePermissionsListProps> = ({ moduleName })
               </tr>
             </thead>
             <tbody>
-              {filteredData.map((item) => (
-                <tr key={item.role} className="border-t hover:bg-gray-50">
-                  <td className="px-6 py-4">
-                    <span className="font-medium" title={item.role_name}>{truncateWords(item.role_name)}</span>
-                  </td>
-                  <td className="px-6 py-4">
-                    {item.permissionObjs.map((permObj, idx) => (
-                      <span key={permObj!.code_name} title={permObj!.description || permObj!.code_name} className="inline-block mr-1 bg-gray-50 px-2 py-1 rounded text-xs border align-middle">
-                        {truncateWords(permObj!.code_name)}{idx < item.permissionObjs.length - 1 ? ', ' : ''}
-                      </span>
-                    ))}
-                  </td>
-                  <td className="px-6 py-4 text-center">{item.users_count}</td>
-                  <td className="px-6 py-4">
-                    <button onClick={() => navigate(`/${moduleName}/edit/${item.role}`)} className="text-orange-600 hover:text-orange-800 font-semibold mr-2">Edit</button>
-                    <button
-                      onClick={async () => {
-                        if (!window.confirm('Are you sure you want to delete all permissions for this role?')) return;
-                        try {
-                          // Find all role-permission mappings for this role
-                          const mappings = rolePermissions.filter(rp => rp.role === item.role);
-                          await Promise.all(mappings.map(m => api.delete(`/api/projectmanagement/role-permissions/${m.id}/`)));
-                          await fetchData();
-                        } catch (error: any) {
-                          console.error('Error deleting role permissions:', error);
-                          alert(error?.response?.data?.error || 'Failed to delete role permissions.');
-                        }
-                      }}
-                      className="text-red-600 hover:text-red-800 font-semibold"
-                    >
-                      Delete
-                    </button>
-                  </td>
-                </tr>
-              ))}
+              {roles.map((role) => {
+                const rolePerms = rolePermissions.filter(rp => rp.role === role.id);
+                const permissionObjs = rolePerms
+                  .map(rp => permissions.find(p => Number(p.id) === Number(rp.permission)))
+                  .filter(Boolean);
+                return (
+                  <tr key={role.id} className="border-t hover:bg-gray-50">
+                    <td className="px-6 py-4">
+                      <span className="font-medium" title={role.name}>{truncateWords(role.name)}</span>
+                    </td>
+                    <td className="px-6 py-4">
+                      {permissionObjs.length === 0 ? (
+                        <span className="text-gray-400">No permissions assigned</span>
+                      ) : (
+                        permissionObjs.map((permObj, idx) => (
+                          <span key={permObj!.id} className="inline-block mr-1 bg-gray-50 px-2 py-1 rounded text-xs border align-middle">
+                            <span className="font-semibold">{permObj!.name || permObj!.code_name}</span>
+                            {idx < permissionObjs.length - 1 ? ', ' : ''}
+                          </span>
+                        ))
+                      )}
+                    </td>
+                    <td className="px-6 py-4 text-center">
+                      {userRoles.filter(ur => ur.role_id === role.id).length}
+                    </td>
+                    <td className="px-6 py-4">
+                      <button onClick={() => navigate(`/${moduleName}/edit/${role.id}`)} className="text-orange-600 hover:text-orange-800 font-semibold mr-2">Edit</button>
+                      <button
+                        onClick={async () => {
+                          if (!window.confirm('Are you sure you want to delete all permissions for this role?')) return;
+                          try {
+                            // Find all role-permission mappings for this role
+                            const mappings = rolePermissions.filter(rp => rp.role === role.id);
+                            await Promise.all(mappings.map(m => api.delete(`/api/projectmanagement/role-permissions/${m.id}/`)));
+                            await fetchData();
+                          } catch (error: any) {
+                            console.error('Error deleting role permissions:', error);
+                            alert(error?.response?.data?.error || 'Failed to delete role permissions.');
+                          }
+                        }}
+                        className="text-red-600 hover:text-red-800 font-semibold"
+                      >
+                        Delete
+                      </button>
+                    </td>
+                  </tr>
+                );
+              })}
             </tbody>
           </table>
-          {filteredData.length === 0 && !loading && (
-            <div className="text-center text-gray-500 py-8">No role permissions found.</div>
+          {roles.length === 0 && !loading && (
+            <div className="text-center text-gray-500 py-8">No roles found.</div>
           )}
         </div>
       </div>

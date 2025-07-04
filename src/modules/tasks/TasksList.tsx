@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import api from '../../services/api';
+import { useToast } from '../../components/ui/alert/ToastContext';
 
 const statusColors: Record<string, string> = {
   'In Progress': 'bg-orange-500 text-white',
@@ -22,6 +23,12 @@ const TasksList: React.FC = () => {
   const [error, setError] = useState<string | null>(null);
   const navigate = useNavigate();
   const API_BASE_URL = import.meta.env.VITE_API_BASE_URL;
+  const { showToast } = useToast();
+
+  // Pagination logic
+  const [currentPage, setCurrentPage] = useState(1);
+  const [jumpPage, setJumpPage] = useState('');
+  const pageSize = 10;
 
   useEffect(() => {
     setLoading(true);
@@ -34,15 +41,39 @@ const TasksList: React.FC = () => {
       .finally(() => setLoading(false));
   }, [API_BASE_URL]);
 
+  // Filtering logic
   const filteredTasks = tasks.filter(task => {
-    return (
-      (!filters.status || task.status === filters.status) &&
-      (!filters.priority || task.priority === filters.priority) &&
-      (!filters.dueDate || (task.due_date && new Date(task.due_date).toLocaleDateString('en-GB') === filters.dueDate)) &&
-      (!filters.name || (task.task_title || task.name || '').toLowerCase().includes(filters.name.toLowerCase())) &&
-      (!search || (task.task_title || task.name || '').toLowerCase().includes(search.toLowerCase()))
-    );
+    // Status filter
+    let statusMatch = true;
+    if (filters.status) {
+      statusMatch = (task.status || '').toLowerCase() === filters.status.toLowerCase();
+    }
+    // Priority filter
+    let priorityMatch = true;
+    if (filters.priority) {
+      priorityMatch = (task.priority || '').toLowerCase() === filters.priority.toLowerCase();
+    }
+    // Due date filter
+    let dueDateMatch = true;
+    if (filters.dueDate) {
+      const taskDue = task.due_date ? new Date(task.due_date).toLocaleDateString('en-GB') : '';
+      dueDateMatch = taskDue === filters.dueDate;
+    }
+    // Search filter (character by character, task_title or name)
+    let searchMatch = true;
+    if (search.trim()) {
+      const searchLower = search.toLowerCase();
+      searchMatch = (task.task_title || task.name || '').toLowerCase().includes(searchLower);
+    }
+    return statusMatch && priorityMatch && dueDateMatch && searchMatch;
   });
+
+  // Pagination logic (use filteredTasks)
+  const totalPages = Math.ceil(filteredTasks.length / pageSize);
+  const pagedTasks = filteredTasks.slice((currentPage - 1) * pageSize, currentPage * pageSize);
+  const handlePageChange = (page: number) => {
+    if (page >= 1 && page <= totalPages) setCurrentPage(page);
+  };
 
   // Collect unique due dates and task names for filter dropdowns
   const dueDates = Array.from(new Set(tasks.map(t => t.due_date ? new Date(t.due_date).toLocaleDateString('en-GB') : ''))).filter(Boolean);
@@ -50,7 +81,12 @@ const TasksList: React.FC = () => {
 
   return (
     <div className="p-8">
-      <div className="text-[18px] text-black mb-1 font-medium">Projects / Project / Tasks</div>
+      <nav className="text-[16px] text-black mb-1 flex items-center gap-1">
+        <span className="hover:underline cursor-pointer text-orange-500" onClick={() => navigate('/')}>Dashboard</span>
+        <span className="mx-1">/</span>
+        <span className="font-semibold">Project Tasks</span>
+      </nav>
+      {/* <div className="text-[18px] text-black mb-1 font-medium">Projects / Project / Tasks</div> */}
       <div className="flex justify-between items-center mb-2">
         <div>
           <h1 className="text-3xl font-bold">Project Tasks</h1>
@@ -79,39 +115,40 @@ const TasksList: React.FC = () => {
         </button>
       </div>
       {/* Filters */}
-      <div className="flex flex-wrap gap-4 mb-4">
-        <select className="rounded bg-gray-100 px-4 py-2 min-w-[120px]" value={filters.status} onChange={e => setFilters(f => ({ ...f, status: e.target.value }))}>
-          <option value="">Status</option>
-          <option value="In Progress">In Progress</option>
-          <option value="Todo">Todo</option>
-          <option value="Completed">Completed</option>
-        </select>
-        <select className="rounded bg-gray-100 px-4 py-2 min-w-[120px]" value={filters.priority} onChange={e => setFilters(f => ({ ...f, priority: e.target.value }))}>
-          <option value="">Priority</option>
-          <option value="High">High</option>
-          <option value="Medium">Medium</option>
-          <option value="Low">Low</option>
-        </select>
-        <select className="rounded bg-gray-100 px-4 py-2 min-w-[120px]" value={filters.dueDate} onChange={e => setFilters(f => ({ ...f, dueDate: e.target.value }))}>
-          <option value="">Due Date</option>
-          {dueDates.map(date => (
-            <option key={date} value={date}>{date}</option>
-          ))}
-        </select>
-        <select className="rounded bg-gray-100 px-4 py-2 min-w-[120px]" value={filters.name} onChange={e => setFilters(f => ({ ...f, name: e.target.value }))}>
-          <option value="">Task Name</option>
-          {taskNames.map(name => (
-            <option key={name} value={name}>{name}</option>
-          ))}
-        </select>
+      <div className="flex flex-col md:flex-row md:items-center gap-3 mb-4">
+        <div className="flex-1 relative">
+          <input
+            type="text"
+            placeholder="Search tasks"
+            value={search}
+            onChange={e => setSearch(e.target.value)}
+            className="w-full rounded-lg border border-gray-200 bg-gray-50 px-4 py-3 pl-10 text-sm focus:outline-none focus:ring-2 focus:ring-brand-500"
+          />
+          <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400">
+            <svg width="18" height="18" fill="none" viewBox="0 0 24 24"><path stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" d="M21 21l-4.35-4.35m0 0A7.5 7.5 0 1 0 6.5 6.5a7.5 7.5 0 0 0 10.6 10.6Z"/></svg>
+          </span>
+        </div>
+        <div className="flex gap-2">
+          <select className="rounded-lg border border-gray-200 bg-white px-3 py-2 text-sm min-w-[120px]" value={filters.status} onChange={e => setFilters(f => ({ ...f, status: e.target.value }))}>
+            <option value="">Status</option>
+            <option value="In Progress">In Progress</option>
+            <option value="Todo">Todo</option>
+            <option value="Completed">Completed</option>
+          </select>
+          <select className="rounded-lg border border-gray-200 bg-white px-3 py-2 text-sm min-w-[120px]" value={filters.priority} onChange={e => setFilters(f => ({ ...f, priority: e.target.value }))}>
+            <option value="">Priority</option>
+            <option value="High">High</option>
+            <option value="Medium">Medium</option>
+            <option value="Low">Low</option>
+          </select>
+          <select className="rounded-lg border border-gray-200 bg-white px-3 py-2 text-sm min-w-[120px]" value={filters.dueDate} onChange={e => setFilters(f => ({ ...f, dueDate: e.target.value }))}>
+            <option value="">Due Date</option>
+            {dueDates.map(date => (
+              <option key={date} value={date}>{date}</option>
+            ))}
+          </select>
+        </div>
       </div>
-      <input
-        type="text"
-        placeholder="Search tasks"
-        className="w-full rounded border border-gray-200 bg-white px-4 py-3 mb-4 text-base"
-        value={search}
-        onChange={e => setSearch(e.target.value)}
-      />
       {/* Table */}
       <div className="overflow-x-auto w-full">
         {loading ? (
@@ -130,20 +167,103 @@ const TasksList: React.FC = () => {
             </tr>
           </thead>
           <tbody>
-            {filteredTasks.map(task => (
+            {pagedTasks.map(task => (
               <tr key={task.id}>
                 <td className="px-6 py-4">{task.task_title || task.name}</td>
                 <td className="px-6 py-4">
-                  <span className={`inline-block rounded px-4 py-1 font-semibold ${statusColors[task.status]}`}>{task.status}</span>
+                  {(() => {
+                    const status = (task.status || '').toLowerCase().replace(/\s/g, '');
+                    const isGreen = status === 'completed' || status === 'done';
+                    return (
+                      <span
+                        className={`inline-flex items-center gap-1 px-3 py-1 rounded-full text-xs font-semibold border
+                          ${status === 'inprogress' ? 'border-orange-500 text-orange-600 bg-orange-50' : ''}
+                          ${isGreen ? 'border-green-500 text-green-700 bg-green-50' : ''}
+                          ${status === 'todo' ? 'border-blue-500 text-blue-600 bg-blue-50' : ''}
+                        `}
+                      >
+                        <span
+                          className={`w-2 h-2 rounded-full mr-1
+                            ${status === 'inprogress' ? 'bg-orange-500' : ''}
+                            ${isGreen ? 'bg-green-500' : ''}
+                            ${status === 'todo' ? 'bg-blue-500' : ''}
+                          `}
+                        ></span>
+                        {task.status}
+                      </span>
+                    );
+                  })()}
                 </td>
                 <td className="px-6 py-4">
-                  <span className={`inline-block rounded px-4 py-1 font-semibold ${priorityColors[task.priority]}`}>{task.priority}</span>
+                  <span
+                    className={`inline-flex items-center gap-1 px-3 py-1 rounded-full text-xs font-semibold border
+                      ${task.priority === 'High' ? 'border-red-500 text-red-600 bg-red-50' : ''}
+                      ${task.priority === 'Medium' ? 'border-yellow-500 text-yellow-700 bg-yellow-50' : ''}
+                      ${task.priority === 'Low' ? 'border-green-500 text-green-700 bg-green-50' : ''}
+                    `}
+                  >
+                    <span
+                      className={`w-2 h-2 rounded-full mr-1
+                        ${task.priority === 'High' ? 'bg-red-500' : ''}
+                        ${task.priority === 'Medium' ? 'bg-yellow-400' : ''}
+                        ${task.priority === 'Low' ? 'bg-green-500' : ''}
+                      `}
+                    ></span>
+                    {task.priority}
+                  </span>
                 </td>
                 <td className="px-6 py-4">{task.due_date ? new Date(task.due_date).toLocaleDateString('en-GB') : ''}</td>
                 <td className="px-6 py-4">
-                  <button onClick={() => navigate(`/tasks/edit/${task.id}`)} className="text-black" title="Edit Task">
+                  <button onClick={() => navigate(`/tasks/edit/${task.id}`)} className="text-black mr-3" title="Edit Task">
                     <svg width="22" height="22" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+                    </svg>
+                  </button>
+                  <button
+                    onClick={() => {
+                      const toastId = showToast({
+                        type: 'warning',
+                        title: 'Confirm Deletion',
+                        message: 'Are you sure you want to delete this task? This action cannot be undone.',
+                        duration: 8000,
+                        actions: [
+                          {
+                            label: 'Delete',
+                            variant: 'danger',
+                            onClick: async () => {
+                              try {
+                                await api.delete(`${API_BASE_URL}/api/projectmanagement/tasks/${task.id}/`);
+                                setTasks(tasks => tasks.filter(t => t.id !== task.id));
+                                showToast({
+                                  type: 'success',
+                                  title: 'Task Deleted',
+                                  message: 'The task has been deleted successfully.',
+                                  duration: 4000
+                                });
+                              } catch (err) {
+                                alert('Failed to delete task.');
+                              }
+                              // Remove the confirmation toast
+                              const evt = new CustomEvent('toast:remove', { detail: { id: toastId } });
+                              window.dispatchEvent(evt);
+                            }
+                          },
+                          {
+                            label: 'Cancel',
+                            variant: 'default',
+                            onClick: () => {
+                              // Remove the confirmation toast
+                              const evt = new CustomEvent('toast:remove', { detail: { id: toastId } });
+                              window.dispatchEvent(evt);
+                            }
+                          }
+                        ]
+                      });
+                    }}
+                    className="text-red-600 hover:text-red-800" title="Delete Task"
+                  >
+                    <svg width="22" height="22" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
                     </svg>
                   </button>
                 </td>
@@ -153,6 +273,31 @@ const TasksList: React.FC = () => {
         </table>
         )}
       </div>
+      {/* Pagination Controls */}
+      {totalPages > 1 && (
+        <div className="flex items-center justify-center gap-2 mt-8">
+          <button onClick={() => handlePageChange(currentPage - 1)} disabled={currentPage === 1} className="px-2 py-1 text-lg disabled:text-gray-300">{'<'}</button>
+          <span className="px-2 py-1 rounded-full bg-gray-100 font-semibold">{currentPage}</span>
+          <button onClick={() => handlePageChange(currentPage + 1)} disabled={currentPage === totalPages} className="px-2 py-1 text-lg disabled:text-gray-300">{'>'}</button>
+          <span className="ml-2 text-gray-500">... {totalPages}</span>
+          {/* Jump to page input */}
+          <span className="ml-4 text-gray-700">Jump to page:</span>
+          <input
+            type="number"
+            min={1}
+            max={totalPages}
+            value={currentPage}
+            onChange={e => {
+              let val = parseInt(e.target.value, 10);
+              if (isNaN(val)) val = 1;
+              if (val < 1) val = 1;
+              if (val > totalPages) val = totalPages;
+              setCurrentPage(val);
+            }}
+            className="w-16 px-2 py-1 border border-gray-300 rounded text-center ml-2"
+          />
+        </div>
+      )}
     </div>
   );
 };

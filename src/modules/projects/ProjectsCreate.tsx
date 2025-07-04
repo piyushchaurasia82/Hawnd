@@ -229,7 +229,13 @@ const ProjectsCreate: React.FC<ProjectsCreateProps> = ({ moduleName }) => {
 
     return (
         <div className="p-4">
-            <div className="text-[16px] text-black mb-4">Dashboard / Project Management / Create Project</div>
+            <nav className="text-[16px] text-black mb-4 flex items-center gap-1">
+                <span className="hover:underline cursor-pointer text-orange-500" onClick={() => navigate('/')}>Dashboard</span>
+                <span className="mx-1">/</span>
+                <span className="hover:underline cursor-pointer text-orange-500" onClick={() => navigate('/projects')}>Project Management</span>
+                <span className="mx-1">/</span>
+                <span className="font-semibold">Create Project</span>
+            </nav>
             <h1 className="text-2xl font-bold mb-6">Create Project</h1>
             {/* Tabs */}
             <div className="flex border-b border-gray-200 mb-6">

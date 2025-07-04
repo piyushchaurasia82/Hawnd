@@ -138,7 +138,7 @@
         "defaultValue": null
       },
       {
-        "name": "code_name",
+        "name": "name",
         "label": "Name",
         "type": "text",
         "isPrimaryKey": false,
@@ -201,12 +201,12 @@
     "listConfig": {
       "defaultSort": { "field": "created_at", "order": "desc" },
       "pageSize": 10,
-      "columns": ["code_name", "description"]
+      "columns": ["name", "description"]
     },
     "formConfig": {
-      "fields": ["code_name", "description"],
+      "fields": ["name", "description"],
       "validation": {
-        "code_name": {
+        "name": {
           "required": "Name is required",
           "maxLength": "Name cannot exceed 100 characters",
           "unique": "Name must be unique"
@@ -215,7 +215,7 @@
     },
     "filterConfig": {
       "fields": [
-        { "name": "code_name", "type": "text", "label": "Name" },
+        { "name": "name", "type": "text", "label": "Name" },
         { "name": "created_at", "type": "date", "label": "Created At" },
         { "name": "updated_at", "type": "date", "label": "Updated At" }
       ]

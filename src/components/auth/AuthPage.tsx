@@ -205,30 +205,34 @@ const AuthPage: React.FC = () => {
             Sign In
           </button>
           {/* Google Auth Separator and Button */}
-          <div className="relative my-8 flex items-center justify-center">
-            <div className="absolute inset-x-0 h-px bg-gray-200"></div>
-            <span className="relative z-10 bg-white px-4 text-sm text-gray-500">Or login with</span>
-          </div>
-          <div className="flex justify-center mb-6">
-            <GoogleLogin
-              onSuccess={credentialResponse => {
-                const idToken = credentialResponse.credential;
-                if (idToken) {
-                  const decoded = decodeJwt(idToken);
-                  console.log('Decoded Google ID Token:', decoded);
-                }
-                console.log(credentialResponse);
-              }}
-              onError={() => {
-                console.log('Login Failed');
-              }}
-              width="320"
-              size="large"
-              theme="outline"
-              text="signin_with"
-              shape="circle"
-            />
-          </div>
+          {false && (
+            <>
+              <div className="relative my-8 flex items-center justify-center">
+                <div className="absolute inset-x-0 h-px bg-gray-200"></div>
+                <span className="relative z-10 bg-white px-4 text-sm text-gray-500">Or login with</span>
+              </div>
+              <div className="flex justify-center mb-6">
+                <GoogleLogin
+                  onSuccess={credentialResponse => {
+                    const idToken = credentialResponse.credential;
+                    if (idToken) {
+                      const decoded = decodeJwt(idToken);
+                      console.log('Decoded Google ID Token:', decoded);
+                    }
+                    console.log(credentialResponse);
+                  }}
+                  onError={() => {
+                    console.log('Login Failed');
+                  }}
+                  width="320"
+                  size="large"
+                  theme="outline"
+                  text="signin_with"
+                  shape="circle"
+                />
+              </div>
+            </>
+          )}
         </form>
         {/* Message Modal - Conditionally Rendered */}
         {message && messageColors && (

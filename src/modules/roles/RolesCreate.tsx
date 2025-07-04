@@ -79,14 +79,10 @@ const RolesCreate: React.FC<RolesCreateProps> = ({ moduleName }) => {
       const roleId = roleRes.data?.id || roleRes.data?.data?.id || roleRes.data?.role?.id;
       // 2. Assign permissions if any
       if (roleId && selectedPermissions.length > 0) {
-        await Promise.all(
-          selectedPermissions.map(permissionId =>
-            api.post('/api/projectmanagement/role-permissions/', {
-              role: roleId,
-              permission: permissionId,
-            })
-          )
-        );
+        await api.post('/api/projectmanagement/role-permissions/', {
+          role_id: roleId,
+          permission: selectedPermissions,
+        });
       }
       navigate(`/${moduleName}`);
     } catch (error) {
@@ -98,12 +94,12 @@ const RolesCreate: React.FC<RolesCreateProps> = ({ moduleName }) => {
 
   return (
     <div className="max-w-6xl mx-auto px-4 py-8">
-      <nav className="text-xs text-gray-500 mb-2 flex gap-1">
-        <button type="button" onClick={() => navigate('/')} className="hover:underline hover:text-black focus:outline-none bg-transparent p-0 m-0">Home</button>
-        <span>/</span>
-        <button type="button" onClick={() => navigate('/roles')} className="hover:underline hover:text-black focus:outline-none bg-transparent p-0 m-0">Roles</button>
-        <span>/</span>
-        <span className="font-semibold text-black">Create New Role</span>
+      <nav className="text-[16px] text-black mb-4 flex items-center gap-1">
+        <span className="hover:underline cursor-pointer text-orange-500" onClick={() => navigate('/')}>Dashboard</span>
+        <span className="mx-1">/</span>
+        <span className="hover:underline cursor-pointer text-orange-500" onClick={() => navigate('/roles')}>Roles</span>
+        <span className="mx-1">/</span>
+        <span className="font-semibold">Create Role</span>
       </nav>
       <h1 className="text-2xl font-bold mb-6">Create New Role</h1>
       <form onSubmit={handleSubmit}>
@@ -154,8 +150,8 @@ const RolesCreate: React.FC<RolesCreateProps> = ({ moduleName }) => {
                   className="w-5 h-5 mt-1 accent-orange-500 border-gray-300 rounded"
                 />
                 <span>
-                  <span className="font-semibold text-base">{perm.code_name}</span>
-                  {perm.description ? <span className="text-sm"> - {perm.description}</span> : ''}
+                  <span className="font-semibold text-base">{perm.name}</span>
+                  {perm.description && <span className="text-sm font-normal text-gray-700"> - {perm.description}</span>}
                 </span>
               </label>
             ))}

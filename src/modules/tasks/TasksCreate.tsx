@@ -7,6 +7,7 @@ import 'react-date-range/dist/theme/default.css';
 import { format } from 'date-fns';
 import { useToast } from '../../components/ui/alert/ToastContext';
 import api from '../../services/api';
+import MultiSelect from '../../components/form/MultiSelect';
 
 const assignees = [
   { id: 1, name: 'Alex' },
@@ -35,13 +36,13 @@ const TasksCreate: React.FC = () => {
   const [tab, setTab] = useState<'quick' | 'detailed'>('quick');
   const [quickForm, setQuickForm] = useState({
     title: '',
-    assignee: '',
+    assignee: [],
     project_id: projectId || '',
   });
 
   const [form, setForm] = useState({
     title: '',
-    assignee: '',
+    assignee: [],
     start_date: '',
     due_date: '',
     estimated: '',
@@ -139,7 +140,7 @@ const TasksCreate: React.FC = () => {
     // Validation
     const errors: { [key: string]: string } = {};
     if (!quickForm.title) errors.title = 'Task Title is required';
-    if (!quickForm.assignee) errors.assignee = 'Assignee is required';
+    if (!quickForm.assignee.length) errors.assignee = 'Assignee is required';
     if (!quickForm.project_id) errors.project_id = 'Project is required';
     if (Object.keys(errors).length > 0) {
       setFieldErrors(errors);
@@ -148,11 +149,14 @@ const TasksCreate: React.FC = () => {
     }
     setLoading(true);
     try {
+      const assigneesArr = Array.isArray(quickForm.assignee) ? quickForm.assignee.map(Number).filter(v => !isNaN(v)) : [];
       let payload: any = {
         project_id: projectId ? Number(projectId) : quickForm.project_id ? Number(quickForm.project_id) : undefined,
         task_title: quickForm.title,
-        assignees: quickForm.assignee,
       };
+      if (assigneesArr.length > 0) {
+        payload.assignees = assigneesArr;
+      }
       payload = Object.fromEntries(Object.entries(payload).filter(([_, v]) => v !== '' && v !== undefined && v !== null));
       await api.post(`${API_BASE_URL}/api/projectmanagement/tasks/`, payload);
       showToast({ type: 'success', title: 'Success', message: 'Task created successfully!' });
@@ -173,25 +177,29 @@ const TasksCreate: React.FC = () => {
     e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>,
     formType: 'quick' | 'detailed'
   ) => {
-    const { name, value, type } = e.target;
-    const isCheckbox = type === 'checkbox';
-    const checked = isCheckbox ? (e.target as HTMLInputElement).checked : undefined;
+    const { name } = e.target;
+    let newValue: any;
+
+    if (e.target instanceof HTMLInputElement && e.target.type === 'checkbox') {
+      newValue = e.target.checked;
+    } else if (e.target instanceof HTMLSelectElement && e.target.multiple) {
+      newValue = Array.from(e.target.options)
+        .filter(option => option.selected)
+        .map(option => option.value);
+    } else {
+      newValue = e.target.value;
+    }
 
     if (formType === 'quick') {
       setQuickForm(prev => ({
         ...prev,
-        [name]: isCheckbox ? checked : value,
+        [name]: newValue,
       }));
     } else {
-      // console.log('Detailed form change:', { name, value, type, isCheckbox, checked });
-      setForm(prev => {
-        const newState = {
-          ...prev,
-          [name]: isCheckbox ? checked : value,
-        };
-        // console.log('New detailed form state:', newState);
-        return newState;
-      });
+      setForm(prev => ({
+        ...prev,
+        [name]: newValue,
+      }));
     }
 
     if (fieldErrors[name]) {
@@ -205,10 +213,10 @@ const TasksCreate: React.FC = () => {
 
   // Map detailed form to API payload
   function mapDetailedToApi() {
-    return {
+    const assigneesArr = Array.isArray(form.assignee) ? form.assignee.map(Number).filter(v => !isNaN(v)) : [];
+    let payload: any = {
       project_id: projectId ? Number(projectId) : form.project_id ? Number(form.project_id) : undefined,
       task_title: form.title,
-      assignees: form.assignee,
       start_date: form.start_date,
       due_date: form.due_date,
       estimated: form.estimated,
@@ -223,14 +231,21 @@ const TasksCreate: React.FC = () => {
       notify_comment: form.notifyComment,
       notify_submission: form.notifySubmission,
     };
+    if (assigneesArr.length > 0) {
+      payload.assignees = assigneesArr;
+    }
+    return payload;
   }
 
   return (
-    <div className="p-4">
-      {/* Breadcrumb */}
-      <div className="text-[15px] text-black mb-2">
-        Dashboard / Project Management / Create Task
-      </div>
+    <div className="p-8">
+      <nav className="text-[16px] text-black mb-4 flex items-center gap-1">
+        <span className="hover:underline cursor-pointer text-orange-500" onClick={() => navigate('/')}>Dashboard</span>
+        <span className="mx-1">/</span>
+        <span className="hover:underline cursor-pointer text-orange-500" onClick={() => navigate('/tasks')}>Project Tasks</span>
+        <span className="mx-1">/</span>
+        <span className="font-semibold">Create Task</span>
+      </nav>
       {/* Tabs */}
       <div className="flex border-b mb-6">
         <button
@@ -285,20 +300,12 @@ const TasksCreate: React.FC = () => {
             <label className="block mb-2 font-medium">
               Assignee <span className="text-red-500">*</span>
             </label>
-            <select
-              name="assignee"
-              className="w-full bg-[#F3F3F3] rounded px-4 py-3 text-black outline-none"
-              value={quickForm.assignee}
-              onChange={(e) => handleChange(e, 'quick')}
-            >
-              <option value="">Select assignee</option>
-              {users.map(user => {
-                const fullName = `${user.first_name} ${user.last_name}`.trim();
-                return (
-                  <option key={user.id} value={user.id}>{fullName}</option>
-                );
-              })}
-            </select>
+            <MultiSelect
+              label="Select assignee(s)"
+              options={users.map(user => ({ value: String(user.id), text: `${user.first_name} ${user.last_name}`.trim() }))}
+              defaultSelected={quickForm.assignee.map(String)}
+              onChange={values => handleChange({ target: { name: 'assignee', value: values } } as any, 'quick')}
+            />
             {fieldErrors.assignee && <div className="text-red-500 text-sm mt-1">{fieldErrors.assignee}</div>}
           </div>
           <div className="flex gap-4 mt-4">
@@ -364,20 +371,12 @@ const TasksCreate: React.FC = () => {
                 <label className="block mb-2 font-medium text-[15px]">
                   Assignees <span className="text-red-500">*</span>
                 </label>
-                <select
-                  name="assignee"
-                  className="w-full bg-[#F3F3F3] rounded px-4 py-3 text-black outline-none text-[15px]"
-                  value={form.assignee}
-                  onChange={(e) => handleChange(e, 'detailed')}
-                >
-                  <option value="">Select assignee</option>
-                  {users.map(user => {
-                    const fullName = `${user.first_name} ${user.last_name}`.trim();
-                    return (
-                      <option key={user.id} value={user.id}>{fullName}</option>
-                    );
-                  })}
-                </select>
+                <MultiSelect
+                  label=""
+                  options={users.map(user => ({ value: String(user.id), text: `${user.first_name} ${user.last_name}`.trim() }))}
+                  defaultSelected={form.assignee.map(String)}
+                  onChange={values => handleChange({ target: { name: 'assignee', value: values } } as any, 'detailed')}
+                />
                 {fieldErrors.assignee && <div className="text-red-500 text-sm mt-1">{fieldErrors.assignee}</div>}
               </div>
               <div className="">

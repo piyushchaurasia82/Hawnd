@@ -223,13 +223,10 @@ const UsersList: React.FC = () => {
 
   return (
     <div className="max-w-6xl mx-auto px-4 py-8">
-      {/* Breadcrumb */}
-      <nav className="text-xs text-gray-500 mb-2 flex gap-1">
-        <span>Home</span>
-        <span>/</span>
-        <span>Users</span>
-        <span>/</span>
-        <span className="font-semibold text-black">User Directory</span>
+      <nav className="text-[16px] text-black mb-4 flex items-center gap-1">
+        <span className="hover:underline cursor-pointer text-orange-500" onClick={() => navigate('/')}>Dashboard</span>
+        <span className="mx-1">/</span>
+        <span className="font-semibold">Users</span>
       </nav>
       {/* Title and Add User */}
       <div className="flex items-center justify-between mb-4">

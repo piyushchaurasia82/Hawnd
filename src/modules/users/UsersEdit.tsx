@@ -96,7 +96,7 @@ const MultiSelectDropdown = ({ options, selectedValues, onChange, label, disable
   );
 };
 
-const UsersEdit: React.FC<{ moduleName: string }> = ({ moduleName }) => {
+const UsersEdit: React.FC<{ moduleName?: string }> = ({ moduleName = 'users' }) => {
     const { id } = useParams<{ id: string }>();
     const config: ModuleConfig | undefined = moduleName ? modules[moduleName] : undefined;
     const navigate = useNavigate();
@@ -115,7 +115,16 @@ const UsersEdit: React.FC<{ moduleName: string }> = ({ moduleName }) => {
         setLoading(true);
         api.get(`${config.apiBaseUrl}${config.endpoints.read.url.replace(':id', id)}/`)
             .then(res => {
-                const user = res.data;
+                // Robust extraction: handle both { data: user } and { ...user fields }
+                let user = res.data;
+                if (user && typeof user === 'object' && 'data' in user && user.data) {
+                  user = user.data;
+                }
+                if (!user || typeof user !== 'object') {
+                  setError('User data not found.');
+                  setLoading(false);
+                  return;
+                }
                 // Always ensure is_active is present and boolean for the toggle
                 if (typeof user.is_active === 'undefined' || user.is_active === null) {
                     user.is_active = true;
@@ -132,9 +141,12 @@ const UsersEdit: React.FC<{ moduleName: string }> = ({ moduleName }) => {
                 setFormData(user);
                 setLoading(false);
             })
-            .catch(() => {
-                setError('Failed to load user data.');
+            .catch((err) => {
+                setError('Failed to load user data. ' + (err?.message || ''));
                 setLoading(false);
+                // Log error for debugging
+                // eslint-disable-next-line no-console
+                console.error('Error fetching user by id:', err);
             });
     }, [config, id, lastChangedPassword]);
 

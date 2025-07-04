@@ -13,6 +13,7 @@ interface TimeLog {
   end_time: string;
   total_hours: string;
   description: string;
+  status?: string;
 }
 
 function formatTime(timeStr: string | null | undefined) {
@@ -34,35 +35,155 @@ const TimeLogsList: React.FC = () => {
   const [timeLogs, setTimeLogs] = useState<TimeLog[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [statusFilter, setStatusFilter] = useState('');
+  const [search, setSearch] = useState('');
+  const [dateRange, setDateRange] = useState<{start: string, end: string}>({start: '', end: ''});
+  const [filteredLogs, setFilteredLogs] = useState<TimeLog[]>([]);
+  const [currentPage, setCurrentPage] = useState(1);
+  const pageSize = 10;
+  const [jumpPage, setJumpPage] = useState('');
+
+  const fetchLogs = async (filters = {}) => {
+    setLoading(true);
+    setError(null);
+    try {
+      const params = new URLSearchParams();
+      if (statusFilter) params.append('status', statusFilter);
+      if (search) params.append('search', search);
+      if (dateRange.start) params.append('start_date', dateRange.start);
+      if (dateRange.end) params.append('end_date', dateRange.end);
+      const url = `/api/projectmanagement/time_logs/?${params.toString()}`;
+      const res = await api.get(url);
+      setTimeLogs(res.data.data || []);
+    } catch (err) {
+      setError('Failed to load time logs.');
+    } finally {
+      setLoading(false);
+    }
+  };
 
   useEffect(() => {
-    api.get('/api/projectmanagement/time_logs/')
-      .then(res => {
-        setTimeLogs(res.data.data || []);
-        setLoading(false);
-      })
-      .catch(err => {
-        setError('Failed to load time logs.');
-        setLoading(false);
-      });
-  }, []);
+    fetchLogs();
+    // eslint-disable-next-line
+  }, [statusFilter, dateRange.start, dateRange.end]);
+
+  // Filter logs by status, date range (independent), and search (character by character) on the frontend
+  useEffect(() => {
+    let logs = [...timeLogs];
+    if (statusFilter) {
+      logs = logs.filter(log => log.status === statusFilter);
+    }
+    if (dateRange.start) {
+      logs = logs.filter(log => log.start_date && new Date(log.start_date) >= new Date(dateRange.start));
+    }
+    if (dateRange.end) {
+      logs = logs.filter(log => log.end_date && new Date(log.end_date) <= new Date(dateRange.end));
+    }
+    if (search.trim()) {
+      const searchLower = search.toLowerCase();
+      logs = logs.filter(log => log.task_name?.toLowerCase().includes(searchLower));
+    }
+    setFilteredLogs(logs);
+  }, [statusFilter, search, dateRange.start, dateRange.end, timeLogs]);
+
+  // Sort logs by start_date descending (latest first)
+  const sortedLogs = [...filteredLogs].sort((a, b) => {
+    const aDate = a.start_date ? new Date(a.start_date).getTime() : 0;
+    const bDate = b.start_date ? new Date(b.start_date).getTime() : 0;
+    return bDate - aDate;
+  });
+
+  // Pagination logic
+  const totalPages = Math.ceil(sortedLogs.length / pageSize);
+  const pagedLogs = sortedLogs.slice((currentPage - 1) * pageSize, currentPage * pageSize);
+
+  const handlePageChange = (page: number) => {
+    if (page >= 1 && page <= totalPages) setCurrentPage(page);
+  };
 
   return (
     <div className="p-6">
       {/* Breadcrumb */}
-      <div className="text-sm text-gray-600 mb-2">
-        Home / Time Logs / List Time Logs
-      </div>
+      <nav className="text-sm text-black mb-2 flex items-center gap-1">
+        <span className="hover:underline cursor-pointer text-orange-500" onClick={() => navigate('/')}>Dashboard</span>
+        <span className="mx-1">/</span>
+        <span className="font-semibold">Time Logs</span>
+      </nav>
       {/* Title */}
       <h1 className="text-2xl font-bold mb-6">Time Logs</h1>
       {/* Filters */}
-      <div className="flex gap-4 mb-4">
-        <button className="bg-[#F6F2ED] border border-[#E5E1DC] rounded px-4 py-2 text-sm flex items-center gap-2">
-          Date Range <span className="ml-1">&#9662;</span>
-        </button>
-        <button className="bg-[#F6F2ED] border border-[#E5E1DC] rounded px-4 py-2 text-sm flex items-center gap-2">
-          Search by Task or Description <span className="ml-1">&#9662;</span>
-        </button>
+      <div className="flex flex-col md:flex-row md:items-start gap-3 mb-4">
+        <div className="flex-1 relative max-w-xl">
+          <input
+            type="text"
+            placeholder="Search by Task or Description"
+            value={search}
+            onChange={e => setSearch(e.target.value)}
+            className="w-full rounded-lg border border-gray-200 bg-gray-50 px-4 py-3 pl-10 pr-10 text-sm focus:outline-none focus:border-orange-500"
+          />
+          <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400">
+            <svg width="18" height="18" fill="none" viewBox="0 0 24 24"><path stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" d="M21 21l-4.35-4.35m0 0A7.5 7.5 0 1 0 6.5 6.5a7.5 7.5 0 0 0 10.6 10.6Z"/></svg>
+          </span>
+          {search && (
+            <button
+              type="button"
+              className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 focus:outline-none"
+              onClick={() => setSearch('')}
+              tabIndex={-1}
+            >
+              <svg width="18" height="18" fill="none" viewBox="0 0 24 24"><path stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" d="M18 6L6 18M6 6l12 12"/></svg>
+            </button>
+          )}
+        </div>
+        <div className="flex gap-2 items-start mt-[-16px]">
+          <div className="flex flex-col">
+            <label className="text-xs font-medium mb-1">Start Date</label>
+            <input
+              type="date"
+              value={dateRange.start}
+              onChange={e => setDateRange(r => ({...r, start: e.target.value}))}
+              className="rounded-lg border border-gray-200 bg-white px-3 py-2 text-sm min-w-[120px]"
+              placeholder="Start Date"
+            />
+          </div>
+          <div className="flex flex-col">
+            <label className="text-xs font-medium mb-1">End Date</label>
+            <input
+              type="date"
+              value={dateRange.end}
+              onChange={e => setDateRange(r => ({...r, end: e.target.value}))}
+              className="rounded-lg border border-gray-200 bg-white px-3 py-2 text-sm min-w-[120px]"
+              placeholder="End Date"
+            />
+          </div>
+          <div className="flex flex-col">
+            <label className="text-xs font-medium mb-1">Status</label>
+            <select
+              value={statusFilter}
+              onChange={e => setStatusFilter(e.target.value)}
+              className="rounded-lg border border-gray-200 bg-white px-3 py-2 text-sm min-w-[120px]"
+            >
+              <option value="">Status</option>
+              <option value="To Do">To Do</option>
+              <option value="In Progress">In Progress</option>
+              <option value="Done">Done</option>
+            </select>
+          </div>
+          {/* Remove All Filters Button */}
+          <div className="flex flex-col justify-end">
+            <button
+              type="button"
+              className="rounded-lg border border-gray-200 bg-white px-4 py-2 text-sm font-semibold hover:bg-gray-100 mt-5"
+              onClick={() => {
+                setSearch('');
+                setStatusFilter('');
+                setDateRange({ start: '', end: '' });
+              }}
+            >
+              Remove All Filters
+            </button>
+          </div>
+        </div>
       </div>
       {/* Table */}
       <div className="bg-white rounded shadow-sm">
@@ -71,6 +192,7 @@ const TimeLogsList: React.FC = () => {
         ) : error ? (
           <div className="p-6 text-center text-red-500">{error}</div>
         ) : (
+          <>
           <table className="min-w-full text-sm">
             <thead>
               <tr className="border-b">
@@ -80,12 +202,12 @@ const TimeLogsList: React.FC = () => {
                 <th className="text-left px-4 py-3 font-semibold">Start Time</th>
                 <th className="text-left px-4 py-3 font-semibold">End Time</th>
                 <th className="text-left px-4 py-3 font-semibold">Total Hours</th>
-                {/* <th className="text-left px-4 py-3 font-semibold">Description</th> */}
+                <th className="text-left px-4 py-3 font-semibold">Status</th>
                 <th className="text-left px-4 py-3 font-semibold">Actions</th>
               </tr>
             </thead>
             <tbody>
-              {timeLogs.map((log) => (
+              {pagedLogs.map((log) => (
                 <tr key={log.id} className="border-b hover:bg-[#F6F2ED]">
                   <td className="px-4 py-3">{log.task_name}</td>
                   <td className="px-4 py-3">{log.start_date ? format(new Date(log.start_date), 'dd-MM-yyyy') : ''}</td>
@@ -93,7 +215,24 @@ const TimeLogsList: React.FC = () => {
                   <td className="px-4 py-3">{formatTime(log.start_time)}</td>
                   <td className="px-4 py-3">{formatTime(log.end_time)}</td>
                   <td className="px-4 py-3">{log.total_hours}</td>
-                  {/* <td className="px-4 py-3">{log.description}</td> */}
+                  <td className="px-4 py-3">
+                    <span
+                      className={`inline-flex items-center gap-1 px-3 py-1 rounded-full text-xs font-semibold border
+                        ${log.status === 'In Progress' ? 'border-orange-500 text-orange-600 bg-orange-50' : ''}
+                        ${log.status === 'Done' ? 'border-green-500 text-green-700 bg-green-50' : ''}
+                        ${log.status === 'To Do' ? 'border-blue-500 text-blue-600 bg-blue-50' : ''}
+                      `}
+                    >
+                      <span
+                        className={`w-2 h-2 rounded-full mr-1
+                          ${log.status === 'In Progress' ? 'bg-orange-500' : ''}
+                          ${log.status === 'Done' ? 'bg-green-500' : ''}
+                          ${log.status === 'To Do' ? 'bg-blue-500' : ''}
+                        `}
+                      ></span>
+                      {log.status || '-'}
+                    </span>
+                  </td>
                   <td className="px-4 py-3">
                     <button className="text-gray-700 hover:text-orange-500" onClick={() => navigate(`/time_logs/edit/${log.id}`)}>
                       <FiEdit2 />
@@ -103,6 +242,70 @@ const TimeLogsList: React.FC = () => {
               ))}
             </tbody>
           </table>
+          {/* Pagination Controls */}
+          {totalPages > 1 && (
+            <div className="flex flex-wrap justify-center items-center gap-2 py-4">
+              <button
+                className="px-3 py-1 rounded border bg-gray-100 text-gray-700 hover:bg-gray-200"
+                onClick={() => handlePageChange(currentPage - 1)}
+                disabled={currentPage === 1}
+              >
+                Prev
+              </button>
+              {Array.from({ length: totalPages }, (_, i) => (
+                <button
+                  key={i + 1}
+                  className={`px-3 py-1 rounded border ${currentPage === i + 1 ? 'bg-orange-500 text-white' : 'bg-gray-100 text-gray-700 hover:bg-gray-200'}`}
+                  onClick={() => handlePageChange(i + 1)}
+                >
+                  {i + 1}
+                </button>
+              ))}
+              <button
+                className="px-3 py-1 rounded border bg-gray-100 text-gray-700 hover:bg-gray-200"
+                onClick={() => handlePageChange(currentPage + 1)}
+                disabled={currentPage === totalPages}
+              >
+                Next
+              </button>
+              {/* Jump to page */}
+              <div className="flex items-center gap-1 ml-4">
+                <span className="text-sm">Jump to</span>
+                <input
+                  type="number"
+                  min={1}
+                  max={totalPages}
+                  value={jumpPage}
+                  onChange={e => setJumpPage(e.target.value.replace(/[^0-9]/g, ''))}
+                  onKeyDown={e => {
+                    if (e.key === 'Enter') {
+                      const page = Number(jumpPage);
+                      if (page >= 1 && page <= totalPages) {
+                        handlePageChange(page);
+                        setJumpPage('');
+                      }
+                    }
+                  }}
+                  className="w-16 px-2 py-1 border rounded text-sm"
+                  placeholder="Page"
+                />
+                <button
+                  className="px-2 py-1 rounded border bg-gray-100 text-gray-700 hover:bg-gray-200 text-sm"
+                  onClick={() => {
+                    const page = Number(jumpPage);
+                    if (page >= 1 && page <= totalPages) {
+                      handlePageChange(page);
+                      setJumpPage('');
+                    }
+                  }}
+                  disabled={!jumpPage || Number(jumpPage) < 1 || Number(jumpPage) > totalPages}
+                >
+                  Go
+                </button>
+              </div>
+            </div>
+          )}
+          </>
         )}
       </div>
     </div>

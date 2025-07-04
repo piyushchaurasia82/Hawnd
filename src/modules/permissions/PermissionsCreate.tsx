@@ -11,7 +11,7 @@ interface PermissionsCreateProps {
 const PermissionsCreate: React.FC<PermissionsCreateProps> = ({ moduleName }) => {
     const config: ModuleConfig | undefined = moduleName ? modules[moduleName] : undefined;
     const navigate = useNavigate();
-    const [formData, setFormData] = useState({ code_name: '', description: '' });
+    const [formData, setFormData] = useState({ name: '', description: '' });
     const [error, setError] = useState<string | null>(null);
 
     if (!config) return <div className="text-red-600 text-lg font-semibold p-4">Module not found</div>;
@@ -36,6 +36,11 @@ const PermissionsCreate: React.FC<PermissionsCreateProps> = ({ moduleName }) => 
 
     return (
         <div className="p-5 max-w-7xl mx-auto">
+            <nav className="text-[16px] text-black mb-4 flex items-center gap-1">
+                <span className="hover:underline cursor-pointer text-orange-500" onClick={() => navigate('/')}>Dashboard</span>
+                <span className="mx-1">/</span>
+                <span className="font-semibold">Create Permission</span>
+            </nav>
             <h1 className="text-2xl font-bold mb-3">Create Permission</h1>
             <div className="border-b border-gray-200 mb-4">
                 <nav className="flex space-x-8 text-sm" aria-label="Tabs">
@@ -44,11 +49,11 @@ const PermissionsCreate: React.FC<PermissionsCreateProps> = ({ moduleName }) => 
             </div>
             <form onSubmit={handleSubmit}>
                 <div className="mb-3">
-                    <label className="block font-semibold mb-1 text-m" htmlFor="code_name">Name</label>
+                    <label className="block font-semibold mb-1 text-m" htmlFor="name">Name</label>
                     <input
-                        id="code_name"
-                        name="code_name"
-                        value={formData.code_name}
+                        id="name"
+                        name="name"
+                        value={formData.name}
                         onChange={handleChange}
                         placeholder="Enter permission name"
                         className="w-full rounded bg-gray-100 p-2 h-12 text-sm placeholder-gray-400"

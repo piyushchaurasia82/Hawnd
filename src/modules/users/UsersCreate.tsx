@@ -2,68 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import api from '../../services/api';
 import { Eye, EyeOff } from 'lucide-react';
-
-// MultiSelectDropdown component (copied from src/components/GenericForm.tsx)
-const MultiSelectDropdown = ({ options, selectedValues, onChange, label, disabled }: {
-  options: { value: string | number; label: string }[];
-  selectedValues: (string | number)[];
-  onChange: (values: (string | number)[]) => void;
-  label?: string;
-  disabled?: boolean;
-}) => {
-  const [open, setOpen] = React.useState(false);
-  const ref = React.useRef<HTMLDivElement>(null);
-
-  React.useEffect(() => {
-    const handleClickOutside = (event: MouseEvent) => {
-      if (ref.current && !ref.current.contains(event.target as Node)) {
-        setOpen(false);
-      }
-    };
-    document.addEventListener('mousedown', handleClickOutside);
-    return () => document.removeEventListener('mousedown', handleClickOutside);
-  }, []);
-
-  const handleSelect = (value: string | number) => {
-    if (selectedValues.includes(value)) {
-      onChange(selectedValues.filter((v) => v !== value));
-    } else {
-      onChange([...selectedValues, value]);
-    }
-  };
-
-  const selectedLabels = options.filter(opt => selectedValues.includes(opt.value)).map(opt => opt.label);
-
-  return (
-    <div className="relative" ref={ref}>
-      <button
-        type="button"
-        className="border rounded p-2 w-full text-left bg-white focus:outline-none focus:ring-2 focus:ring-blue-500"
-        onClick={() => setOpen((o) => !o)}
-        disabled={disabled}
-      >
-        {selectedLabels.length > 0 ? selectedLabels.join(', ') : `Select ${label || ''}`}
-        <span className="float-right">▼</span>
-      </button>
-      {open && (
-        <div className="absolute z-10 mt-1 w-full bg-white border border-gray-300 rounded shadow-lg max-h-48 overflow-y-auto">
-          {options.map((option) => (
-            <label key={option.value} className="flex items-center px-2 py-1 cursor-pointer hover:bg-gray-100">
-              <input
-                type="checkbox"
-                checked={selectedValues.includes(option.value)}
-                onChange={() => handleSelect(option.value)}
-                className="h-4 w-4 text-blue-600 border-gray-300 rounded mr-2"
-                disabled={disabled}
-              />
-              <span className="text-sm">{option.label}</span>
-            </label>
-          ))}
-        </div>
-      )}
-    </div>
-  );
-};
+import MultiSelect from '../../components/form/MultiSelect';
 
 const UsersCreate: React.FC = () => {
   const navigate = useNavigate();
@@ -72,7 +11,7 @@ const UsersCreate: React.FC = () => {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
-  const [rolesOptions, setRolesOptions] = useState<{ value: string; label: string }[]>([]);
+  const [rolesOptions, setRolesOptions] = useState<{ value: string; text: string }[]>([]);
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
   const [success, setSuccess] = useState<string | null>(null);
@@ -88,23 +27,68 @@ const UsersCreate: React.FC = () => {
   const [selectedRoles, setSelectedRoles] = useState<(string | number)[]>([]);
 
   // Fetch roles, projects, tasks
-  useEffect(() => {
-    async function fetchOptions() {
-      try {
-        const [rolesRes, projectsRes, tasksRes] = await Promise.all([
-          api.get('/api/projectmanagement/roles/'),
-          api.get('/api/projectmanagement/projects/'),
-          api.get('/api/projectmanagement/tasks/'),
-        ]);
-        setRolesOptions((rolesRes.data.data || rolesRes.data.roles || rolesRes.data).map((r: any) => ({ value: r.id, label: r.name || r.description })));
-        setProjects((projectsRes.data.data || projectsRes.data.projects || projectsRes.data).map((p: any) => ({ value: p.id, label: p.project_title })));
-        setTasks((tasksRes.data.data || tasksRes.data.tasks || tasksRes.data).map((t: any) => ({ value: t.id, label: t.task_title || t.name, project_id: t.project_id })));
-      } catch (e) {
-        // fallback to empty
-      }
+  const fetchRoles = async () => {
+    try {
+      const rolesRes = await api.get('/api/projectmanagement/roles/');
+      const rolesArr = Array.isArray(rolesRes.data)
+        ? rolesRes.data
+        : rolesRes.data.data || rolesRes.data.roles || [];
+      setRolesOptions(Array.isArray(rolesArr) ? rolesArr.map((r: any) => ({ value: String(r.id), text: r.name || r.description })) : []);
+      console.log('Fetched roles:', rolesArr);
+    } catch (e) {
+      setRolesOptions([]);
+      console.error('Error fetching roles:', e);
     }
-    fetchOptions();
+  };
+
+  // Fetch all projects
+  const fetchProjects = async () => {
+    try {
+      const res = await api.get('/api/projectmanagement/projects/');
+      const arr = Array.isArray(res.data)
+        ? res.data
+        : res.data.data || res.data.projects || [];
+      setProjects(arr.map((p: any) => ({
+        value: String(p.id),
+        label: p.project_title || p.name || `Project ${p.id}`
+      })));
+    } catch (e) {
+      setProjects([]);
+      console.error('Error fetching projects:', e);
+    }
+  };
+
+  // Fetch all tasks for a selected project using the full filter endpoint
+  const fetchTasks = async (projectId: string) => {
+    try {
+      const url = `/api/projectmanagement/tasks/?project_id=${projectId}&task_title=&start_date=&due_date=&priority=&status=`;
+      const res = await api.get(url);
+      const arr = Array.isArray(res.data)
+        ? res.data
+        : res.data.data || res.data.tasks || [];
+      setTasks(arr.map((t: any) => ({
+        value: String(t.id),
+        label: t.task_title || t.name || `Task ${t.id}`,
+        project_id: t.project_id
+      })));
+    } catch (e) {
+      setTasks([]);
+      console.error('Error fetching tasks:', e);
+    }
+  };
+
+  useEffect(() => {
+    fetchRoles();
+    fetchProjects();
   }, []);
+
+  useEffect(() => {
+    if (selectedProjects[0]) {
+      fetchTasks(selectedProjects[0]);
+    } else {
+      setTasks([]);
+    }
+  }, [selectedProjects]);
 
   // Save handler
   const handleSubmit = async (e: React.FormEvent) => {
@@ -262,13 +246,12 @@ const UsersCreate: React.FC = () => {
 
   return (
     <div className="max-w-6xl mx-auto px-4 py-8">
-      {/* Breadcrumb */}
-      <nav className="text-xs text-gray-500 mb-2 flex gap-1">
-        <button type="button" onClick={() => navigate('/')} className="hover:underline hover:text-black focus:outline-none bg-transparent p-0 m-0">Home</button>
-        <span>/</span>
-        <button type="button" onClick={() => navigate('/users')} className="hover:underline hover:text-black focus:outline-none bg-transparent p-0 m-0">Users</button>
-        <span>/</span>
-        <span className="font-semibold text-black">Create New User</span>
+      <nav className="text-[16px] text-black mb-4 flex items-center gap-1">
+        <span className="hover:underline cursor-pointer text-orange-500" onClick={() => navigate('/')}>Dashboard</span>
+        <span className="mx-1">/</span>
+        <span className="hover:underline cursor-pointer text-orange-500" onClick={() => navigate('/users')}>Users</span>
+        <span className="mx-1">/</span>
+        <span className="font-semibold">Create User</span>
       </nav>
       <h1 className="text-2xl font-bold mb-6">Add New User</h1>
       <form onSubmit={handleSubmit}>
@@ -365,15 +348,12 @@ const UsersCreate: React.FC = () => {
         {/* Roles */}
         <div className="mb-8">
           <h2 className="text-lg font-bold mb-4">Assign Roles</h2>
-          <div className="w-1/3">
-            <label className="block font-semibold mb-1">Assign Roles</label>
-            <MultiSelectDropdown
-              options={rolesOptions}
-              selectedValues={selectedRoles}
-              onChange={setSelectedRoles}
-              label="Roles"
-            />
-          </div>
+          <MultiSelect
+            label="Assign Roles"
+            options={rolesOptions}
+            defaultSelected={selectedRoles.map(String)}
+            onChange={vals => setSelectedRoles(vals)}
+          />
         </div>
         {/* Assignments */}
         <div className="mb-8">
