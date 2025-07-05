@@ -334,7 +334,7 @@ const AccountSettings: React.FC = () => {
   return (
     <PasswordChangeContext.Provider value={{ lastChangedPassword, setLastChangedPassword }}>
       <div className="min-h-screen bg-white px-6 py-10">
-        <h1 className="text-2xl font-semibold mb-8 text-gray-900">Account Settings</h1>
+        <h1 className="text-2xl font-semibold mb-8 pl-19 text-gray-900">Account Settings</h1>
         <form onSubmit={handleSave} className="max-w-6xl mx-auto">
           <div className="grid grid-cols-1 md:grid-cols-3 gap-8 mb-8">
             <div>
@@ -427,7 +427,7 @@ const AccountSettings: React.FC = () => {
                       value={newEmail}
                       onChange={e => setNewEmail(e.target.value)}
                       placeholder="Enter new email"
-                      className="w-full h-12 bg-white border border-gray-300 rounded-md text-sm font-medium py-1 px-2 pr-28"
+                      className="w-full h-12 bg-gray-100 border border-gray-300 rounded-md text-sm font-medium py-1 px-2 pr-28"
                     />
                     <button
                       type="button"
@@ -441,31 +441,33 @@ const AccountSettings: React.FC = () => {
                 </div>
               </div>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
-                <div>
-                  <label className="block text-gray-700 mb-1 font-medium">Verification Token</label>
-                  <div className="flex items-center bg-gray-100 rounded-md p-3">
-                    <input
-                      type="text"
-                      name="otp"
-                      value={otp}
-                      onChange={e => setOtp(e.target.value)}
-                      placeholder="Enter verification token"
-                      className="flex-1 bg-transparent border-none outline-none text-sm font-medium py-1"
-                    />
+                <div className="flex items-center gap-2">
+                  <div className="flex-1">
+                    <label className="block text-gray-700 mb-1 font-medium">Verify OTP</label>
+                    <div className="bg-gray-100 rounded-md p-3">
+                      <input
+                        type="text"
+                        name="otp"
+                        value={otp}
+                        onChange={e => setOtp(e.target.value)}
+                        placeholder="Enter OTP"
+                        className="w-full bg-transparent border-none outline-none text-sm font-medium py-1"
+                      />
+                    </div>
                   </div>
+                  <button
+                    type="button"
+                    className="bg-orange-500 h-12 text-white px-6 py-2 rounded-md font-semibold hover:bg-orange-600 transition whitespace-nowrap mt-7"
+                    disabled={loading}
+                    onClick={handleProfileSubmit}
+                  >
+                    {loading ? 'Saving...' : 'Save Changes'}
+                  </button>
                 </div>
               </div>
               {/* End Email Change with OTP UI */}
               {profileMsg && <div className="text-green-600 mb-2">{profileMsg}</div>}
               {profileError && <div className="text-red-600 mb-2">{profileError}</div>}
-              <button
-                type="button"
-                className="bg-orange-500 text-white px-6 py-2 rounded-md font-semibold hover:bg-orange-600 transition"
-                disabled={loading}
-                onClick={handleProfileSubmit}
-              >
-                {loading ? 'Saving...' : 'Save Changes'}
-              </button>
             </div>
             <form onSubmit={handlePasswordSubmit}>
               <h2 className="text-xl font-semibold text-gray-800 mb-4">Change Password</h2>
