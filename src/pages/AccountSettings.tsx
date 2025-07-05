@@ -122,9 +122,11 @@ const AccountSettings: React.FC = () => {
           headers: { Authorization: `Bearer ${token}` },
         });
         const data = response.data;
-        if (!data.email) throw new Error('Invalid response format: Email not found in response');
-        setProfile({ email: data.email });
-        setEmailToChange(data.email);
+        // Try to extract email from possible locations
+        const email = data.email || (data.data && data.data.email) || (data.user && data.user.email);
+        if (!email) throw new Error('Invalid response format: Email not found in response');
+        setProfile({ email });
+        setEmailToChange(email);
       } catch (err: any) {
         setProfileError(err.message || 'Failed to load profile.');
       }
@@ -156,6 +158,12 @@ const AccountSettings: React.FC = () => {
       };
       await api.put(`/api/projectmanagement/users/${form.id}/`, payload);
       setSuccess('Account settings updated successfully.');
+      showToast({
+        type: 'success',
+        title: 'Profile Updated',
+        message: 'Your profile details have been updated successfully.',
+        duration: 4000
+      });
       await fetchUser(form.id || null); // Reload user details after save using ID
     } catch (err: any) {
       setError(err.message || 'Failed to update account settings.');
@@ -394,7 +402,7 @@ const AccountSettings: React.FC = () => {
               <button
                 type="button"
                 className="bg-gray-100 hover:bg-gray-200 text-gray-900 font-semibold px-8 py-3 rounded-lg shadow border border-gray-300 transition"
-                onClick={() => navigate(-1)}
+                onClick={() => navigate('/')}
                 disabled={saving}
               >
                 Cancel

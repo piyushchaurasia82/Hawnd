@@ -1,8 +1,12 @@
 import Chart from "react-apexcharts";
 
-export default function BarChartOne() {
+interface ExecutiveBarChartProps {
+  data?: [number, number, number]; // [High, Medium, Low]
+}
+
+export default function ExecutiveBarChart({ data = [0, 0, 0] }: ExecutiveBarChartProps) {
   const options = {
-    colors: ["#2176FF"],
+    colors: ["#FF2D2D", "#FF9100", "#00c950"],
     chart: {
       fontFamily: "Outfit, sans-serif",
       type: 'bar',
@@ -17,16 +21,21 @@ export default function BarChartOne() {
         columnWidth: "40%",
         borderRadius: 5,
         borderRadiusApplication: "end",
+        distributed: true,
       },
     },
     dataLabels: {
-      enabled: false,
+      enabled: true,
+      style: {
+        fontSize: '16px',
+        fontWeight: 600,
+      },
     },
     stroke: {
       show: false,
     },
     xaxis: {
-      categories: ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct"],
+      categories: ["High", "Medium", "Low"],
       axisBorder: {
         show: false,
       },
@@ -45,7 +54,7 @@ export default function BarChartOne() {
     },
     yaxis: {
       min: 0,
-      max: 400,
+      forceNiceScale: true,
       labels: {
         style: {
           fontSize: '14px',
@@ -73,15 +82,15 @@ export default function BarChartOne() {
   } as any;
   const series = [
     {
-      name: "Project Summary",
-      data: [150, 370, 180, 290, 170, 170, 270, 90, 190, 370],
+      name: "Tasks",
+      data: data,
     },
   ];
   return (
     <div className="max-w-full overflow-x-auto custom-scrollbar">
-      <div id="chartOne" className="min-w-[600px]">
-        <Chart options={options} series={series} type="bar" height={240} />
+      <div id="executiveBarChart" className="min-w-[350px]">
+        <Chart options={options} series={series} type="bar" height={340} />
       </div>
     </div>
   );
-}
+} 

@@ -53,6 +53,7 @@ import AccountSettings from './pages/AccountSettings';
 import { tokenManager } from './services/api';
 import ProjectTasks from './modules/projects/ProjectTasks';
 import AuditLogsList from './modules/audit_logs/AuditLogsList';
+import ExecutiveReport from './pages/ExecutiveReport';
 
 // ProtectedRoute: Prevents authenticated users from accessing login page
 const ProtectedRoute: React.FC<{ children: React.ReactNode }> = ({ children }) => {
@@ -148,6 +149,7 @@ const AppRoutes: React.FC = () => {
         <Route path="/audit-logs" element={<AuditLogsList />} />
         <Route path="/edit-profile" element={<EditProfile />} />
         <Route path="/account-settings" element={<AccountSettings />} />
+        <Route path="/reports/executive" element={<ExecutiveReport />} />
       </Route>
     </Routes>
   );

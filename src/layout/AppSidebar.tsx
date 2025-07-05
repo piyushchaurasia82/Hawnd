@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Link } from "react-router-dom";
+import { Link, useLocation } from "react-router-dom";
 import { ChevronDownIcon, HorizontaLDots, TableIcon } from "../icons";
 import { useSidebar } from "../context/SidebarContext";
 import modules from "../config/loadModules";
@@ -13,6 +13,7 @@ import {
   BoxIcon,
   TimeIcon,
   FileIcon,
+  PieChartIcon,
 } from '../icons';
 import { Users as LucideUsers, User as LucideUser, Plus as LucidePlus, FileText as LucideFileText } from 'lucide-react';
 
@@ -101,6 +102,23 @@ const customUsersNav: NavItem = {
   ],
 };
 
+const customReportsNav: NavItem = {
+  icon: <PieChartIcon />,
+  name: 'Reports',
+  subItems: [
+    {
+      icon: <PieChartIcon />,
+      name: 'Executive Report',
+      path: '/reports/executive',
+    },
+    {
+      icon: <PieChartIcon />,
+      name: 'Admin Report',
+      path: '/reports/admin',
+    },
+  ],
+};
+
 const dashboardNav: NavItem = {
   icon: <TableIcon />,
   name: 'Dashboard',
@@ -111,9 +129,29 @@ const navItemsWithCustomUsers = [dashboardNav, ...jsonNavItems.map(item =>
   item.name === 'Users' ? customUsersNav : item
 )];
 
+// Insert Reports menu after Time logs
+const insertReportsAfterTimeLogs = (items: NavItem[]): NavItem[] => {
+  const result: NavItem[] = [];
+  let reportsInserted = false;
+  
+  for (const item of items) {
+    result.push(item);
+    // Insert Reports after Time logs
+    if (item.name === 'Time Logs' && !reportsInserted) {
+      result.push(customReportsNav);
+      reportsInserted = true;
+    }
+  }
+  
+  return result;
+};
+
+const finalNavItems = insertReportsAfterTimeLogs(navItemsWithCustomUsers);
+
 const AppSidebar: React.FC = () => {
   const { isExpanded, isMobileOpen, isHovered, setIsHovered } = useSidebar();
   const [openSubmenus, setOpenSubmenus] = useState<string[]>([]);
+  const location = useLocation();
 
   const handleSubmenuToggle = (submenuPath: string) => {
     setOpenSubmenus((prev) =>
@@ -135,7 +173,7 @@ const AppSidebar: React.FC = () => {
         const isSubmenuOpen = openSubmenus.includes(submenuPath);
         // Highlight Dashboard as active if current location is '/'
         const isDashboard = nav.name === 'Dashboard';
-        const isActiveDashboard = isDashboard && window.location.pathname === '/';
+        const isActiveDashboard = isDashboard && (window.location.pathname === '/' || location.pathname === '/');
         return (
           <li key={nav.name}>
             {nav.subItems ? (
@@ -172,16 +210,16 @@ const AppSidebar: React.FC = () => {
                   className={`menu-item group flex items-center ${
                     isDashboard
                       ? isActiveDashboard
-                        ? "menu-item-active bg-brand-50 text-black"
-                        : "menu-item-inactive text-black hover:bg-gray-100"
+                        ? "menu-item-active bg-[#e8ebff] text-black hover:text-black"
+                        : "menu-item-inactive text-black hover:bg-gray-100 hover:text-black"
                       : ""
                   } ${
                     !isExpanded && !isHovered ? "lg:justify-center " : "lg:justify-start"
                   }`}
                 >
-                  <span className="menu-item-icon-size">{nav.icon}</span>
+                  <span className={`menu-item-icon-size ${isDashboard && isActiveDashboard ? '' : ''}`}>{nav.icon}</span>
                   {(isExpanded || isHovered || isMobileOpen) && (
-                    <span className="menu-item-text ">{nav.name}</span>
+                    <span className={`menu-item-text ${isDashboard ? 'hover:text-black' : ''}`}>{nav.name}</span>
                   )}
                 </Link>
               )
@@ -257,7 +295,7 @@ const AppSidebar: React.FC = () => {
                   <HorizontaLDots className="size-6" />
                 )}
               </h2>
-              {renderMenuItems(navItemsWithCustomUsers, "main")}
+              {renderMenuItems(finalNavItems, "main")}
             </div>
           </div>
         </nav>

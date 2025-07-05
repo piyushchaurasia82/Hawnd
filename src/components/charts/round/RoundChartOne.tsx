@@ -1,21 +1,17 @@
 import React from "react";
 import Chart from "react-apexcharts";
-import type { ApexOptions } from "apexcharts"; // ✅ Add this
+import type { ApexOptions } from "apexcharts";
 
-interface RoundChartProps {
-  title: string;
-  value: number;
-  max: number;
+interface RoundChartOneProps {
+  data?: [number, number, number]; // [In Progress, Todo, Completed]
 }
 
-const RoundChart: React.FC<RoundChartProps> = ({ title, value, max }) => {
-  const remaining = max - value;
-
+const RoundChartOne: React.FC<RoundChartOneProps> = ({ data = [0, 0, 0] }) => {
   const options: ApexOptions = {
     chart: {
-      type: "donut", // ✅ Now TypeScript knows it's a valid type
+      type: "donut" as const,
     },
-    labels: ["Present", "Remaining"],
+    labels: ["In Progress", "Todo", "Completed"],
     legend: { show: false },
     stroke: { width: 0 },
     dataLabels: {
@@ -26,42 +22,28 @@ const RoundChart: React.FC<RoundChartProps> = ({ title, value, max }) => {
         donut: {
           size: "75%",
           labels: {
-            show: true,
-            name: { show: false },
-            value: {
-              show: true,
-              fontSize: "20px",
-              fontWeight: 600,
-              color: "#111",
-              offsetY: 4,
-              formatter: () => `${value}`,
-            },
-            total: {
-              show: true,
-            },
+            show: false,
           },
         },
       },
     },
     tooltip: {
-      style: {
-        fontSize: "14px",
-        // fontWeight: 500,
-        // colors: ["#000000"], // Will not work for text color, use CSS
-      },
       y: {
-        formatter: (val: number) => `${val} days`,
+        formatter: (val: number) => `${val}`,
       },
     },
-    colors: ["#3b82f6", "#e5e7eb"],
+    colors: ["#FF9100", "#2176FF", "#1FAA59"],
   };
-
   return (
-    <div className="bg-white dark:bg-gray-800 p-6 rounded-xl shadow-sm text-center">
-      <h4 className="mb-2 font-medium text-gray-700 dark:text-gray-100">{title}</h4>
-      <Chart options={options} series={[value, remaining]} type="donut" height={280} />
+    <div className="flex flex-col items-center">
+      <Chart options={options} series={data} type="donut" height={260} />
+      <div className="flex justify-center gap-4 mt-4 text-sm">
+        <div className="flex items-center gap-1"><span className="inline-block w-3 h-3 rounded-full bg-[#FF9100]"></span> In Progress: {data[0]}</div>
+        <div className="flex items-center gap-1"><span className="inline-block w-3 h-3 rounded-full bg-[#2176FF]"></span> Todo: {data[1]}</div>
+        <div className="flex items-center gap-1"><span className="inline-block w-3 h-3 rounded-full bg-[#1FAA59]"></span> Completed: {data[2]}</div>
+      </div>
     </div>
   );
 };
 
-export default RoundChart;
+export default RoundChartOne;
