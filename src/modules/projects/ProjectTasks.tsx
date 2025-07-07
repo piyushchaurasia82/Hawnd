@@ -18,6 +18,7 @@ interface Task {
     assigned_to_id?: number;
     created_by_id?: number;
     task_title?: string;
+    task_assignees?: { user_name: string }[];
     // Add more fields as needed
 }
 interface ProjectTakProps {
@@ -49,7 +50,14 @@ const ProjectTasks: React.FC<ProjectTakProps> = ({ moduleName }) => {
         setLoading(true);
         api.get(`${API_BASE_URL}/api/projectmanagement/tasks/?project_id=${id}`)
             .then(res => {
-                setTasks(res.data.data || []);
+                const data = res.data.data || [];
+                // Sort by updated_at (or created_at if updated_at is missing), descending
+                data.sort((a: any, b: any) => {
+                  const aTime = new Date(a.updated_at || a.created_at || 0).getTime();
+                  const bTime = new Date(b.updated_at || b.created_at || 0).getTime();
+                  return bTime - aTime;
+                });
+                setTasks(data);
             })
             .catch(() => setTasks([]))
             .finally(() => setLoading(false));
@@ -211,6 +219,7 @@ const ProjectTasks: React.FC<ProjectTakProps> = ({ moduleName }) => {
                             <th className="px-4 py-3 text-sm font-semibold">Status</th>
                             <th className="px-4 py-3 text-sm font-semibold">Priority</th>
                             <th className="px-4 py-3 text-sm font-semibold">Due Date</th>
+                            <th className="px-4 py-3 text-sm font-semibold">Assignee</th>
                             <th className="px-4 py-3 text-sm font-semibold">Edit Task</th>
                         </tr>
                     </thead>
@@ -261,6 +270,11 @@ const ProjectTasks: React.FC<ProjectTakProps> = ({ moduleName }) => {
                                     </span>
                                 </td>
                                 <td className="px-4 py-4">{task.due_date ? format(new Date(task.due_date), 'dd-MM-yyyy') : ''}</td>
+                                <td className="px-4 py-4">
+                                  {Array.isArray(task.task_assignees) && task.task_assignees.length > 0
+                                    ? task.task_assignees.map(a => a.user_name).filter(Boolean).join(', ')
+                                    : '-'}
+                                </td>
                                 <td onClick={() => handleEdit(task.id)} className="px-4 py-4">
                                     <button className="text-black hover:text-gray-700 mr-3" title="Edit Task">
                                         <FiEdit size={18} />

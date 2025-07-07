@@ -30,6 +30,33 @@ const TasksList: React.FC = () => {
   const [jumpPage, setJumpPage] = useState('');
   const pageSize = 10;
 
+  const [users, setUsers] = useState<any[]>([]);
+  useEffect(() => {
+    api.get('/api/projectmanagement/users/')
+      .then(res => {
+        const data = res.data.data || res.data.users || res.data;
+        setUsers(Array.isArray(data) ? data : []);
+      })
+      .catch(() => setUsers([]));
+  }, []);
+
+  const getAssigneeNames = (assignees: any) => {
+    if (!Array.isArray(assignees) || assignees.length === 0) return '-';
+    return (
+      assignees
+        .map((a: any) => {
+          if (a && typeof a === 'object') {
+            if (a.user_name) return a.user_name;
+            const user = users.find(u => String(u.id) === String(a.user_id));
+            return user ? `${user.first_name} ${user.last_name}`.trim() : '-';
+          }
+          return '-';
+        })
+        .filter(name => name && name !== '-')
+        .join(', ') || '-'
+    );
+  };
+
   useEffect(() => {
     setLoading(true);
     setError(null);
@@ -41,8 +68,15 @@ const TasksList: React.FC = () => {
       .finally(() => setLoading(false));
   }, [API_BASE_URL]);
 
+  // Sort tasks so that newly created/updated tasks appear at the top
+  const sortedTasks = [...tasks].sort((a: any, b: any) => {
+    const aTime = new Date(a.updated_at || a.created_at || 0).getTime();
+    const bTime = new Date(b.updated_at || b.created_at || 0).getTime();
+    return bTime - aTime;
+  });
+
   // Filtering logic
-  const filteredTasks = tasks.filter(task => {
+  const filteredTasks = sortedTasks.filter(task => {
     // Status filter
     let statusMatch = true;
     if (filters.status) {
@@ -163,6 +197,7 @@ const TasksList: React.FC = () => {
               <th className="px-6 py-3 text-left font-semibold">Status</th>
               <th className="px-6 py-3 text-left font-semibold">Priority</th>
               <th className="px-6 py-3 text-left font-semibold">Due Date</th>
+              <th className="px-6 py-3 text-left font-semibold">Assignee</th>
               <th className="px-6 py-3 text-left font-semibold">Edit Task</th>
             </tr>
           </thead>
@@ -213,6 +248,14 @@ const TasksList: React.FC = () => {
                   </span>
                 </td>
                 <td className="px-6 py-4">{task.due_date ? new Date(task.due_date).toLocaleDateString('en-GB') : ''}</td>
+                <td className="px-6 py-4">
+                  {Array.isArray(task.task_assignees) && task.task_assignees.length > 0
+                    ? task.task_assignees
+                        .map((a: any) => a.user_name)
+                        .filter(Boolean)
+                        .join(', ')
+                    : '-'}
+                </td>
                 <td className="px-6 py-4">
                   <button onClick={() => navigate(`/tasks/edit/${task.id}`)} className="text-black mr-3" title="Edit Task">
                     <svg width="22" height="22" fill="none" stroke="currentColor" viewBox="0 0 24 24">

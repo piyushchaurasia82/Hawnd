@@ -10,6 +10,7 @@ interface MultiSelectProps {
   label: string;
   options: Option[];
   defaultSelected?: string[];
+  value?: string[];
   onChange?: (selected: string[]) => void;
   disabled?: boolean;
 }
@@ -18,6 +19,7 @@ const MultiSelect: React.FC<MultiSelectProps> = ({
   label,
   options,
   defaultSelected = [],
+  value,
   onChange,
   disabled = false,
 }) => {
@@ -42,6 +44,14 @@ const MultiSelect: React.FC<MultiSelectProps> = ({
     };
   }, [isOpen]);
 
+  useEffect(() => {
+    if (value !== undefined) {
+      setSelectedOptions(value);
+    } else {
+      setSelectedOptions(defaultSelected);
+    }
+  }, [value, defaultSelected]);
+
   const toggleDropdown = () => {
     if (!disabled) setIsOpen((prev) => !prev);
   };
@@ -61,7 +71,9 @@ const MultiSelect: React.FC<MultiSelectProps> = ({
     onChange?.(newSelectedOptions);
   };
 
-  const selectedValuesText = selectedOptions.map(
+  // Only show selected values that match an option
+  const validSelectedOptions = selectedOptions.filter(value => options.some(option => option.value === value));
+  const selectedValuesText = validSelectedOptions.map(
     (value) => options.find((option) => option.value === value)?.text || ""
   );
 
@@ -79,7 +91,7 @@ const MultiSelect: React.FC<MultiSelectProps> = ({
                 {selectedValuesText.length > 0 ? (
                   selectedValuesText.map((text, index) => (
                     <div
-                      key={index}
+                      key={validSelectedOptions[index]}
                       className="group flex items-center justify-center rounded-full border-[0.7px] border-transparent bg-gray-100 py-1 pl-2.5 pr-2 text-sm text-gray-800 hover:border-gray-200"
                     >
                       <span className="flex-initial max-w-full">{text}</span>
@@ -87,7 +99,7 @@ const MultiSelect: React.FC<MultiSelectProps> = ({
                         <div
                           onClick={e => {
                             e.stopPropagation();
-                            removeOption(selectedOptions[index]);
+                            removeOption(validSelectedOptions[index]);
                           }}
                           className="pl-2 text-gray-500 cursor-pointer group-hover:text-gray-400"
                         >
@@ -110,7 +122,7 @@ const MultiSelect: React.FC<MultiSelectProps> = ({
                     </div>
                   ))
                 ) : (
-                  <span className="text-gray-400 text-sm">Select option(s)</span>
+                  <span className="text-gray-400 text-sm">No assignee selected</span>
                 )}
               </div>
               <div className="flex items-center py-1 pl-1 pr-1 w-7">

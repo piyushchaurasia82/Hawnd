@@ -2,7 +2,7 @@ import React, { useEffect, useState } from 'react';
 import ExecutiveBarChart from '../components/charts/bar/ExecutiveBarChart';
 import RoundChartOne from '../components/charts/round/RoundChartOne';
 import TimelineChart from '../components/charts/TimelineChart';
-import { getMonth, getYear, parseISO, isAfter, isBefore } from 'date-fns';
+import { getMonth, getYear, parseISO, isAfter, isBefore, differenceInCalendarDays } from 'date-fns';
 import api from '../services/api';
 
 interface Task {
@@ -24,6 +24,9 @@ const ExecutiveReport: React.FC = () => {
   const [selectedYear, setSelectedYear] = useState<number>(getYear(new Date()));
   const [availableMonths, setAvailableMonths] = useState<number[]>([]);
   const [availableYears, setAvailableYears] = useState<number[]>([]);
+  const [percentComplete, setPercentComplete] = useState(0);
+  const [overdueCount, setOverdueCount] = useState(0);
+  const [milestoneRiskCount, setMilestoneRiskCount] = useState(0);
 
   useEffect(() => {
     const fetchProjects = async () => {
@@ -43,6 +46,9 @@ const ExecutiveReport: React.FC = () => {
       setBarData([0, 0, 0]);
       setRoundData([0, 0, 0]);
       setTimelineTasks([]);
+      setPercentComplete(0);
+      setOverdueCount(0);
+      setMilestoneRiskCount(0);
       return;
     }
     const fetchTasks = async () => {
@@ -52,6 +58,11 @@ const ExecutiveReport: React.FC = () => {
         let high = 0, medium = 0, low = 0;
         let inProgress = 0, todo = 0, completed = 0;
         const filteredTasks: Task[] = [];
+        let totalTasks = 0;
+        let completedTasks = 0;
+        let overdue = 0;
+        let milestoneRisk = 0;
+        const today = new Date();
         tasks.forEach((task: any) => {
           if (String(task.project_id) === String(selectedProject)) {
             // Priority for bar chart
@@ -73,15 +84,35 @@ const ExecutiveReport: React.FC = () => {
               due_date: task.due_date,
               status: task.status,
             });
+            // For percent complete
+            totalTasks++;
+            if (status === 'completed' || status === 'done') completedTasks++;
+            // For overdue (ToDo) tasks
+            if (status === 'todo' || status === 'to do') overdue++;
+            // For milestone risk: high priority, in progress, due date was 3 or more days before today (overdue by at least 3 days)
+            if (
+              priority === 'high' &&
+              status === 'in progress' &&
+              task.due_date &&
+              differenceInCalendarDays(today, parseISO(task.due_date)) >= 3
+            ) {
+              milestoneRisk++;
+            }
           }
         });
         setBarData([high, medium, low]);
         setRoundData([inProgress, todo, completed]);
         setTimelineTasks(filteredTasks);
+        setPercentComplete(totalTasks > 0 ? Math.round((completedTasks / totalTasks) * 100) : 0);
+        setOverdueCount(overdue);
+        setMilestoneRiskCount(milestoneRisk);
       } catch {
         setBarData([0, 0, 0]);
         setRoundData([0, 0, 0]);
         setTimelineTasks([]);
+        setPercentComplete(0);
+        setOverdueCount(0);
+        setMilestoneRiskCount(0);
       }
     };
     fetchTasks();
@@ -145,22 +176,18 @@ const ExecutiveReport: React.FC = () => {
         </select>
       </div>
       {/* Summary Cards */}
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
         <div className="bg-gray-50 rounded-lg p-4 flex flex-col items-center">
           <div className="text-xs text-gray-500 mb-1">% Complete</div>
-          <div className="text-2xl font-bold">76%</div>
+          <div className="text-2xl font-bold">{percentComplete}%</div>
         </div>
         <div className="bg-gray-50 rounded-lg p-4 flex flex-col items-center">
           <div className="text-xs text-gray-500 mb-1">Overdue Tasks</div>
-          <div className="text-2xl font-bold text-red-500">5 <span className="text-xs font-normal text-gray-700">Overdue</span></div>
-        </div>
-        <div className="bg-gray-50 rounded-lg p-4 flex flex-col items-center">
-          <div className="text-xs text-gray-500 mb-1">Open Dependencies</div>
-          <div className="text-2xl font-bold text-orange-500">3 <span className="text-xs font-normal text-gray-700">Blocked</span></div>
+          <div className="text-2xl font-bold text-red-500">{overdueCount} <span className="text-xs font-normal text-gray-700">ToDo</span></div>
         </div>
         <div className="bg-gray-50 rounded-lg p-4 flex flex-col items-center">
           <div className="text-xs text-gray-500 mb-1">Milestone Risk</div>
-          <div className="text-2xl font-bold text-yellow-600">1 <span className="text-xs font-normal text-gray-700">At Risk</span></div>
+          <div className="text-2xl font-bold text-yellow-600">{milestoneRiskCount} <span className="text-xs font-normal text-gray-700">At Risk</span></div>
         </div>
       </div>
       {/* Visual Charts */}
@@ -170,7 +197,7 @@ const ExecutiveReport: React.FC = () => {
           <div className="bg-white rounded-lg p-4 shadow-sm min-h-[340px] flex items-center justify-center">
             <div className="w-full">
               {selectedProject && !barData.every(v => v === 0) && (
-                <div className="font-medium mb-2">Task Status Distribution</div>
+                <div className="font-medium mb-2">Task Priority Distribution</div>
               )}
               {selectedProject ? (
                 barData.every(v => v === 0) ? (
@@ -186,7 +213,7 @@ const ExecutiveReport: React.FC = () => {
           <div className="bg-white rounded-lg p-4 shadow-sm flex flex-col items-center min-h-[340px] justify-center w-full">
             <div className="w-full">
               {selectedProject && !roundData.every(v => v === 0) && (
-                <div className="font-medium mb-2">Project Timeline</div>
+                <div className="font-medium mb-2 mt-0 pt-0">Project Status Distribution</div>
               )}
               {selectedProject ? (
                 roundData.every(v => v === 0) ? (
@@ -203,31 +230,41 @@ const ExecutiveReport: React.FC = () => {
       </div>
       {/* Timeline Section */}
       <div className="mb-4">
-        <div className="text-xl font-bold text-center mb-4 mt-18">Project Task Summary</div>
-        <div className="flex items-center mb-2 gap-4">
-          <div className="font-semibold">
-            {new Date(selectedYear, selectedMonth).toLocaleString('default', { month: 'long', year: 'numeric' })}
-          </div>
-          <select
-            className="border rounded px-2 py-1 text-sm"
-            value={selectedMonth}
-            onChange={e => setSelectedMonth(Number(e.target.value))}
-          >
-            {availableMonths.map((m) => (
-              <option key={m} value={m}>{new Date(0, m).toLocaleString('default', { month: 'long' })}</option>
-            ))}
-          </select>
-          <select
-            className="border rounded px-2 py-1 text-sm"
-            value={selectedYear}
-            onChange={e => setSelectedYear(Number(e.target.value))}
-          >
-            {availableYears.map((y) => (
-              <option key={y} value={y}>{y}</option>
-            ))}
-          </select>
-        </div>
-        <TimelineChart tasks={timelineTasks} month={selectedMonth} year={selectedYear} />
+        <div className="text-xl font-bold text-center mb-4 mt-8">Project Task Summary</div>
+        {selectedProject ? (
+          timelineTasks.length === 0 ? (
+            <div className="flex items-center justify-center h-[200px] text-gray-400 text-lg font-semibold">This project does not contain any data.</div>
+          ) : (
+            <>
+              <div className="flex items-center mb-2 gap-4">
+                <div className="font-semibold">
+                  {new Date(selectedYear, selectedMonth).toLocaleString('default', { month: 'long', year: 'numeric' })}
+                </div>
+                <select
+                  className="border rounded px-2 py-1 text-sm"
+                  value={selectedMonth}
+                  onChange={e => setSelectedMonth(Number(e.target.value))}
+                >
+                  {availableMonths.map((m) => (
+                    <option key={m} value={m}>{new Date(0, m).toLocaleString('default', { month: 'long' })}</option>
+                  ))}
+                </select>
+                <select
+                  className="border rounded px-2 py-1 text-sm"
+                  value={selectedYear}
+                  onChange={e => setSelectedYear(Number(e.target.value))}
+                >
+                  {availableYears.map((y) => (
+                    <option key={y} value={y}>{y}</option>
+                  ))}
+                </select>
+              </div>
+              <TimelineChart tasks={timelineTasks} month={selectedMonth} year={selectedYear} />
+            </>
+          )
+        ) : (
+          <div className="flex items-center justify-center h-[200px] text-gray-400 text-lg font-semibold">No project is selected.</div>
+        )}
       </div>
     </div>
   );

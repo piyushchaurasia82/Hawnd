@@ -1,24 +1,34 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { DateRange } from 'react-date-range';
-import type { Range } from 'react-date-range';
 import 'react-date-range/dist/styles.css';
 import 'react-date-range/dist/theme/default.css';
 import { format } from 'date-fns';
 import { useToast } from '../../components/ui/alert/ToastContext';
 import api from '../../services/api';
+import Select from 'react-select';
+import MultiSelect from '../../components/form/MultiSelect';
 
-const reviewers = [
-  { id: 1, name: 'Reviewer 1' },
-  { id: 2, name: 'Reviewer 2' },
-];
 const priorities = ['Low', 'Medium', 'High'];
 const statuses = ['To Do', 'In Progress', 'Done'];
 
-interface DateRangeSelection extends Range {
-  startDate: Date | undefined;
-  endDate: Date | undefined;
-  key: string;
+interface TaskEditForm {
+  title: string;
+  task_assignees: string[];
+  start_date: string;
+  due_date: string;
+  estimated: string;
+  description: string;
+  priority: string;
+  status: string;
+  reviewer: string;
+  startAfter: string;
+  blockedBy: string;
+  overrideNotifications: boolean;
+  notifyStatus: boolean;
+  notifyComment: boolean;
+  notifySubmission: boolean;
+  project_id: string;
 }
 
 const TasksEdit: React.FC = () => {
@@ -26,9 +36,9 @@ const TasksEdit: React.FC = () => {
   const { showToast } = useToast();
   const navigate = useNavigate();
 
-  const [form, setForm] = useState({
+  const [form, setForm] = useState<TaskEditForm>({
     title: '',
-    assignee: '',
+    task_assignees: [],
     start_date: '',
     due_date: '',
     estimated: '',
@@ -45,17 +55,19 @@ const TasksEdit: React.FC = () => {
     project_id: projectId || '',
   });
   const [showRange, setShowRange] = useState(false);
-  const [dateRange, setDateRange] = useState<DateRangeSelection[]>([
+  type DateRangeType = { startDate?: Date; endDate?: Date; key: string };
+  const [dateRange, setDateRange] = useState<DateRangeType[]>([
     {
       startDate: undefined,
       endDate: undefined,
-      key: 'selection'
-    }
+      key: 'selection',
+    },
   ]);
   const [loading, setLoading] = useState(false);
   const [fieldErrors, setFieldErrors] = useState<{ [key: string]: string }>({});
   const [users, setUsers] = useState<{ id: number; first_name: string; last_name: string }[]>([]);
   const [projects, setProjects] = useState<{ id: number; project_title: string }[]>([]);
+  const [projectOwner, setProjectOwner] = useState<string>('');
 
   useEffect(() => {
     // Fetch users
@@ -77,7 +89,17 @@ const TasksEdit: React.FC = () => {
           const taskData = res.data.data;
           setForm({
             title: taskData.task_title || '',
-            assignee: taskData.assignees ? String(taskData.assignees) : '',
+            task_assignees: Array.isArray(taskData.task_assignees)
+              ? taskData.task_assignees
+                  .map((u: any) =>
+                    typeof u === 'object' && u !== null && u.user_id !== undefined
+                      ? String(u.user_id)
+                      : typeof u === 'string' || typeof u === 'number'
+                        ? String(u)
+                        : null
+                  )
+                  .filter(Boolean)
+              : [],
             start_date: taskData.start_date ? format(new Date(taskData.start_date), 'yyyy-MM-dd') : '',
             due_date: taskData.due_date ? format(new Date(taskData.due_date), 'yyyy-MM-dd') : '',
             estimated: taskData.estimated_time !== undefined && taskData.estimated_time !== null ? String(taskData.estimated_time) : '',
@@ -93,11 +115,21 @@ const TasksEdit: React.FC = () => {
             notifySubmission: taskData.reviewer_on_submission_notification === 'YES',
             project_id: taskData.project_id ? String(taskData.project_id) : '',
           });
-          setDateRange([{
-            startDate: taskData.start_date ? new Date(taskData.start_date) : undefined,
-            endDate: taskData.due_date ? new Date(taskData.due_date) : undefined,
-            key: 'selection',
-          }]);
+          setDateRange([
+            {
+              startDate: taskData.start_date ? new Date(taskData.start_date) : undefined,
+              endDate: taskData.due_date ? new Date(taskData.due_date) : undefined,
+              key: 'selection',
+            },
+          ]);
+          // Fetch project owner for the project
+          const pid = taskData.project_id || projectId;
+          if (pid) {
+            api.get(`/api/projectmanagement/projects/${pid}/`).then(res2 => {
+              const project = res2.data.data || res2.data;
+              setProjectOwner(project.project_owner || project.owner || '');
+            }).catch(() => setProjectOwner(''));
+          }
         })
         .catch(err => {
           showToast({ type: 'error', title: 'Error', message: 'Failed to fetch task data.' });
@@ -131,7 +163,7 @@ const TasksEdit: React.FC = () => {
     setFieldErrors({});
     const errors: { [key: string]: string } = {};
     if (!form.title) errors.title = 'Task Title is required';
-    if (!form.assignee) errors.assignee = 'Assignee is required';
+    if (!form.task_assignees || form.task_assignees.length === 0) errors.task_assignees = 'At least one assignee is required';
     if (!form.project_id) errors.project_id = 'Project is required';
 
     if (Object.keys(errors).length > 0) {
@@ -145,7 +177,7 @@ const TasksEdit: React.FC = () => {
       let payload: any = {
         project_id: projectId ? Number(projectId) : form.project_id ? Number(form.project_id) : undefined,
         task_title: form.title,
-        assignees: form.assignee,
+        assignees: form.task_assignees.map((id: string) => Number(id)),
         start_date: form.start_date ? new Date(form.start_date).toISOString() : undefined,
         due_date: form.due_date ? new Date(form.due_date).toISOString() : undefined,
         estimated_time: form.estimated ? parseFloat(form.estimated) : undefined,
@@ -163,7 +195,7 @@ const TasksEdit: React.FC = () => {
       
       await api.put(`/api/projectmanagement/tasks/${id}/`, payload);
       showToast({ type: 'success', title: 'Success', message: 'Task updated successfully!' });
-      navigate(`/projects/${form.project_id}/tasks`);
+      navigate(`/projects/${form.project_id}/tasks?updated=${Date.now()}`);
     } catch (err: any) {
       showToast({ type: 'error', title: 'Error', message: err.message || 'Error occurred' });
     } finally {
@@ -174,7 +206,9 @@ const TasksEdit: React.FC = () => {
   return (
     <div className="p-4">
       <div className="text-[15px] text-black mb-2">
-        Dashboard / Project Management / Edit Task
+        <span className="cursor-pointer text-orange-600 hover:underline" onClick={() => navigate('/')}>Dashboard</span> /
+        <span className="cursor-pointer text-orange-600 hover:underline" onClick={() => navigate('/projects')}> Project Management</span> /
+        <span className="text-black"> Edit Task</span>
       </div>
       <div className="flex border-b mb-6">
         <button
@@ -205,21 +239,14 @@ const TasksEdit: React.FC = () => {
                 <label className="block mb-2 font-medium text-[15px]">
                   Assignees <span className="text-red-500">*</span>
                 </label>
-                <select
-                  name="assignee"
-                  className="w-full bg-[#F3F3F3] rounded px-4 py-3 text-black outline-none text-[15px]"
-                  value={form.assignee}
-                  onChange={handleChange}
-                >
-                  <option value="">Select assignee</option>
-                  {users.map(user => {
-                    const fullName = `${user.first_name} ${user.last_name}`.trim();
-                    return (
-                      <option key={user.id} value={user.id}>{fullName}</option>
-                    );
-                  })}
-                </select>
-                {fieldErrors.assignee && <div className="text-red-500 text-sm mt-1">{fieldErrors.assignee}</div>}
+                <MultiSelect
+                  label=""
+                  options={users.map(user => ({ value: String(user.id), text: `${user.first_name} ${user.last_name}`.trim() }))}
+                  value={form.task_assignees.filter(Boolean)}
+                  onChange={selected => setForm(prev => ({ ...prev, task_assignees: selected }))}
+                  disabled={false}
+                />
+                {fieldErrors.task_assignees && <div className="text-red-500 text-sm mt-1">{fieldErrors.task_assignees}</div>}
               </div>
               <div className="">
                 <label className="block mb-2 font-medium text-[15px]">Date</label>
@@ -240,7 +267,7 @@ const TasksEdit: React.FC = () => {
                   <div className="absolute z-50 mt-2">
                     <DateRange
                       editableDateInputs={true}
-                      onChange={(item: { selection: DateRangeSelection }) => {
+                      onChange={(item: { selection: DateRangeType }) => {
                         const newRange = item.selection;
                         setDateRange([newRange]);
                         setForm(f => ({
@@ -307,11 +334,10 @@ const TasksEdit: React.FC = () => {
                 <select
                   name="reviewer"
                   className="w-full bg-[#F3F3F3] rounded px-4 py-3 text-black outline-none text-[15px]"
-                  value={form.reviewer}
-                  onChange={handleChange}
+                  value={projectOwner}
+                  disabled
                 >
-                  <option value="">Select Reviewer/Approver</option>
-                  {reviewers.map(r => <option key={r.id} value={r.id}>{r.name}</option>)}
+                  <option value="">{projectOwner ? projectOwner : 'No owner found'}</option>
                 </select>
               </div>
             </div>
@@ -343,6 +369,7 @@ const TasksEdit: React.FC = () => {
             </div>
           </div>
           {/* Notification Control */}
+          {/*
           <div>
             <div className="font-bold text-[17px] mb-4">Notification Control</div>
             <div className="flex items-center bg-[#F3F3F3] rounded px-4 py-3 mb-2 justify-between">
@@ -384,14 +411,18 @@ const TasksEdit: React.FC = () => {
                   checked={form.notifySubmission}
                   onChange={handleChange}
                 />
-                Notify reviewer on submission
+                Notify on submission
               </label>
             </div>
           </div>
+          */}
           {/* Actions */}
-          <div className="flex justify-end items-center mt-4">
+          <div className="flex justify-end items-center mt-4 gap-2">
             <button type="submit" className="bg-orange-500 text-white font-semibold rounded px-6 py-2 hover:bg-orange-600 text-[15px]" disabled={loading}>
               {loading ? 'Updating...' : 'Update Task'}
+            </button>
+            <button type="button" className="bg-gray-300 text-black font-semibold rounded px-6 py-2 hover:bg-gray-400 text-[15px]" onClick={() => navigate(`/projects/${form.project_id}/tasks`)}>
+              Cancel
             </button>
           </div>
         </form>

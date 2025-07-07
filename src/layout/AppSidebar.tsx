@@ -186,7 +186,7 @@ const AppSidebar: React.FC = () => {
                 }`}
               >
                 <span
-                  className={`menu-item-icon-size text-black-500  ${
+                  className={`menu-item-icon-size text-black  ${
                     isSubmenuOpen ? "menu-item-icon-active " : "menu-item-icon-inactive "
                   }`}
                 >
@@ -211,13 +211,13 @@ const AppSidebar: React.FC = () => {
                     isDashboard
                       ? isActiveDashboard
                         ? "menu-item-active bg-[#e8ebff] text-black hover:text-black"
-                        : "menu-item-inactive text-black hover:bg-gray-100 hover:text-black"
+                        : "menu-item-inactive text-black hover:text-black"
                       : ""
                   } ${
                     !isExpanded && !isHovered ? "lg:justify-center " : "lg:justify-start"
                   }`}
                 >
-                  <span className={`menu-item-icon-size ${isDashboard && isActiveDashboard ? '' : ''}`}>{nav.icon}</span>
+                  <span className={`menu-item-icon-size ${isDashboard ? 'group-hover:text-gray-400' : '!text-black'}`}>{nav.icon}</span>
                   {(isExpanded || isHovered || isMobileOpen) && (
                     <span className={`menu-item-text ${isDashboard ? 'hover:text-black' : ''}`}>{nav.name}</span>
                   )}
