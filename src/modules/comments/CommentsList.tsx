@@ -35,7 +35,7 @@ const CommentsList: React.FC<CommentsListProps> = ({ moduleName }) => {
                 );
                 window.location.reload();
             } catch (error) {
-                console.error('Error deleting:', error);
+                // Error handling intentionally left blank (no debug output)
             }
         }
     };

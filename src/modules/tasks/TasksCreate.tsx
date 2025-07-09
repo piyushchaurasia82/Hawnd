@@ -1,23 +1,14 @@
 import React, { useState, useEffect } from 'react';
-import { FiCalendar, FiClock } from 'react-icons/fi';
 import { useLocation, useParams, useNavigate } from 'react-router-dom';
-import { DateRange, Range, RangeKeyDict } from 'react-date-range';
+import { DateRange } from 'react-date-range';
 import 'react-date-range/dist/styles.css';
 import 'react-date-range/dist/theme/default.css';
 import { format } from 'date-fns';
 import { useToast } from '../../components/ui/alert/ToastContext';
 import api from '../../services/api';
 import MultiSelect from '../../components/form/MultiSelect';
+import { useCurrentUser } from '../../context/CurrentUserContext';
 
-const assignees = [
-  { id: 1, name: 'Alex' },
-  { id: 2, name: 'Sam' },
-  { id: 3, name: 'Jordan' },
-];
-const reviewers = [
-  { id: 1, name: 'Reviewer 1' },
-  { id: 2, name: 'Reviewer 2' },
-];
 const priorities = ['Low', 'Medium', 'High'];
 const statuses = ['To Do', 'In Progress', 'Done'];
 
@@ -36,13 +27,13 @@ const TasksCreate: React.FC = () => {
   const [tab, setTab] = useState<'quick' | 'detailed'>('quick');
   const [quickForm, setQuickForm] = useState({
     title: '',
-    assignee: [],
+    assignee: [] as string[],
     project_id: projectId || '',
   });
 
   const [form, setForm] = useState({
     title: '',
-    assignee: [],
+    assignee: [] as string[],
     start_date: '',
     due_date: '',
     estimated: '',
@@ -69,7 +60,10 @@ const TasksCreate: React.FC = () => {
   const [loading, setLoading] = useState(false);
   const [fieldErrors, setFieldErrors] = useState<{ [key: string]: string }>({});
   const [users, setUsers] = useState<{ id: number; first_name: string; last_name: string }[]>([]);
-  const [projects, setProjects] = useState<{ id: number; project_title: string }[]>([]);
+  const [projects, setProjects] = useState<{ id: number; project_title: string; project_owner?: string }[]>([]);
+  const { user, userRole } = useCurrentUser();
+  const [reviewerOptions, setReviewerOptions] = useState<{ id: string | number; name: string }[]>([]);
+  const [allTasks, setAllTasks] = useState<any[]>([]);
 
   const API_BASE_URL = import.meta.env.VITE_API_BASE_URL;
 
@@ -103,8 +97,71 @@ const TasksCreate: React.FC = () => {
           setProjects(Array.isArray(data) ? data : []);
         })
         .catch(() => setProjects([]));
+    } else {
+      // Fetch the specific project if projectId is present
+      api.get(`${API_BASE_URL}/api/projectmanagement/projects/${projectId}/`)
+        .then(res => {
+          const data = res.data.data || res.data.project || res.data;
+          if (data && data.id) {
+            setProjects([data]);
+          } else {
+            setProjects([]);
+          }
+        })
+        .catch(() => setProjects([]));
     }
+    // Fetch all tasks for developer filtering
+    api.get(`${API_BASE_URL}/api/projectmanagement/tasks/`)
+      .then(res => {
+        setAllTasks(res.data.data || res.data.tasks || res.data || []);
+      })
+      .catch(() => setAllTasks([]));
   }, [projectId]);
+
+  // Filter projects for developer: only show projects where user is assigned to at least one task
+  let filteredProjects = projects;
+  if (userRole && userRole.trim().toLowerCase().includes('developer') && user && user.id) {
+    const assignedProjectIds = new Set(
+      allTasks
+        .filter(task => {
+          if (Array.isArray(task.task_assignees)) {
+            return task.task_assignees.some((a: any) => String(a.user_id || a.id) === String(user.id));
+          }
+          return String(task.assigned_to_id) === String(user.id);
+        })
+        .map(task => task.project_id)
+    );
+    filteredProjects = projects.filter(p => assignedProjectIds.has(p.id));
+  }
+
+  // Auto-select current user as assignee for developers
+  useEffect(() => {
+    if (userRole && userRole.trim().toLowerCase().includes('developer') && user && user.id) {
+      setQuickForm(prev => ({ ...prev, assignee: [String(user.id)] }));
+      setForm(prev => ({ ...prev, assignee: [String(user.id)] }));
+    }
+  }, [userRole, user]);
+
+  // When project or projects/users list changes, set reviewer to project owner
+  useEffect(() => {
+    let selectedProjectId = projectId || form.project_id;
+    if (!selectedProjectId) return;
+    const selectedProject = projects.find(p => String(p.id) === String(selectedProjectId));
+    if (!selectedProject || !selectedProject.project_owner) return;
+    // Try to find user by full name (first + last)
+    const ownerName = selectedProject.project_owner.trim();
+    const ownerUser = users.find(
+      u => `${u.first_name} ${u.last_name}`.trim().toLowerCase() === ownerName.toLowerCase()
+    );
+    if (ownerUser) {
+      setForm(prev => ({ ...prev, reviewer: String(ownerUser.id) }));
+      setReviewerOptions([{ id: ownerUser.id, name: ownerName }]);
+    } else {
+      // fallback: set reviewer to empty, but still show owner name as disabled option
+      setForm(prev => ({ ...prev, reviewer: '' }));
+      setReviewerOptions([{ id: '', name: ownerName }]);
+    }
+  }, [form.project_id, projectId, projects, users]);
 
   // Detailed form submit handler
   const handleDetailedSubmit = async (e: React.FormEvent) => {
@@ -276,7 +333,7 @@ const TasksCreate: React.FC = () => {
                 onChange={(e) => handleChange(e, 'quick')}
               >
                 <option value="">Select project</option>
-                {projects.map(project => (
+                {filteredProjects.map(project => (
                   <option key={project.id} value={project.id}>{project.project_title}</option>
                 ))}
               </select>
@@ -305,6 +362,7 @@ const TasksCreate: React.FC = () => {
               options={users.map(user => ({ value: String(user.id), text: `${user.first_name} ${user.last_name}`.trim() }))}
               defaultSelected={quickForm.assignee.map(String)}
               onChange={values => handleChange({ target: { name: 'assignee', value: values } } as any, 'quick')}
+              disabled={!!(userRole && userRole.trim().toLowerCase().includes('developer'))}
             />
             {fieldErrors.assignee && <div className="text-red-500 text-sm mt-1">{fieldErrors.assignee}</div>}
           </div>
@@ -347,7 +405,7 @@ const TasksCreate: React.FC = () => {
                     onChange={(e) => handleChange(e, 'detailed')}
                   >
                     <option value="">Select project</option>
-                    {projects.map(project => (
+                    {filteredProjects.map(project => (
                       <option key={project.id} value={project.id}>{project.project_title}</option>
                     ))}
                   </select>
@@ -376,6 +434,7 @@ const TasksCreate: React.FC = () => {
                   options={users.map(user => ({ value: String(user.id), text: `${user.first_name} ${user.last_name}`.trim() }))}
                   defaultSelected={form.assignee.map(String)}
                   onChange={values => handleChange({ target: { name: 'assignee', value: values } } as any, 'detailed')}
+                  disabled={!!(userRole && userRole.trim().toLowerCase().includes('developer'))}
                 />
                 {fieldErrors.assignee && <div className="text-red-500 text-sm mt-1">{fieldErrors.assignee}</div>}
               </div>
@@ -429,7 +488,7 @@ const TasksCreate: React.FC = () => {
                 value={form.description}
                 onChange={(e) => handleChange(e, 'detailed')}
               />
-              <div className="text-right text-xs text-gray-400 mt-1 font-semibold">Upload Files</div>
+              {/* <div className="text-right text-xs text-gray-400 mt-1 font-semibold">Upload Files</div> */}
             </div>
           </div>
           {/* Schedule & Task Status */}
@@ -466,10 +525,11 @@ const TasksCreate: React.FC = () => {
                   name="reviewer"
                   className="w-full bg-[#F3F3F3] rounded px-4 py-3 text-black outline-none text-[15px]"
                   value={form.reviewer}
-                  onChange={(e) => handleChange(e, 'detailed')}
+                  disabled
                 >
-                  <option value="">Select Reviewer/Approver</option>
-                  {reviewers.map(r => <option key={r.id} value={r.id}>{r.name}</option>)}
+                  {reviewerOptions.map(r => (
+                    <option key={r.id} value={r.id}>{r.name}</option>
+                  ))}
                 </select>
               </div>
             </div>
@@ -549,16 +609,16 @@ const TasksCreate: React.FC = () => {
           </div>
           )}
           {/* Activity & Edit History */}
-          <div>
+          {/* <div>
             <div className="font-bold text-[17px] mb-4">Activity & Edit History</div>
             <div className="bg-[#F3F3F3] rounded px-4 py-3 text-black text-sm">
               Created by Alex on July 20, 2024<br />
               Edited 'Status' from In Progress to Done
             </div>
-          </div>
+          </div> */}
           {/* Actions */}
           <div className="flex justify-between items-center mt-4 gap-4">
-            <button type="button" className="text-black font-semibold underline text-[15px]">Save as Draft</button>
+            {/* <button type="button" className="text-black font-semibold underline text-[15px]">Save as Draft</button> */}
             <div className="flex gap-4">
               <button
                 type="button"

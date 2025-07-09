@@ -4,12 +4,9 @@ import GenericShow from '../../components/GenericShow';
 import modules from '../../config/loadModules';
 import type { ModuleConfig } from '../../config/types';
 
-interface ProjectMembersShowProps {
-    moduleName: string;
-}
-
-const ProjectMembersShow: React.FC<ProjectMembersShowProps> = ({ moduleName }) => {
+const ProjectMembersShow: React.FC = () => {
     const { id } = useParams<{ id: string }>();
+    const moduleName = 'project_members';
     const config: ModuleConfig | undefined = moduleName ? modules[moduleName] : undefined;
 
     if (!config) return <div className="text-lg font-medium text-red-600">Module not found</div>;

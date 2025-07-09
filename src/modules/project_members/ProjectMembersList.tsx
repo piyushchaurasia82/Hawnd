@@ -6,13 +6,10 @@ import GenericFilter from '../../components/GenericFilter';
 import modules from '../../config/loadModules';
 import type { ModuleConfig } from '../../config/types';
 
-interface ProjectMembersListProps {
-    moduleName: string;
-}
-
-const ProjectMembersList: React.FC<ProjectMembersListProps> = ({ moduleName }) => {
+const ProjectMembersList: React.FC = () => {
     const navigate = useNavigate();
     const [filters, setFilters] = useState<{ [key: string]: string }>({});
+    const moduleName = 'project_members';
     const config: ModuleConfig = modules[moduleName as keyof typeof modules];
 
     if (!config) {

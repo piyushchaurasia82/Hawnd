@@ -5,12 +5,9 @@ import GenericForm from '../../components/GenericForm';
 import modules from '../../config/loadModules';
 import type { ModuleConfig } from '../../config/types';
 
-interface UserRolesEditProps {
-    moduleName: string;
-}
-
-const UserRolesEdit: React.FC<UserRolesEditProps> = ({ moduleName }) => {
+const UserRolesEdit: React.FC = () => {
     const { id } = useParams<{ id: string }>();
+    const moduleName = 'user_roles';
     const config: ModuleConfig | undefined = moduleName ? modules[moduleName] : undefined;
     const navigate = useNavigate();
     const [users, setUsers] = useState<{ id: number; username: string; first_name: string; last_name: string }[]>([]);

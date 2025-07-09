@@ -3,9 +3,12 @@ import { useNavigate } from 'react-router-dom';
 import api from '../../services/api';
 import { Eye, EyeOff } from 'lucide-react';
 import MultiSelect from '../../components/form/MultiSelect';
+import { useCurrentUser } from '../../context/CurrentUserContext';
+import { postAuditLog } from '../../services/api';
 
 const UsersCreate: React.FC = () => {
   const navigate = useNavigate();
+  const { user: currentUser } = useCurrentUser();
   // Form state
   const [fullName, setFullName] = useState('');
   const [email, setEmail] = useState('');
@@ -197,6 +200,15 @@ const UsersCreate: React.FC = () => {
           console.warn('Failed to assign some tasks:', taskError);
         }
       }
+      
+      // Audit log: User Created
+      const performerName = currentUser ? `${currentUser.firstName} ${currentUser.lastName}`.trim() : (JSON.parse(localStorage.getItem('user_data') || '{}').username || 'Unknown');
+      await postAuditLog({
+        action: 'User Created',
+        affected_user: `${firstName} ${lastName}`.trim(),
+        performer: performerName,
+        description: `User account for ${firstName} ${lastName} was created by ${performerName}.`
+      });
       
       setSuccess(`User "${firstName} ${lastName}" created successfully! They can now login with username: ${username}`);
       

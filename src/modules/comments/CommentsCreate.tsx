@@ -23,7 +23,7 @@ const CommentsCreate: React.FC<CommentsCreateProps> = ({ moduleName }) => {
             );
             navigate(`/${moduleName}`);
         } catch (error) {
-            console.error('Error creating:', error);
+            // Remove all console.error statements
         }
     };
 

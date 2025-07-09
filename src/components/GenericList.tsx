@@ -62,89 +62,6 @@ const DescriptionCell: React.FC<{ description: string }> = ({ description }) => 
   );
 };
 
-const dummyProjects = [
-  {
-    id: 1,
-    title: 'Website Redesign',
-    owner: 'Emily Carter',
-    status: 'In Progress',
-    completed: 60,
-    type: 'Marketing',
-  },
-  {
-    id: 2,
-    title: 'Mobile App Development',
-    owner: 'David Lee',
-    status: 'Completed',
-    completed: 100,
-    type: 'Product',
-  },
-  {
-    id: 3,
-    title: 'Content Marketing Strategy',
-    owner: 'Sarah Chen',
-    status: 'Todo',
-    completed: 20,
-    type: 'Marketing',
-  },
-  {
-    id: 4,
-    title: 'Sales Training Program',
-    owner: 'Michael Brown',
-    status: 'In Progress',
-    completed: 40,
-    type: 'Sales',
-  },
-  {
-    id: 5,
-    title: 'Customer Support Portal',
-    owner: 'Jessica Wong',
-    status: 'Completed',
-    completed: 100,
-    type: 'Support',
-  },
-  {
-    id: 6,
-    title: 'Product Launch Campaign',
-    owner: 'Daniel Kim',
-    status: 'Todo',
-    completed: 10,
-    type: 'Marketing',
-  },
-  {
-    id: 7,
-    title: 'Internal Tools Upgrade',
-    owner: 'Olivia Green',
-    status: 'In Progress',
-    completed: 50,
-    type: 'IT',
-  },
-  {
-    id: 8,
-    title: 'Market Research Study',
-    owner: 'Ethan Clark',
-    status: 'Completed',
-    completed: 100,
-    type: 'Research',
-  },
-  {
-    id: 9,
-    title: 'Partnership Development',
-    owner: 'Sophia Davis',
-    status: 'Todo',
-    completed: 30,
-    type: 'Business',
-  },
-  {
-    id: 10,
-    title: 'Employee Onboarding Process',
-    owner: 'Ryan Taylor',
-    status: 'In Progress',
-    completed: 70,
-    type: 'HR',
-  },
-];
-
 const GenericList: React.FC<GenericListProps> = ({
   config,
   filters,
@@ -212,7 +129,7 @@ const GenericList: React.FC<GenericListProps> = ({
   if (isProjectsModule) {
     return (
       <tbody className="border border-[#EAEAEA]">
-        <tr className="bg-gray-100 text-gray-700 text-left">
+        <tr className="!bg-gray-100 text-gray-700 text-left">
           <th className="px-4 py-3 whitespace-nowrap font-medium">Project Title</th>
           <th className="px-4 py-3 whitespace-nowrap font-medium">Owner</th>
           <th className="px-4 py-3 whitespace-nowrap font-medium">Status</th>
@@ -286,7 +203,7 @@ const GenericList: React.FC<GenericListProps> = ({
     <div className="mt-4">
       <div className="overflow-x-auto w-full">
         <table className="min-w-full divide-y divide-gray-200 text-sm sm:text-base">
-          <thead className="bg-gray-100 text-gray-700 text-left">
+          <thead className="!bg-gray-100 text-gray-700 text-left">
             <tr>
               {config.listConfig.columns.map((column) => {
                 const field = config.fields.find((f) => f.name === column);

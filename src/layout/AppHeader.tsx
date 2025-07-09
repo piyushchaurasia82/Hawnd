@@ -1,6 +1,5 @@
 import React, { useEffect, useRef, useState } from "react";
 import { useSidebar } from "../context/SidebarContext";
-import NotificationDropdown from "../components/header/NotificationDropdown";
 import UserDropdown from "../components/header/UserDropdown";
 
 interface AppHeaderProps {

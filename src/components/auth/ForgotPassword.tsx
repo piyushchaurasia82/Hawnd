@@ -13,14 +13,16 @@ const ForgotPassword: React.FC = () => {
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gradient-to-b from-[#b3d8fd] to-[#eaf6ff] font-inter">
-      <div className="bg-white bg-opacity-90 rounded-2xl shadow-xl px-8 py-10 w-full max-w-md text-center">
+    <div className="min-h-screen flex items-center justify-center relative font-inter">
+      {/* Background image */}
+      <div className="absolute inset-0 w-full h-full bg-cover bg-center z-0" style={{ backgroundImage: "url('/images/background/clouds.png')" }} />
+      <div className="bg-white bg-opacity-90 rounded-2xl shadow-xl px-8 py-10 w-full max-w-md text-center relative z-20">
         {/* Logo */}
-        <img src="/images/logo/logo.png" alt="ebizneeds logo" className="mx-auto mb-4 w-48" />
+        <img src="/images/logo/hawnd.png" alt="Hawnd logo" className="mx-auto mb-4 w-48" />
         {/* Heading */}
         <h2 className="text-2xl sm:text-3xl font-bold text-gray-900 mb-2">Oops, brain lag?</h2>
         <p className="text-base text-gray-800 mb-8">
-          Enter the email associated with your account and we'll send an email with instructions to reset your password.
+        Enter the email associated with your account. We'll send you a One-Time Password (OTP) to verify your identity. After verification, you'll be able to set a new password.
         </p>
         {submitted ? (
           <div className="text-green-600 font-semibold mb-4">If an account exists for {email}, you will receive an email with password reset instructions.</div>

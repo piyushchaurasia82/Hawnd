@@ -3,6 +3,8 @@ import { useNavigate } from "react-router-dom";
 import api from "../../services/api";
 import modules from "../../config/loadModules";
 import type { ModuleConfig } from "../../config/types";
+import { useCurrentUser } from '../../context/CurrentUserContext';
+import { postAuditLog } from '../../services/api';
 
 interface RolesCreateProps {
   moduleName: string;
@@ -17,6 +19,7 @@ const RolesCreate: React.FC<RolesCreateProps> = ({ moduleName }) => {
   const [selectAll, setSelectAll] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
+  const { user: currentUser } = useCurrentUser();
 
   useEffect(() => {
     async function fetchPermissions() {
@@ -84,6 +87,14 @@ const RolesCreate: React.FC<RolesCreateProps> = ({ moduleName }) => {
           permission: selectedPermissions,
         });
       }
+      // Audit log: Role Created
+      const performerName = currentUser ? `${currentUser.firstName} ${currentUser.lastName}`.trim() : (JSON.parse(localStorage.getItem('user_data') || '{}').username || 'Unknown');
+      await postAuditLog({
+        action: 'Role Created',
+        affected_user: formData.name,
+        performer: performerName,
+        description: `Role '${formData.name}' was created by ${performerName}.`
+      });
       navigate(`/${moduleName}`);
     } catch (error) {
       setError("Error creating role. Please try again.");

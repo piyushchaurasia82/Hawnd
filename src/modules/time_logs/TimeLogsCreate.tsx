@@ -1,13 +1,15 @@
 import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import api from '../../services/api';
-import { FiClock, FiCalendar } from 'react-icons/fi';
 import { useToast } from '../../components/ui/alert/ToastContext';
+import { useCurrentUser } from '../../context/CurrentUserContext';
+import Select from 'react-select';
 
 const TimeLogsCreate: React.FC = () => {
     const navigate = useNavigate();
     const { showToast } = useToast();
-    const [tasks, setTasks] = useState<{ id: number; task_title: string }[]>([]);
+    const { userRole, user } = useCurrentUser();
+    const [tasks, setTasks] = useState<{ id: number; task_title: string; task_assignees?: any[]; assigned_to_id?: string | number }[]>([]);
     const [form, setForm] = useState({
         task_id: '',
         start_date: '',
@@ -75,17 +77,22 @@ const TimeLogsCreate: React.FC = () => {
         }
         try {
             const userData = JSON.parse(localStorage.getItem('user_data') || '{}');
-            // Combine date and time for ISO string
-            const startDateTime = form.start_time ? new Date(form.start_time).toISOString() : '';
-            const endDateTime = form.end_time ? new Date(form.end_time).toISOString() : '';
+            // Helper to combine date and time into ISO string
+            function toIsoDatetime(date: string, time: string) {
+                if (!date || !time) return '';
+                // If time is '09:00', add ':00' for seconds
+                if (/^\d{2}:\d{2}$/.test(time)) time = time + ':00';
+                // Combine and add 'Z' for UTC (or remove 'Z' if backend expects local time)
+                return `${date}T${time}Z`;
+            }
             const payload = {
                 user_id: userData.id,
                 task_id: Number(form.task_id),
                 start_date: form.start_date ? new Date(form.start_date).toISOString() : '',
                 end_date: form.end_date ? new Date(form.end_date).toISOString() : '',
-                start_time: startDateTime,
-                end_time: endDateTime,
-                total_hours: Number(form.total_hours),
+                start_time: toIsoDatetime(form.start_date, form.start_time),
+                end_time: toIsoDatetime(form.end_date, form.end_time),
+                total_hours: form.total_hours,
                 description: form.description,
                 status: form.status,
             };
@@ -94,11 +101,27 @@ const TimeLogsCreate: React.FC = () => {
             navigate('/time_logs');
         } catch (err: any) {
             setError('Failed to create time log.');
+            if (err.response && err.response.data) {
+                console.error('API Error:', err.response.data);
+                showToast({ type: 'error', title: 'Error', message: JSON.stringify(err.response.data) });
+            } else {
             showToast({ type: 'error', title: 'Error', message: 'Failed to create time log.' });
+            }
         } finally {
             setLoading(false);
         }
     };
+
+    // Filter tasks for developer: only show tasks assigned to the current user
+    let filteredTasks = tasks;
+    if (userRole && userRole.trim().toLowerCase().includes('developer') && user && user.id) {
+        filteredTasks = tasks.filter(task => {
+            if (Array.isArray(task.task_assignees)) {
+                return task.task_assignees.some((a: any) => String(a.user_id || a.id) === String(user.id));
+            }
+            return String(task.assigned_to_id) === String(user.id);
+        });
+    }
 
     return (
         <div className="p-6">
@@ -115,18 +138,24 @@ const TimeLogsCreate: React.FC = () => {
                     {/* Task Name */}
                     <div>
                         <label className="block mb-2 font-semibold">Task Name <span className="text-red-500">*</span></label>
-                        <select
+                        <Select
                             name="task_id"
-                            value={form.task_id}
-                            onChange={handleChange}
-                            className="w-full bg-[#F6F2ED] rounded px-4 py-3 text-black outline-none"
-                            
-                        >
-                            <option value="">Enter Task Name</option>
-                            {tasks.map(task => (
-                                <option key={task.id} value={task.id}>{task.task_title}</option>
-                            ))}
-                        </select>
+                            options={filteredTasks.map(task => ({ value: task.id, label: task.task_title }))}
+                            value={filteredTasks
+                                .map(task => ({ value: task.id, label: task.task_title }))
+                                .find(option => String(option.value) === String(form.task_id)) || null}
+                            onChange={option => {
+                                setForm(f => ({ ...f, task_id: option ? String(option.value) : '' }));
+                                setFieldErrors(prev => ({ ...prev, task_id: '' }));
+                            }}
+                            isClearable
+                            placeholder="Enter Task Name"
+                            classNamePrefix="react-select"
+                            styles={{
+                                control: (base) => ({ ...base, backgroundColor: '#F6F2ED', minHeight: '48px', borderRadius: '0.375rem', borderColor: '#d1d5db', boxShadow: 'none' }),
+                                menu: (base) => ({ ...base, zIndex: 9999 }),
+                            }}
+                        />
                         {fieldErrors.task_id && <div className="text-red-500 text-sm mt-1">{fieldErrors.task_id}</div>}
                     </div>
                     {/* Start Date */}

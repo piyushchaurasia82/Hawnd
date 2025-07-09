@@ -26,7 +26,7 @@ const CommentsEdit: React.FC<CommentsEditProps> = ({ moduleName }) => {
             );
             navigate(`/${moduleName}`);
         } catch (error) {
-            console.error('Error updating:', error);
+            // Remove all console.error statements
         }
     };
 

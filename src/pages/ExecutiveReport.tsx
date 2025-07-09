@@ -2,7 +2,7 @@ import React, { useEffect, useState } from 'react';
 import ExecutiveBarChart from '../components/charts/bar/ExecutiveBarChart';
 import RoundChartOne from '../components/charts/round/RoundChartOne';
 import TimelineChart from '../components/charts/TimelineChart';
-import { getMonth, getYear, parseISO, isAfter, isBefore, differenceInCalendarDays } from 'date-fns';
+import { getMonth, getYear, parseISO, isAfter, differenceInCalendarDays } from 'date-fns';
 import api from '../services/api';
 
 interface Task {

@@ -4,23 +4,8 @@ import { tokenManager } from '../services/api';
 import api from '../services/api';
 import { useNavigate } from 'react-router-dom';
 
-const mockReminders = [
-  { title: "Prepare Presentation for Stakeholders' Meeting", date: '5 May' },
-  { title: 'Renew Software License', date: '10 May' },
-  { title: 'Organize Team Building Event', date: '15 May' },
-];
-
-const mockApprovalQueue = [
-  { id: 'REQ001', type: 'Expense Report', submitter: 'Ethan Carter', date: '2024-07-26', status: 'Pending', action: 'Approve/Reject' },
-  { id: 'REQ002', type: 'Time Off Request', submitter: 'Olivia Bennett', date: '2024-07-25', status: 'Pending', action: 'Approve/Reject' },
-  { id: 'REQ003', type: 'Purchase Order', submitter: 'Liam Harper', date: '2024-07-24', status: 'Approved', action: 'View' },
-  { id: 'REQ004', type: 'Travel Authorization', submitter: 'Ava Morgan', date: '2024-07-23', status: 'Rejected', action: 'View' },
-  { id: 'REQ005', type: 'Contract Renewal', submitter: 'Noah Foster', date: '2024-07-22', status: 'Pending', action: 'Approve/Reject' },
-];
-
 const Dashboard: React.FC = () => {
   const navigate = useNavigate();
-  const [projectTypeCounts, setProjectTypeCounts] = useState<{ [key: string]: number }>({});
   const [teamPerformance, setTeamPerformance] = useState<any[]>([]);
   const [tasks, setTasks] = useState<any[]>([]);
   const [selectedPriority, setSelectedPriority] = useState<string>('');
@@ -54,14 +39,14 @@ const Dashboard: React.FC = () => {
         return null;
       }
     }
-    function isTokenExpired(token: string, thresholdMinutes: number = 0) {
+    function isTokenExpired(token: string) {
       const decoded = decodeJwt(token);
       if (!decoded || !decoded.exp) return true;
       const expiryTime = decoded.exp * 1000;
       const currentTime = Date.now();
       return expiryTime <= currentTime;
     }
-    if (!token || isTokenExpired(token, 0)) {
+    if (!token || isTokenExpired(token)) {
       tokenManager.clearTokens();
       navigate('/auth', { replace: true });
     }
@@ -74,15 +59,8 @@ const Dashboard: React.FC = () => {
         const res = await api.get('/api/projectmanagement/projects/');
         const data = res.data.data || res.data.projects || res.data;
         setProjects(Array.isArray(data) ? data : []);
-        const counts: { [key: string]: number } = {};
-        (Array.isArray(data) ? data : []).forEach((project: any) => {
-          const type = (project.internal_external || 'Other').toLowerCase();
-          counts[type] = (counts[type] || 0) + 1;
-        });
-        setProjectTypeCounts(counts);
       } catch {
         setProjects([]);
-        setProjectTypeCounts({});
       }
     };
     fetchProjects();
@@ -217,8 +195,8 @@ const Dashboard: React.FC = () => {
     <div className="p-8 bg-[#FAFAFA] min-h-screen">
       {/* Welcome Header */}
       <div className="mb-8">
-        <h2 className="text-lg font-semibold text-gray-700">Dashboard</h2>
-        <h1 className="text-4xl font-bold mt-2 text-gray-900">
+        {/* <h2 className="text-lg font-semibold text-gray-700">Dashboard</h2> */}
+        <h1 className="text-5xl font-bold mt-2 text-gray-900">
           Welcome back, <span className="text-orange-500">{tokenManager.getUsername() || 'User'}</span>
         </h1>
       </div>
@@ -328,11 +306,11 @@ const Dashboard: React.FC = () => {
           <table className="min-w-full text-sm">
             <thead>
               <tr className="text-left text-gray-500 border-b">
-                <th className="py-2 px-4 font-semibold">Project Name</th>
-                <th className="py-2 px-4 font-semibold">Project Owner</th>
-                <th className="py-2 px-4 font-semibold">Status</th>
-                <th className="py-2 px-4 font-semibold">Progress</th>
-                <th className="py-2 px-4 font-semibold">Priority</th>
+                <th className="py-2 px-4 !bg-gray-100 font-semibold">Project Name</th>
+                <th className="py-2 px-4 !bg-gray-100 font-semibold">Project Owner</th>
+                <th className="py-2 px-4 !bg-gray-100 font-semibold">Status</th>
+                <th className="py-2 px-4 !bg-gray-100 font-semibold">Progress</th>
+                <th className="py-2 px-4 !bg-gray-100 font-semibold">Priority</th>
               </tr>
             </thead>
             <tbody>
@@ -416,10 +394,10 @@ const Dashboard: React.FC = () => {
           <table className="min-w-full text-sm">
             <thead>
               <tr className="text-left text-gray-500 bg-orange-50">
-                <th className="py-2 px-4 font-semibold">Name</th>
-                <th className="py-2 px-4 font-semibold">Role</th>
-                <th className="py-2 px-4 font-semibold">Tasks Completed</th>
-                <th className="py-2 px-4 font-semibold">Tasks In Progress</th>
+                <th className="py-2 px-4 !bg-gray-100 font-semibold">Name</th>
+                <th className="py-2 px-4 !bg-gray-100 font-semibold">Role</th>
+                <th className="py-2 px-4 !bg-gray-100 font-semibold">Tasks Completed</th>
+                <th className="py-2 px-4 !bg-gray-100 font-semibold">Tasks In Progress</th>
               </tr>
             </thead>
             <tbody>
@@ -469,10 +447,10 @@ const Dashboard: React.FC = () => {
           <table className="min-w-full text-sm">
             <thead>
               <tr className="text-left text-gray-500 bg-orange-50">
-                <th className="py-2 px-4 font-semibold">Task Name</th>
-                <th className="py-2 px-4 font-semibold">Assignee</th>
-                <th className="py-2 px-4 font-semibold">Status</th>
-                <th className="py-2 px-4 font-semibold">Due Date</th>
+                <th className="py-2 px-4 !bg-gray-100 font-semibold">Task Name</th>
+                <th className="py-2 px-4 !bg-gray-100 font-semibold">Assignee</th>
+                <th className="py-2 px-4 !bg-gray-100 font-semibold">Status</th>
+                <th className="py-2 px-4 !bg-gray-100 font-semibold">Due Date</th>
               </tr>
             </thead>
             <tbody>

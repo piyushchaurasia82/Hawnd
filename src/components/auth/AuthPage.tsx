@@ -3,6 +3,7 @@ import { Eye, EyeOff } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { GoogleLogin } from '@react-oauth/google';
 import api, { tokenManager } from '../../services/api';
+import { useCurrentUser } from '../../context/CurrentUserContext';
 
 // Define a type for your message modal
 interface Message {
@@ -33,6 +34,7 @@ const AuthPage: React.FC = () => {
   const [message, setMessage] = useState<Message | null>(null);
 
   const navigate = useNavigate();
+  const { refetch } = useCurrentUser();
 
   // Helper function to set the message state
   const displayMessage = (type: Message['type'], title: string, body: string | React.ReactNode, buttonText: string = 'Close') => {
@@ -58,7 +60,14 @@ const AuthPage: React.FC = () => {
             { id: userId, username }
           );
         }
-        navigate('/');
+        await refetch();
+        // Role-based redirect
+        const userRole = (localStorage.getItem('user_role') || '').toLowerCase();
+        if (['developer', 'developers', 'dev'].includes(userRole)) {
+          navigate('/developer-dashboard');
+        } else {
+          navigate('/');
+        }
         return;
       } else {
         displayMessage('error', 'Login Failed', response.data.message || 'Unexpected response from server. Please try again.');
@@ -160,7 +169,7 @@ const AuthPage: React.FC = () => {
       <div className="absolute inset-0 w-full h-full bg-cover bg-center z-0" style={{ backgroundImage: "url('/images/background/clouds.png')" }} />
       <div className="bg-white bg-opacity-90 rounded-2xl shadow-xl px-8 py-10 w-full max-w-md text-center relative z-20">
         {/* Logo */}
-        <img src="/images/logo/hawnd.png" alt="ebizneeds logo" className="mx-auto mb-4 w-48" />
+        <img src="/images/logo/hawnd.png" alt="Hawnd logo" className="mx-auto mb-4 w-48" />
         {/* Heading */}
         <h2 className="text-3xl sm:text-4xl font-bold text-[#f39c12] mb-2">Hey You, Let's Get In</h2>
         <p className="text-xl font-semibold text-gray-900 mb-8">Welcome back, legend</p>
@@ -191,12 +200,12 @@ const AuthPage: React.FC = () => {
           </div>
           <div className="flex items-center justify-between text-sm mt-2 mb-2">
             <div></div>
-            <span
+            {/* <span
               className="text-[#f39c12] font-semibold hover:underline cursor-pointer"
               onClick={() => navigate('/forgot-password')}
             >
               Forgot Password?
-            </span>
+            </span> */}
           </div>
           <button
             type="submit"

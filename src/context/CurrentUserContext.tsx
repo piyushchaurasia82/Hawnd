@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useEffect, useState } from 'react';
+import { createContext, useContext, useEffect, useState } from 'react';
 import type { ReactNode } from 'react';
 import api, { tokenManager } from '../services/api';
 import { useNavigate } from 'react-router-dom';
@@ -17,6 +17,8 @@ interface CurrentUserContextType {
   loading: boolean;
   error: string;
   refetch: () => Promise<void>;
+  userRole: string | null;
+  userRoleId: string | null;
 }
 
 const CurrentUserContext = createContext<CurrentUserContextType>({
@@ -24,6 +26,8 @@ const CurrentUserContext = createContext<CurrentUserContextType>({
   loading: true,
   error: '',
   refetch: async () => {},
+  userRole: null,
+  userRoleId: null,
 });
 
 export const useCurrentUser = () => useContext(CurrentUserContext);
@@ -32,6 +36,8 @@ export const CurrentUserProvider = ({ children }: { children: ReactNode }) => {
   const [user, setUser] = useState<CurrentUser | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
+  const [userRole, setUserRole] = useState<string | null>(null);
+  const [userRoleId, setUserRoleId] = useState<string | null>(null);
   const navigate = useNavigate();
 
   const fetchUser = async () => {
@@ -41,6 +47,7 @@ export const CurrentUserProvider = ({ children }: { children: ReactNode }) => {
       // Fetch the current user using the get-profile API
       const res = await api.get('/api/projectmanagement/get-profile/');
       const u = res.data.data || res.data;
+      // console.log('Fetched user:', u);
       setUser({
         id: u.id,
         username: u.username,
@@ -49,6 +56,31 @@ export const CurrentUserProvider = ({ children }: { children: ReactNode }) => {
         email: u.email,
         isActive: u.is_active === true || u.is_active === 'true' || u.is_active === 'True' || u.is_active === 1,
       });
+
+      // Fetch all user_roles
+      const allUserRolesRes = await api.get('/api/projectmanagement/user_roles/');
+      const allUserRolesArr = allUserRolesRes.data.data || allUserRolesRes.data.user_roles || allUserRolesRes.data;
+      // console.log('allUserRolesArr:', allUserRolesArr);
+      // Find the user_roles entry for this user
+      const userRoleEntry = Array.isArray(allUserRolesArr) ? allUserRolesArr.find((ur: any) => String(ur.user_id) === String(u.id)) : null;
+      const userRoleId = userRoleEntry ? userRoleEntry.role_id : null;
+      // console.log('userRoleEntry:', userRoleEntry);
+      // console.log('userRoleId:', userRoleId);
+      if (userRoleId) {
+        // Fetch all roles
+        const rolesRes = await api.get('/api/projectmanagement/roles/');
+        const rolesArr = rolesRes.data.data || rolesRes.data.roles || rolesRes.data;
+        // console.log('rolesArr:', rolesArr);
+        const matchedRole = Array.isArray(rolesArr) ? rolesArr.find((r: any) => String(r.id) === String(userRoleId)) : null;
+        // console.log('matchedRole:', matchedRole);
+        if (matchedRole) {
+          localStorage.setItem('user_role', matchedRole.name);
+          localStorage.setItem('user_role_id', String(matchedRole.id));
+          window.dispatchEvent(new Event('user_role_updated'));
+          setUserRole(matchedRole.name);
+          setUserRoleId(String(matchedRole.id));
+        }
+      }
     } catch (err: any) {
       // If error is 401, log out
       if (err?.response?.status === 401) {
@@ -76,7 +108,7 @@ export const CurrentUserProvider = ({ children }: { children: ReactNode }) => {
   }, []);
 
   return (
-    <CurrentUserContext.Provider value={{ user, loading, error, refetch: fetchUser }}>
+    <CurrentUserContext.Provider value={{ user, loading, error, refetch: fetchUser, userRole, userRoleId }}>
       {children}
     </CurrentUserContext.Provider>
   );

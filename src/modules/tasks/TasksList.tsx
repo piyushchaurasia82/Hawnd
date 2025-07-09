@@ -2,17 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import api from '../../services/api';
 import { useToast } from '../../components/ui/alert/ToastContext';
-
-const statusColors: Record<string, string> = {
-  'In Progress': 'bg-orange-500 text-white',
-  'Todo': 'bg-blue-500 text-white',
-  'Completed': 'bg-green-500 text-white',
-};
-const priorityColors: Record<string, string> = {
-  'High': 'bg-red-500 text-white',
-  'Medium': 'bg-orange-500 text-white',
-  'Low': 'bg-green-500 text-white',
-};
+import { useCurrentUser } from '../../context/CurrentUserContext';
 
 const TasksList: React.FC = () => {
   const [activeTab, setActiveTab] = useState<'team' | 'my'>('team');
@@ -24,38 +14,11 @@ const TasksList: React.FC = () => {
   const navigate = useNavigate();
   const API_BASE_URL = import.meta.env.VITE_API_BASE_URL;
   const { showToast } = useToast();
+  const { user, userRole } = useCurrentUser();
 
   // Pagination logic
   const [currentPage, setCurrentPage] = useState(1);
-  const [jumpPage, setJumpPage] = useState('');
   const pageSize = 10;
-
-  const [users, setUsers] = useState<any[]>([]);
-  useEffect(() => {
-    api.get('/api/projectmanagement/users/')
-      .then(res => {
-        const data = res.data.data || res.data.users || res.data;
-        setUsers(Array.isArray(data) ? data : []);
-      })
-      .catch(() => setUsers([]));
-  }, []);
-
-  const getAssigneeNames = (assignees: any) => {
-    if (!Array.isArray(assignees) || assignees.length === 0) return '-';
-    return (
-      assignees
-        .map((a: any) => {
-          if (a && typeof a === 'object') {
-            if (a.user_name) return a.user_name;
-            const user = users.find(u => String(u.id) === String(a.user_id));
-            return user ? `${user.first_name} ${user.last_name}`.trim() : '-';
-          }
-          return '-';
-        })
-        .filter(name => name && name !== '-')
-        .join(', ') || '-'
-    );
-  };
 
   useEffect(() => {
     setLoading(true);
@@ -77,6 +40,15 @@ const TasksList: React.FC = () => {
 
   // Filtering logic
   const filteredTasks = sortedTasks.filter(task => {
+    // For 'My Tasks' tab, show only tasks assigned to current user for both admin and developer
+    if (activeTab === 'my' && user && user.id && userRole && (userRole.trim().toLowerCase().includes('developer') || userRole.trim().toLowerCase().includes('admin'))) {
+      // Check task_assignees (array of objects with user_id or id)
+      if (Array.isArray(task.task_assignees)) {
+        return task.task_assignees.some((a: any) => String(a.user_id || a.id) === String(user.id));
+      }
+      // Fallback: check assigned_to_id
+      return String(task.assigned_to_id) === String(user.id);
+    }
     // Status filter
     let statusMatch = true;
     if (filters.status) {
@@ -109,9 +81,15 @@ const TasksList: React.FC = () => {
     if (page >= 1 && page <= totalPages) setCurrentPage(page);
   };
 
-  // Collect unique due dates and task names for filter dropdowns
+  // Collect unique due dates for filter dropdowns
   const dueDates = Array.from(new Set(tasks.map(t => t.due_date ? new Date(t.due_date).toLocaleDateString('en-GB') : ''))).filter(Boolean);
-  const taskNames = Array.from(new Set(tasks.map(t => t.task_title || t.name || ''))).filter(Boolean);
+
+  // Set My Tasks as default for developers
+  React.useEffect(() => {
+    if (userRole && userRole.trim().toLowerCase().includes('developer')) {
+      setActiveTab('my');
+    }
+  }, [userRole]);
 
   return (
     <div className="p-8">
@@ -135,12 +113,14 @@ const TasksList: React.FC = () => {
       </div>
       {/* Tabs */}
       <div className="flex border-b mb-6 mt-6">
+        {!(userRole && userRole.trim().toLowerCase().includes('developer')) && (
         <button
           className={`pr-4 py-2 text-base font-semibold border-b-2 transition-all duration-150 ${activeTab === 'team' ? 'border-orange-500 text-black' : 'border-transparent text-gray-500'}`}
           onClick={() => setActiveTab('team')}
         >
           Team Tasks
         </button>
+        )}
         <button
           className={`pr-4 py-2 text-base font-semibold border-b-2 transition-all duration-150 ${activeTab === 'my' ? 'border-orange-500 text-black' : 'border-transparent text-gray-500'}`}
           onClick={() => setActiveTab('my')}
@@ -192,13 +172,13 @@ const TasksList: React.FC = () => {
         ) : (
         <table className="min-w-full text-base">
           <thead>
-            <tr className="bg-orange-50 text-orange-500">
-              <th className="px-6 py-3 text-left font-semibold">Task Name</th>
-              <th className="px-6 py-3 text-left font-semibold">Status</th>
-              <th className="px-6 py-3 text-left font-semibold">Priority</th>
-              <th className="px-6 py-3 text-left font-semibold">Due Date</th>
-              <th className="px-6 py-3 text-left font-semibold">Assignee</th>
-              <th className="px-6 py-3 text-left font-semibold">Edit Task</th>
+            <tr className="bg-gray-100 text-gray-700">
+              <th className="px-6 py-3 text-left font-semibold !bg-gray-100" style={{background:'#f2f4f7'}}>Task Name</th>
+              <th className="px-6 py-3 text-left font-semibold !bg-gray-100" style={{background:'#f2f4f7'}}>Status</th>
+              <th className="px-6 py-3 text-left font-semibold !bg-gray-100" style={{background:'#f2f4f7'}}>Priority</th>
+              <th className="px-6 py-3 text-left font-semibold !bg-gray-100" style={{background:'#f2f4f7'}}>Due Date</th>
+              <th className="px-6 py-3 text-left font-semibold !bg-gray-100" style={{background:'#f2f4f7'}}>Assignee</th>
+              <th className="px-6 py-3 text-left font-semibold !bg-gray-100" style={{background:'#f2f4f7'}}>Edit Task</th>
             </tr>
           </thead>
           <tbody>

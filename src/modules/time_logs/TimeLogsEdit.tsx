@@ -1,13 +1,15 @@
 import React, { useEffect, useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import api from '../../services/api';
-import { FiClock, FiCalendar } from 'react-icons/fi';
 import { useToast } from '../../components/ui/alert/ToastContext';
+import { useCurrentUser } from '../../context/CurrentUserContext';
 
 const TimeLogsEdit: React.FC = () => {
     const { id } = useParams<{ id: string }>();
     const navigate = useNavigate();
     const { showToast } = useToast();
+    const { user, userRole } = useCurrentUser();
+    const isDeveloper = userRole && userRole.trim().toLowerCase().includes('developer');
     const [tasks, setTasks] = useState<{ id: number; task_title: string }[]>([]);
     const [form, setForm] = useState({
         task_id: '',
@@ -26,7 +28,18 @@ const TimeLogsEdit: React.FC = () => {
     // Fetch tasks and time log data
     useEffect(() => {
         api.get('/api/projectmanagement/tasks/')
-            .then(res => setTasks(res.data.data || []))
+            .then(res => {
+                let allTasks = res.data.data || [];
+                // If developer, filter tasks assigned to current user
+                if (isDeveloper && user && user.id) {
+                    allTasks = allTasks.filter((task: any) =>
+                        Array.isArray(task.task_assignees)
+                            ? task.task_assignees.some((a: any) => String(a.user_id || a.id) === String(user.id))
+                            : String(task.assigned_to_id) === String(user.id)
+                    );
+                }
+                setTasks(allTasks);
+            })
             .catch(() => setTasks([]));
         if (id) {
             api.get(`/api/projectmanagement/time_logs/${id}/`)
@@ -45,7 +58,7 @@ const TimeLogsEdit: React.FC = () => {
                 })
                 .catch(() => setError('Failed to load time log.'));
         }
-    }, [id]);
+    }, [id, isDeveloper, user]);
 
     // Calculate total hours if start and end time are set
     useEffect(() => {
@@ -252,13 +265,22 @@ const TimeLogsEdit: React.FC = () => {
                     />
                 </div>
                 {error && <div className="text-red-500 text-sm mt-2">{error}</div>}
-                <button
-                    type="submit"
-                    className="bg-orange-500 text-white font-semibold rounded px-6 py-2 mt-2 hover:bg-orange-600"
-                    disabled={loading}
-                >
-                    {loading ? 'Updating...' : 'Update Time Log'}
-                </button>
+                <div className="flex gap-4 justify-end">
+                    <button
+                        type="button"
+                        className="bg-gray-200 text-gray-800 font-semibold rounded px-6 py-2 hover:bg-gray-300"
+                        onClick={() => navigate('/time_logs')}
+                    >
+                        Cancel
+                    </button>
+                    <button
+                        type="submit"
+                        className="bg-orange-500 text-white font-semibold rounded px-6 py-2 hover:bg-orange-600"
+                        disabled={loading}
+                    >
+                        {loading ? 'Saving...' : 'Update'}
+                    </button>
+                </div>
             </form>
         </div>
     );

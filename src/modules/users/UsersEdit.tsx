@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import api, { tokenManager } from '../../services/api';
+import api, { tokenManager, postAuditLog } from '../../services/api';
 import modules from '../../config/loadModules';
 import InputField from '../../components/form/input/InputField';
 import SelectField from '../../components/form/input/SelectField';
@@ -9,23 +9,7 @@ import Checkbox from '../../components/form/input/Checkbox';
 import type { ModuleConfig, Field } from '../../config/types';
 import { usePasswordChange } from '../../pages/AccountSettings';
 import { useToast } from '../../components/ui/alert/ToastContext';
-
-const OrangeToggle = ({ checked, onChange }: { checked: boolean; onChange: (v: boolean) => void }) => (
-  <label className="inline-flex items-center cursor-pointer">
-    <input
-      type="checkbox"
-      className="sr-only peer"
-      checked={checked}
-      onChange={e => onChange(e.target.checked)}
-    />
-    <div className={
-      `w-11 h-6 rounded-full transition-all duration-300
-       ${checked ? 'bg-orange-500 shadow-lg ring-2 ring-orange-300' : 'bg-gray-200 shadow-inner'}
-       peer-focus:ring-4 peer-focus:ring-orange-300`
-    }></div>
-    <span className={`ml-3 text-sm font-medium ${checked ? 'text-orange-700' : 'text-gray-900'}`}>{checked ? 'Active' : 'Inactive'}</span>
-  </label>
-);
+import { useCurrentUser } from '../../context/CurrentUserContext';
 
 const MultiSelectDropdown = ({ options, selectedValues, onChange, label, disabled, onAddNew }: {
   options: { value: string | number; label: string }[];
@@ -102,6 +86,7 @@ const UsersEdit: React.FC<{ moduleName?: string }> = ({ moduleName = 'users' }) 
     const navigate = useNavigate();
     const { lastChangedPassword } = usePasswordChange();
     const { showToast } = useToast();
+    const { user: currentUser } = useCurrentUser();
 
     const [formData, setFormData] = useState<{ [key: string]: any }>({});
     const [loading, setLoading] = useState(true);
@@ -218,6 +203,14 @@ const UsersEdit: React.FC<{ moduleName?: string }> = ({ moduleName = 'users' }) 
                 `${config.apiBaseUrl}${config.endpoints.update.url.replace(':id', id!)}/`,
                 payload
             );
+            // Audit log: User Edited
+            const performerName = currentUser ? `${currentUser.firstName} ${currentUser.lastName}`.trim() : (JSON.parse(localStorage.getItem('user_data') || '{}').username || 'Unknown');
+            await postAuditLog({
+                action: 'User Edited',
+                affected_user: `${formData.first_name} ${formData.last_name}`.trim(),
+                performer: performerName,
+                description: `User details for ${formData.first_name} ${formData.last_name} were updated by ${performerName}.`
+            });
             showToast({
                 type: 'success',
                 title: 'User Updated',

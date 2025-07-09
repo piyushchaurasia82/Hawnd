@@ -5,11 +5,8 @@ import GenericForm from '../../components/GenericForm';
 import modules from '../../config/loadModules';
 import type { ModuleConfig } from '../../config/types';
 
-interface ProjectMembersCreateProps {
-    moduleName: string;
-}
-
-const ProjectMembersCreate: React.FC<ProjectMembersCreateProps> = ({ moduleName }) => {
+const ProjectMembersCreate: React.FC = () => {
+    const moduleName = 'project_members';
     const config: ModuleConfig | undefined = moduleName ? modules[moduleName] : undefined;
     const navigate = useNavigate();
 

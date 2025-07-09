@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useState, useCallback, useEffect } from 'react';
+import React, { createContext, useContext, useState, useCallback } from 'react';
 import type { ReactNode } from 'react';
 import Alert from './Alert';
 
@@ -32,7 +32,6 @@ export const useToast = () => {
 };
 
 let toastId = 0;
-const TOAST_STORAGE_KEY = 'app_last_toast';
 
 export const ToastProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
   const [toasts, setToasts] = useState<Toast[]>([]);
@@ -42,13 +41,11 @@ export const ToastProvider: React.FC<{ children: ReactNode }> = ({ children }) =
     setToasts((prev) => prev.filter((t) => t.id !== id));
   };
 
-  // Show toast and persist in localStorage
+  // Show toast (no localStorage persistence)
   const showToast = useCallback((toast: Omit<Toast, 'id'>) => {
     toastId += 1;
     const newToast = { ...toast, id: toastId };
     setToasts((prev) => [...prev, newToast]);
-    // Persist in localStorage
-    localStorage.setItem(TOAST_STORAGE_KEY, JSON.stringify({ ...newToast, shownAt: Date.now() }));
     setTimeout(() => {
       setToasts((prev) => prev.filter((t) => t.id !== newToast.id));
     }, toast.duration || 5000);
@@ -64,31 +61,6 @@ export const ToastProvider: React.FC<{ children: ReactNode }> = ({ children }) =
     };
     window.addEventListener('toast:remove', handler);
     return () => window.removeEventListener('toast:remove', handler);
-  }, []);
-
-  // On mount, show toast from localStorage if present and not expired
-  useEffect(() => {
-    const stored = localStorage.getItem(TOAST_STORAGE_KEY);
-    if (stored) {
-      try {
-        const parsed = JSON.parse(stored);
-        // Only show if not expired (within duration)
-        const now = Date.now();
-        const duration = parsed.duration || 5000;
-        if (parsed.shownAt && now - parsed.shownAt < duration) {
-          setToasts([{ ...parsed, id: ++toastId }]);
-          // Remove from storage immediately so it doesn't show again
-          localStorage.removeItem(TOAST_STORAGE_KEY);
-          setTimeout(() => {
-            setToasts([]);
-          }, duration - (now - parsed.shownAt));
-        } else {
-          localStorage.removeItem(TOAST_STORAGE_KEY);
-        }
-      } catch {
-        localStorage.removeItem(TOAST_STORAGE_KEY);
-      }
-    }
   }, []);
 
   return (

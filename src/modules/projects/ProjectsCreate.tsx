@@ -3,18 +3,15 @@ import { useNavigate } from 'react-router-dom';
 import { useToast } from '../../components/ui/alert/ToastContext';
 import api from '../../services/api';
 
-interface ProjectsCreateProps {
-    moduleName: string;
-}
-
+// Add User type definition for filteredUsers
 interface User {
-    id: number;
-    first_name: string;
-    last_name: string;
-    roles?: string[];
+  id: number;
+  first_name: string;
+  last_name: string;
+  roles?: string[];
 }
 
-const ProjectsCreate: React.FC<ProjectsCreateProps> = ({ moduleName }) => {
+const ProjectsCreate: React.FC = () => {
     const navigate = useNavigate();
     const { showToast } = useToast();
     const [tab, setTab] = useState<'quick' | 'detailed'>('quick');
@@ -38,14 +35,10 @@ const ProjectsCreate: React.FC<ProjectsCreateProps> = ({ moduleName }) => {
     });
     const [loading, setLoading] = useState(false);
     const [fieldErrors, setFieldErrors] = useState<{ [key: string]: string }>({});
-    const [users, setUsers] = useState<User[]>([]);
     const [filteredUsers, setFilteredUsers] = useState<User[]>([]);
 
     // Get API base URL from env
     const API_BASE_URL = import.meta.env.VITE_API_BASE_URL;
-
-    // Allowed roles for project owners
-    const ALLOWED_ROLES = ['Admin', 'Manager', 'Project Lead'];
 
     useEffect(() => {
         // Fetch users, user_roles, and roles for Project Owner dropdown
@@ -69,7 +62,6 @@ const ProjectsCreate: React.FC<ProjectsCreateProps> = ({ moduleName }) => {
                 // If roles API failed or returned an error, fallback to showing all users
                 if (!rolesData || rolesData.error) {
                     console.warn('Roles API failed or unauthorized. Showing all users in project owner dropdown.');
-                    setUsers(usersData);
                     setFilteredUsers(usersData);
                     return;
                 }
@@ -104,12 +96,10 @@ const ProjectsCreate: React.FC<ProjectsCreateProps> = ({ moduleName }) => {
                         ALLOWED_ROLE_NAMES.some(allowed => roleName.toLowerCase() === allowed.toLowerCase())
                     );
                 });
-                setUsers(usersData);
                 setFilteredUsers(filtered);
 
             } catch (error) {
                 console.error('Error fetching users with roles:', error);
-                setUsers([]);
                 setFilteredUsers([]);
             }
         };

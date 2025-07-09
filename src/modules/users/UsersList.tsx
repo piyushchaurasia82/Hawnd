@@ -1,11 +1,12 @@
 import React, { useEffect, useState } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
-import api from '../../services/api';
+import api, { postAuditLog } from '../../services/api';
 import Button from '../../components/ui/button/Button';
 import Avatar from '../../components/ui/avatar/Avatar';
 import PencilIcon from '../../icons/pencil.svg';
 import TrashIcon from '../../icons/trash.svg';
 import { useToast } from '../../components/ui/alert/ToastContext';
+import { useCurrentUser } from '../../context/CurrentUserContext';
 
 const STATUS_OPTIONS = [
   { label: 'Status', value: '' },
@@ -40,11 +41,11 @@ const UsersList: React.FC = () => {
   const [status, setStatus] = useState('');
   const [project, setProject] = useState('');
   const [userDeleted, setUserDeleted] = useState(false);
+  const { user: currentUser } = useCurrentUser();
 
   const fetchUsers = async () => {
     setLoading(true);
     try {
-      console.log('Fetching users from project management system...');
       const [usersRes, userRolesRes, rolesRes, projectsRes, projectMembersRes] = await Promise.all([
         api.get('/api/projectmanagement/users/'),
         api.get('/api/projectmanagement/user_roles/'),
@@ -53,23 +54,12 @@ const UsersList: React.FC = () => {
         api.get('/api/projectmanagement/project_members/'),
       ]);
       
-      console.log('Users response:', usersRes.data);
-      console.log('User roles response:', userRolesRes.data);
-      console.log('Roles response:', rolesRes.data);
-      
       const usersData = usersRes.data.data || usersRes.data;
       const userRolesData = userRolesRes.data.data || userRolesRes.data.user_roles || userRolesRes.data;
       const rolesData = rolesRes.data.data || rolesRes.data.roles || rolesRes.data;
       
-      console.log('Processed users data:', usersData);
-      console.log('Processed user roles data:', userRolesData);
-      console.log('Processed roles data:', rolesData);
-      
       const projectsData = projectsRes.data.data || projectsRes.data.projects || projectsRes.data;
       const projectMembersData = projectMembersRes.data.data || projectMembersRes.data.project_members || projectMembersRes.data;
-      
-      console.log('Processed projects data:', projectsData);
-      console.log('Processed project members data:', projectMembersData);
       
       setUsers(usersData || []);
       setUserRoles(userRolesData || []);
@@ -77,7 +67,6 @@ const UsersList: React.FC = () => {
       setProjects(projectsData || []);
       setProjectMembers(projectMembersData || []);
     } catch (e) {
-      console.error('Error fetching users:', e);
       setUsers([]);
       setUserRoles([]);
       setRoles([]);
@@ -153,6 +142,14 @@ const UsersList: React.FC = () => {
             removeSelf();
             try {
               await api.delete(`/api/projectmanagement/users/${id}/`);
+              // Audit log: User Deleted
+              const performerName = currentUser ? `${currentUser.firstName} ${currentUser.lastName}`.trim() : (JSON.parse(localStorage.getItem('user_data') || '{}').username || 'Unknown');
+              await postAuditLog({
+                action: 'User Deleted',
+                affected_user: id,
+                performer: performerName,
+                description: `User with ID ${id} was deleted by ${performerName}.`
+              });
               setUserDeleted(true);
               fetchUsers();
             } catch (e: any) {
@@ -267,13 +264,13 @@ const UsersList: React.FC = () => {
       <div className="bg-white rounded-xl border border-gray-200 overflow-x-auto">
         <table className="min-w-full text-sm">
           <thead>
-            <tr className="bg-gray-50 text-gray-700">
-              <th className="px-6 py-3 text-left font-medium">Name</th>
-              <th className="px-6 py-3 text-left font-medium">Email</th>
-              <th className="px-6 py-3 text-left font-medium">Role</th>
-              <th className="px-6 py-3 text-left font-medium">Projects</th>
-              <th className="px-6 py-3 text-left font-medium">Status</th>
-              <th className="px-6 py-3 text-left font-medium">Actions</th>
+            <tr className="!bg-gray-100">
+              <th className="px-6 py-3 !bg-gray-100 text-left font-medium">Name</th>
+              <th className="px-6 py-3 !bg-gray-100 text-left font-medium">Email</th>
+              <th className="px-6 py-3 !bg-gray-100 text-left font-medium">Role</th>
+              <th className="px-6 py-3 !bg-gray-100 text-left font-medium">Projects</th>
+              <th className="px-6 py-3 !bg-gray-100 text-left font-medium">Status</th>
+              <th className="px-6 py-3 !bg-gray-100 text-left font-medium">Actions</th>
             </tr>
           </thead>
           <tbody>

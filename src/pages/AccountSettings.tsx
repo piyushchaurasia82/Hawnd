@@ -41,11 +41,9 @@ const AccountSettings: React.FC = () => {
   const token = tokenManager.getAccessToken();
   const [lastChangedPassword, setLastChangedPassword] = useState('');
   const { user: currentUser } = useCurrentUser();
-  const [emailToChange, setEmailToChange] = useState('');
   const [newEmail, setNewEmail] = useState('');
   const [otp, setOtp] = useState('');
   const [otpStatus, setOtpStatus] = useState<'idle' | 'pending' | 'sent' | 'verified' | 'error'>('idle');
-  const [otpMsg, setOtpMsg] = useState('');
   const [otpLoading, setOtpLoading] = useState(false);
   const [otpTimer, setOtpTimer] = useState(0);
   const [otpIntervalId, setOtpIntervalId] = useState<NodeJS.Timeout | null>(null);
@@ -126,7 +124,6 @@ const AccountSettings: React.FC = () => {
         const email = data.email || (data.data && data.data.email) || (data.user && data.user.email);
         if (!email) throw new Error('Invalid response format: Email not found in response');
         setProfile({ email });
-        setEmailToChange(email);
       } catch (err: any) {
         setProfileError(err.message || 'Failed to load profile.');
       }
@@ -173,9 +170,6 @@ const AccountSettings: React.FC = () => {
   };
 
   // Add handlers for profile and password change
-  const handleProfileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    setProfile({ ...profile, [e.target.name]: e.target.value });
-  };
   const handleProfileSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setShowProfileConfirm(false);
@@ -184,13 +178,12 @@ const AccountSettings: React.FC = () => {
     setLoading(true);
     if (newEmail && newEmail !== form.email) {
       setOtpStatus('pending');
-      setOtpMsg('');
       setOtpLoading(true);
       try {
         // 1. Verify OTP
         await api.post('/api/projectmanagement/verify-user-verification-otp/', { email: form.email, otp });
         setOtpStatus('verified');
-        setOtpMsg('OTP verified. Updating email...');
+        setOtpLoading(true);
         showToast({
           type: 'success',
           title: 'OTP Verified',
@@ -228,7 +221,6 @@ const AccountSettings: React.FC = () => {
         }, 500);
       } catch (err: any) {
         setOtpStatus('error');
-        setOtpMsg(err.message || 'OTP verification or email update failed.');
         showToast({
           type: 'error',
           title: 'Update Failed',
@@ -292,16 +284,13 @@ const AccountSettings: React.FC = () => {
   const handleSendOtp = async () => {
     if (!newEmail) {
       setOtpStatus('error');
-      setOtpMsg('Please enter a new email.');
       return;
     }
     setOtpStatus('pending');
-    setOtpMsg('');
     setOtpLoading(true);
     try {
-      const response = await api.post('/api/projectmanagement/send-user-verification-otp/', { email: form.email });
+      await api.post('/api/projectmanagement/send-user-verification-otp/', { email: form.email });
       setOtpStatus('sent');
-      setOtpMsg(response.data.message || 'OTP sent to your current email.');
       showToast({
         type: 'success',
         title: 'OTP Sent',
@@ -322,7 +311,6 @@ const AccountSettings: React.FC = () => {
       setOtpIntervalId(interval);
     } catch (err: any) {
       setOtpStatus('error');
-      setOtpMsg(err.message || 'Failed to send OTP.');
     } finally {
       setOtpLoading(false);
     }

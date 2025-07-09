@@ -55,11 +55,12 @@ import ProjectTasks from './modules/projects/ProjectTasks';
 import AuditLogsList from './modules/audit_logs/AuditLogsList';
 import ExecutiveReport from './pages/ExecutiveReport';
 import AdminReports from './pages/AdminReports';
+import DeveloperDashboard from './components/DeveloperDashboard';
+import { useCurrentUser } from './context/CurrentUserContext';
 
 // ProtectedRoute: Prevents authenticated users from accessing login page
 const ProtectedRoute: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const isAuthenticated = tokenManager.isAuthenticated();
-  console.log('ProtectedRoute: user authenticated?', isAuthenticated);
   if (isAuthenticated) {
     return <Navigate to="/" replace />;
   }
@@ -68,16 +69,11 @@ const ProtectedRoute: React.FC<{ children: React.ReactNode }> = ({ children }) =
 
 // PrivateRoute: Protects dashboard and other routes, redirects unauthenticated users to login
 const PrivateRoute: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-  const isAuthenticated = tokenManager.isAuthenticated();
-  console.log('PrivateRoute: user authenticated?', isAuthenticated);
-  // if (!isAuthenticated) {
-  //   return <Navigate to="/auth" replace />;
-  // }
-  
   return <>{children}</>;
 };
 
 const AppRoutes: React.FC = () => {
+  const { userRole } = useCurrentUser();
   return (
     <Routes>
       {/* Public route for authentication */}
@@ -100,53 +96,58 @@ const AppRoutes: React.FC = () => {
           </PrivateRoute>
         }
       >
-        <Route index path="/" element={<Dashboard />} />
-        <Route path="/roles" element={<RolesList moduleName={'roles'} />} />
-        <Route path="/roles/create" element={<RolesCreate moduleName={'roles'} />} />
-        <Route path="/roles/edit/:id" element={<RolesEdit moduleName={'roles'} />} />
-        <Route path="/roles/show/:id" element={<RolesShow moduleName={'roles'} />} />
-        <Route path="/permissions" element={<PermissionsList moduleName={'permissions'} />} />
-        <Route path="/permissions/create" element={<PermissionsCreate moduleName={'permissions'} />} />
-        <Route path="/permissions/edit/:id" element={<PermissionsEdit moduleName={'permissions'} />} />
-        <Route path="/permissions/show/:id" element={<PermissionsShow moduleName={'permissions'} />} />
-        <Route path="/role_permissions" element={<RolePermissionsList moduleName={'role_permissions'} />} />
-        <Route path="/role_permissions/create" element={<RolePermissionsCreate moduleName={'role_permissions'} />} />
-        <Route path="/role_permissions/edit/:id" element={<RolePermissionsEdit moduleName={'role_permissions'} />} />
-        <Route path="/role_permissions/show/:id" element={<RolePermissionsShow moduleName={'role_permissions'} />} />
+        <Route index path="/" element={
+          userRole && userRole.toLowerCase().includes('developer')
+            ? <Navigate to="/developer-dashboard" replace />
+            : <Dashboard />
+        } />
+        <Route path="/developer-dashboard" element={<DeveloperDashboard />} />
+        <Route path="/roles" element={<RolesList moduleName='roles' />} />
+        <Route path="/roles/create" element={<RolesCreate moduleName='roles' />} />
+        <Route path="/roles/edit/:id" element={<RolesEdit moduleName='roles' />} />
+        <Route path="/roles/show/:id" element={<RolesShow moduleName='roles' />} />
+        <Route path="/permissions" element={<PermissionsList moduleName='permissions' />} />
+        <Route path="/permissions/create" element={<PermissionsCreate moduleName='permissions' />} />
+        <Route path="/permissions/edit/:id" element={<PermissionsEdit moduleName='permissions' />} />
+        <Route path="/permissions/show/:id" element={<PermissionsShow moduleName='permissions' />} />
+        <Route path="/role_permissions" element={<RolePermissionsList moduleName='role_permissions' />} />
+        <Route path="/role_permissions/create" element={<RolePermissionsCreate moduleName='role_permissions' />} />
+        <Route path="/role_permissions/edit/:id" element={<RolePermissionsEdit moduleName='role_permissions' />} />
+        <Route path="/role_permissions/show/:id" element={<RolePermissionsShow moduleName='role_permissions' />} />
         <Route path="/users" element={<UsersList />} />
         <Route path="/users/create" element={<UsersCreate />} />
-        <Route path="/users/edit/:id" element={<UsersEdit moduleName={'users'} />} />
-        <Route path="/users/show/:id" element={<UsersShow moduleName={'users'} />} />
-        <Route path="/user_roles" element={<UserRolesList moduleName={'user_roles'} />} />
+        <Route path="/users/edit/:id" element={<UsersEdit />} />
+        <Route path="/users/show/:id" element={<UsersShow moduleName='users' />} />
+        <Route path="/user_roles" element={<UserRolesList />} />
         <Route path="/user_roles/create" element={<UserRolesCreate />} />
-        <Route path="/user_roles/edit/:id" element={<UserRolesEdit moduleName={'user_roles'} />} />
-        <Route path="/user_roles/show/:id" element={<UserRolesShow moduleName={'user_roles'} />} />
-        <Route path="/projects" element={<ProjectsList moduleName={'projects'} />} />
-        <Route path="/projects/create" element={<ProjectsCreate moduleName={'projects'} />} />
-        <Route path="/projects/edit/:id" element={<ProjectsEdit moduleName={'projects'} />} />
-        <Route path="/projects/show/:id" element={<ProjectsShow moduleName={'projects'} />} />
+        <Route path="/user_roles/edit/:id" element={<UserRolesEdit />} />
+        <Route path="/user_roles/show/:id" element={<UserRolesShow />} />
+        <Route path="/projects" element={<ProjectsList />} />
+        <Route path="/projects/create" element={<ProjectsCreate />} />
+        <Route path="/projects/edit/:id" element={<ProjectsEdit />} />
+        <Route path="/projects/show/:id" element={<ProjectsShow />} />
         <Route path="/projects/:id/tasks" element={<ProjectTasks />} />
-        <Route path="/project_members" element={<ProjectMembersList moduleName={'project_members'} />} />
-        <Route path="/project_members/create" element={<ProjectMembersCreate moduleName={'project_members'} />} />
-        <Route path="/project_members/edit/:id" element={<ProjectMembersEdit moduleName={'project_members'} />} />
-        <Route path="/project_members/show/:id" element={<ProjectMembersShow moduleName={'project_members'} />} />
+        <Route path="/project_members" element={<ProjectMembersList />} />
+        <Route path="/project_members/create" element={<ProjectMembersCreate />} />
+        <Route path="/project_members/edit/:id" element={<ProjectMembersEdit />} />
+        <Route path="/project_members/show/:id" element={<ProjectMembersShow />} />
         <Route path="/tasks" element={<TasksList />} />
         <Route path="/tasks/create" element={<TasksCreate />} />
         <Route path="/tasks/create/:id" element={<TasksCreate />} />
-        <Route path="/tasks/edit/:id" element={<TasksEdit moduleName={'tasks'} />} />
-        <Route path="/tasks/show/:id" element={<TasksShow moduleName={'tasks'} />} />
-        <Route path="/comments" element={<CommentsList moduleName={'comments'} />} />
-        <Route path="/comments/create" element={<CommentsCreate moduleName={'comments'} />} />
-        <Route path="/comments/edit/:id" element={<CommentsEdit moduleName={'comments'} />} />
-        <Route path="/comments/show/:id" element={<CommentsShow moduleName={'comments'} />} />
-        <Route path="/time_logs" element={<TimeLogsList moduleName={'time_logs'} />} />
-        <Route path="/time_logs/create" element={<TimeLogsCreate moduleName={'time_logs'} />} />
-        <Route path="/time_logs/edit/:id" element={<TimeLogsEdit moduleName={'time_logs'} />} />
-        <Route path="/time_logs/show/:id" element={<TimeLogsShow moduleName={'time_logs'} />} />
-        <Route path="/attachments" element={<AttachmentsList moduleName={'attachments'} />} />
-        <Route path="/attachments/create" element={<AttachmentsCreate moduleName={'attachments'} />} />
-        <Route path="/attachments/edit/:id" element={<AttachmentsEdit moduleName={'attachments'} />} />
-        <Route path="/attachments/show/:id" element={<AttachmentsShow moduleName={'attachments'} />} />
+        <Route path="/tasks/edit/:id" element={<TasksEdit />} />
+        <Route path="/tasks/show/:id" element={<TasksShow moduleName='tasks' />} />
+        <Route path="/comments" element={<CommentsList moduleName='comments' />} />
+        <Route path="/comments/create" element={<CommentsCreate moduleName='comments' />} />
+        <Route path="/comments/edit/:id" element={<CommentsEdit moduleName='comments' />} />
+        <Route path="/comments/show/:id" element={<CommentsShow moduleName='comments' />} />
+        <Route path="/time_logs" element={<TimeLogsList />} />
+        <Route path="/time_logs/create" element={<TimeLogsCreate />} />
+        <Route path="/time_logs/edit/:id" element={<TimeLogsEdit />} />
+        <Route path="/time_logs/show/:id" element={<TimeLogsShow moduleName='time_logs' />} />
+        <Route path="/attachments" element={<AttachmentsList moduleName='attachments' />} />
+        <Route path="/attachments/create" element={<AttachmentsCreate moduleName='attachments' />} />
+        <Route path="/attachments/edit/:id" element={<AttachmentsEdit moduleName='attachments' />} />
+        <Route path="/attachments/show/:id" element={<AttachmentsShow moduleName='attachments' />} />
         <Route path="/audit-logs" element={<AuditLogsList />} />
         <Route path="/edit-profile" element={<EditProfile />} />
         <Route path="/account-settings" element={<AccountSettings />} />

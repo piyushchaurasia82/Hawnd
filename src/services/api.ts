@@ -77,7 +77,6 @@ function decodeJwt(token: string) {
     );
     return JSON.parse(jsonPayload);
   } catch (error) {
-    console.error('Error decoding JWT:', error);
     return null;
   }
 }
@@ -125,8 +124,6 @@ const processQueue = (error: any, token: string | null = null) => {
 // Refresh token function
 const refreshAccessToken = async (refreshToken: string): Promise<{ access: string; refresh: string }> => {
   try {
-    console.log('Attempting to refresh token with:', refreshToken.substring(0, 20) + '...');
-    
     const response = await axios.post(
       `${import.meta.env.VITE_API_BASE_URL}/api/projectmanagement/refresh-token/`,
       { 
@@ -140,26 +137,17 @@ const refreshAccessToken = async (refreshToken: string): Promise<{ access: strin
       }
     );
 
-    console.log('Refresh token response:', response.data);
-
     // Handle different response formats
     if (response.data.status === 'success' && response.data.data) {
-      console.log('Token refresh successful (format 1)');
       return response.data.data;
     } else if (response.data.access && response.data.refresh) {
-      console.log('Token refresh successful (format 2)');
       return response.data;
     } else if (response.data.data && response.data.data.data && response.data.data.data.access) {
-      console.log('Token refresh successful (format 3 - nested structure)');
       return response.data.data.data;
     } else {
-      console.error('Invalid refresh token response format:', response.data);
       throw new Error('Invalid refresh token response format');
     }
   } catch (error: any) {
-    console.error('Token refresh failed:', error);
-    console.error('Error response:', error.response?.data);
-    console.error('Error status:', error.response?.status);
     throw new Error(error.response?.data?.message || error.message || 'Failed to refresh token');
   }
 };
@@ -241,12 +229,9 @@ function setupProactiveTokenRefresh() {
     // If access token will expire in 5 minutes, refresh it
     if (isTokenExpired(accessToken, 5)) {
       try {
-        console.log('[Proactive Refresh] Access token expiring soon, refreshing...');
         const { access, refresh } = await refreshAccessToken(refreshToken);
         tokenManager.setTokens(access, refresh);
-        console.log('[Proactive Refresh] Tokens refreshed and stored.');
       } catch (err) {
-        console.error('[Proactive Refresh] Failed to refresh token:', err);
         // Optionally, handle logout or notification here
       }
     }
@@ -255,6 +240,30 @@ function setupProactiveTokenRefresh() {
 
 // Start the proactive refresh timer when this module is loaded
 setupProactiveTokenRefresh();
+
+// Helper to post an audit log entry
+export async function postAuditLog({
+  action,
+  affected_user,
+  performer,
+  description
+}: {
+  action: string;
+  affected_user: string | number;
+  performer: string | number;
+  description: string;
+}) {
+  try {
+    await api.post('/api/projectmanagement/audit-logs/', {
+      action,
+      affected_user,
+      performer,
+      description
+    });
+  } catch (e) {
+    // Optionally log error, but don't block UI
+  }
+}
 
 // Export the enhanced api instance and token manager
 export default api; 

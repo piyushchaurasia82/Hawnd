@@ -6,8 +6,8 @@ import 'react-date-range/dist/theme/default.css';
 import { format } from 'date-fns';
 import { useToast } from '../../components/ui/alert/ToastContext';
 import api from '../../services/api';
-import Select from 'react-select';
 import MultiSelect from '../../components/form/MultiSelect';
+import { useCurrentUser } from '../../context/CurrentUserContext';
 
 const priorities = ['Low', 'Medium', 'High'];
 const statuses = ['To Do', 'In Progress', 'Done'];
@@ -35,6 +35,7 @@ const TasksEdit: React.FC = () => {
   const { id, projectId } = useParams<{ id: string; projectId: string }>();
   const { showToast } = useToast();
   const navigate = useNavigate();
+  const { userRole } = useCurrentUser();
 
   const [form, setForm] = useState<TaskEditForm>({
     title: '',
@@ -66,7 +67,6 @@ const TasksEdit: React.FC = () => {
   const [loading, setLoading] = useState(false);
   const [fieldErrors, setFieldErrors] = useState<{ [key: string]: string }>({});
   const [users, setUsers] = useState<{ id: number; first_name: string; last_name: string }[]>([]);
-  const [projects, setProjects] = useState<{ id: number; project_title: string }[]>([]);
   const [projectOwner, setProjectOwner] = useState<string>('');
 
   useEffect(() => {
@@ -74,13 +74,6 @@ const TasksEdit: React.FC = () => {
     api.get(`/api/projectmanagement/users/`)
       .then(res => setUsers(Array.isArray(res.data) ? res.data : []))
       .catch(() => setUsers([]));
-
-    // Fetch projects if no projectId
-    if (!projectId) {
-      api.get(`/api/projectmanagement/projects/`)
-        .then(res => setProjects(Array.isArray(res.data.data) ? res.data.data : []))
-        .catch(() => setProjects([]));
-    }
 
     // Fetch task data
     if (id) {
@@ -117,9 +110,9 @@ const TasksEdit: React.FC = () => {
           });
           setDateRange([
             {
-              startDate: taskData.start_date ? new Date(taskData.start_date) : undefined,
-              endDate: taskData.due_date ? new Date(taskData.due_date) : undefined,
-              key: 'selection',
+            startDate: taskData.start_date ? new Date(taskData.start_date) : undefined,
+            endDate: taskData.due_date ? new Date(taskData.due_date) : undefined,
+            key: 'selection',
             },
           ]);
           // Fetch project owner for the project
@@ -131,8 +124,8 @@ const TasksEdit: React.FC = () => {
             }).catch(() => setProjectOwner(''));
           }
         })
-        .catch(err => {
-          showToast({ type: 'error', title: 'Error', message: 'Failed to fetch task data.' });
+        .catch(() => {
+          // handle error if needed
         });
     }
   }, [id, projectId, showToast]);
@@ -244,7 +237,7 @@ const TasksEdit: React.FC = () => {
                   options={users.map(user => ({ value: String(user.id), text: `${user.first_name} ${user.last_name}`.trim() }))}
                   value={form.task_assignees.filter(Boolean)}
                   onChange={selected => setForm(prev => ({ ...prev, task_assignees: selected }))}
-                  disabled={false}
+                  disabled={!!(userRole && userRole.trim().toLowerCase().includes('developer'))}
                 />
                 {fieldErrors.task_assignees && <div className="text-red-500 text-sm mt-1">{fieldErrors.task_assignees}</div>}
               </div>
@@ -335,7 +328,7 @@ const TasksEdit: React.FC = () => {
                   name="reviewer"
                   className="w-full bg-[#F3F3F3] rounded px-4 py-3 text-black outline-none text-[15px]"
                   value={projectOwner}
-                  disabled
+                  disabled={!!(userRole && userRole.trim().toLowerCase().includes('developer'))}
                 >
                   <option value="">{projectOwner ? projectOwner : 'No owner found'}</option>
                 </select>

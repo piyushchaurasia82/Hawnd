@@ -16,6 +16,7 @@ import {
   PieChartIcon,
 } from '../icons';
 import { Users as LucideUsers, User as LucideUser, Plus as LucidePlus, FileText as LucideFileText } from 'lucide-react';
+import { useCurrentUser } from '../context/CurrentUserContext';
 
 type NavItem = {
   icon?: React.ReactNode;
@@ -152,6 +153,59 @@ const AppSidebar: React.FC = () => {
   const { isExpanded, isMobileOpen, isHovered, setIsHovered } = useSidebar();
   const [openSubmenus, setOpenSubmenus] = useState<string[]>([]);
   const location = useLocation();
+  const { userRole } = useCurrentUser();
+
+  // Wait for userRole to be available before rendering
+  if (userRole === null) return null;
+
+  // Determine if user is a developer
+  const userRoleLower = userRole.trim().toLowerCase();
+  const isDeveloper = ['developer', 'developers', 'dev'].includes(userRoleLower);
+
+  // Patch the dashboard nav item path for developers
+  const patchedNavItems = finalNavItems.map(item => {
+    if (item.name === 'Dashboard') {
+      return {
+        ...item,
+        path: isDeveloper ? '/developer-dashboard' : '/',
+      };
+    }
+    return item;
+  });
+
+  const filteredNavItems = patchedNavItems.filter(item => {
+    const allowedRoles = ['admin', 'project lead', 'manager'];
+    if (item.name === 'Users' && userRole) {
+      const role = userRole.trim().toLowerCase();
+      if (allowedRoles.some(r => role.includes(r))) return true;
+      if (role.includes('developer')) return false;
+    }
+    // Hide 'Role Permissions' for Developer
+    if (item.name.toLowerCase().includes('role permissions') && userRole && userRole.trim().toLowerCase().includes('developer')) {
+      return false;
+    }
+    // Hide 'Reports' menu for Developer
+    if (item.name === 'Reports' && userRole && userRole.trim().toLowerCase().includes('developer')) {
+      return false;
+    }
+    return true;
+  }).map(item => {
+    // Hide 'Create Project' sub menu for developers
+    if (item.name === 'Projects' && userRole && userRole.trim().toLowerCase().includes('developer') && Array.isArray(item.subItems)) {
+      return {
+        ...item,
+        subItems: item.subItems.filter(sub => !sub.name.toLowerCase().includes('create project'))
+      };
+    }
+    // Hide 'Admin Report' sub menu for admin users
+    if (item.name === 'Reports' && userRole && userRole.trim().toLowerCase().includes('admin') && Array.isArray(item.subItems)) {
+      return {
+        ...item,
+        subItems: item.subItems.filter(sub => sub.name !== 'Admin Report')
+      };
+    }
+    return item;
+  });
 
   const handleSubmenuToggle = (submenuPath: string) => {
     setOpenSubmenus((prev) =>
@@ -171,9 +225,9 @@ const AppSidebar: React.FC = () => {
       {items.map((nav, index) => {
         const submenuPath = [...parentPath, `${menuType}-${index}`].join("");
         const isSubmenuOpen = openSubmenus.includes(submenuPath);
-        // Highlight Dashboard as active if current location is '/'
+        // Highlight Dashboard as active if current location is '/' or '/developer-dashboard'
         const isDashboard = nav.name === 'Dashboard';
-        const isActiveDashboard = isDashboard && (window.location.pathname === '/' || location.pathname === '/');
+        const isActiveDashboard = isDashboard && (window.location.pathname === '/' || location.pathname === '/' || window.location.pathname === '/developer-dashboard' || location.pathname === '/developer-dashboard');
         return (
           <li key={nav.name}>
             {nav.subItems ? (
@@ -210,7 +264,7 @@ const AppSidebar: React.FC = () => {
                   className={`menu-item group flex items-center ${
                     isDashboard
                       ? isActiveDashboard
-                        ? "menu-item-active bg-[#e8ebff] text-black hover:text-black"
+                        ? "menu-item-active bg-[#e8ebff] text-black hover:text-black font-semibold"
                         : "menu-item-inactive text-black hover:text-black"
                       : ""
                   } ${
@@ -219,7 +273,7 @@ const AppSidebar: React.FC = () => {
                 >
                   <span className={`menu-item-icon-size ${isDashboard ? 'group-hover:text-gray-400' : '!text-black'}`}>{nav.icon}</span>
                   {(isExpanded || isHovered || isMobileOpen) && (
-                    <span className={`menu-item-text ${isDashboard ? 'hover:text-black' : ''}`}>{nav.name}</span>
+                    <span className={`menu-item-text ${isDashboard ? 'hover:text-black font-semibold' : ''}`}>{nav.name}</span>
                   )}
                 </Link>
               )
@@ -295,7 +349,7 @@ const AppSidebar: React.FC = () => {
                   <HorizontaLDots className="size-6" />
                 )}
               </h2>
-              {renderMenuItems(finalNavItems, "main")}
+              {renderMenuItems(filteredNavItems, "main")}
             </div>
           </div>
         </nav>

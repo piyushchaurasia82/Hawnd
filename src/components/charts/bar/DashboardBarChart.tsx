@@ -36,7 +36,7 @@ const DashboardBarChart: React.FC<DashboardBarChartProps> = ({ tasks, range = 'M
         days.forEach((d, i) => {
           if (date.toDateString() === d.toDateString()) {
             if (status === 'in progress') inProgressCounts[i]++;
-            else if (status === 'todo') todoCounts[i]++;
+            else if (status === 'todo' || status === 'to do') todoCounts[i]++;
             else if (status === 'done' || status === 'completed') completedCounts[i]++;
             createdCounts[i]++;
           }
@@ -64,7 +64,7 @@ const DashboardBarChart: React.FC<DashboardBarChartProps> = ({ tasks, range = 'M
         const status = (task.status || '').toLowerCase();
         if (idx !== -1) {
           if (status === 'in progress') inProgressCounts[idx]++;
-          else if (status === 'todo') todoCounts[idx]++;
+          else if (status === 'todo' || status === 'to do') todoCounts[idx]++;
           else if (status === 'done' || status === 'completed') completedCounts[idx]++;
           createdCounts[idx]++;
         }
@@ -86,7 +86,7 @@ const DashboardBarChart: React.FC<DashboardBarChartProps> = ({ tasks, range = 'M
         const month = date.getMonth();
         const status = (task.status || '').toLowerCase();
         if (status === 'in progress') inProgressCounts[month]++;
-        else if (status === 'todo') todoCounts[month]++;
+        else if (status === 'todo' || status === 'to do') todoCounts[month]++;
         else if (status === 'done' || status === 'completed') completedCounts[month]++;
         createdCounts[month]++;
       }

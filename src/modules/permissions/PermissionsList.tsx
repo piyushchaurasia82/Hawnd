@@ -5,6 +5,8 @@ import GenericList from "../../components/GenericList";
 import GenericFilter from "../../components/GenericFilter";
 import modules from "../../config/loadModules";
 import type { ModuleConfig } from "../../config/types";
+import { useCurrentUser } from '../../context/CurrentUserContext';
+import { postAuditLog } from '../../services/api';
 
 interface PermissionsListProps {
   moduleName: string;
@@ -14,6 +16,7 @@ const PermissionsList: React.FC<PermissionsListProps> = ({ moduleName }) => {
   const navigate = useNavigate();
   const [filters, setFilters] = useState<{ [key: string]: string }>({});
   const config: ModuleConfig = modules[moduleName as keyof typeof modules];
+  const { user: currentUser } = useCurrentUser();
 
   if (!config) {
     return (
@@ -39,6 +42,14 @@ const PermissionsList: React.FC<PermissionsListProps> = ({ moduleName }) => {
         await api.delete(
           `${config.apiBaseUrl}${config.endpoints.delete.url.replace(":id", id.toString())}/`
         );
+        // Audit log: Permission Deleted
+        const performerName = currentUser ? `${currentUser.firstName} ${currentUser.lastName}`.trim() : (JSON.parse(localStorage.getItem('user_data') || '{}').username || 'Unknown');
+        await postAuditLog({
+          action: 'Permission Deleted',
+          affected_user: id,
+          performer: performerName,
+          description: `Permission with ID ${id} was deleted by ${performerName}.`
+        });
         window.location.reload();
       } catch (error) {
         console.error("Error deleting:", error);

@@ -2,10 +2,9 @@ import React, { useState, useEffect } from 'react';
 import { FiEdit } from 'react-icons/fi';
 import { useNavigate, useParams } from 'react-router-dom';
 import { format } from 'date-fns';
-import type { ModuleConfig } from '../../config/types';
-import modules from '../../config/loadModules';
 import api from '../../services/api';
 import { useToast } from '../../components/ui/alert/ToastContext';
+import { useCurrentUser } from '../../context/CurrentUserContext';
 
 interface Task {
     id: number;
@@ -21,16 +20,12 @@ interface Task {
     task_assignees?: { user_name: string }[];
     // Add more fields as needed
 }
-interface ProjectTakProps {
-    moduleName: string;
-}
 
-const ProjectTasks: React.FC<ProjectTakProps> = ({ moduleName }) => {
+const ProjectTasks: React.FC = () => {
     const navigate = useNavigate();
     const { id } = useParams<{ id: string }>();
     const [activeTab, setActiveTab] = useState<'team' | 'my'>('team');
     const [searchQuery, setSearchQuery] = useState('');
-    const config: ModuleConfig = modules[moduleName as keyof typeof modules];
     const [filters, setFilters] = useState({
         status: '',
         priority: '',
@@ -44,6 +39,7 @@ const ProjectTasks: React.FC<ProjectTakProps> = ({ moduleName }) => {
     const [currentPage, setCurrentPage] = useState(1);
     const pageSize = 10;
     const { showToast } = useToast();
+    const { user, userRole } = useCurrentUser();
 
     useEffect(() => {
         if (!id) return;
@@ -63,39 +59,27 @@ const ProjectTasks: React.FC<ProjectTakProps> = ({ moduleName }) => {
             .finally(() => setLoading(false));
     }, [id, API_BASE_URL]);
 
+    // Set My Tasks as default for developers
+    useEffect(() => {
+        if (userRole && userRole.trim().toLowerCase().includes('developer')) {
+            setActiveTab('my');
+        }
+    }, [userRole]);
+
     // console.log(tasks);
     const handleEdit = (id: number) => {
         navigate(`/tasks/edit/${id}`);
     };
 
-    const getStatusColor = (status: string) => {
-        switch (status) {
-            case 'In Progress':
-                return 'bg-orange-500';
-            case 'Done':
-                return 'bg-green-500';
-            case 'Todo':
-                return 'bg-blue-500';
-            default:
-                return 'bg-gray-500';
-        }
-    };
-
-    const getPriorityColor = (priority: string) => {
-        switch (priority) {
-            case 'High':
-                return 'bg-red-500';
-            case 'Medium':
-                return 'bg-orange-500';
-            case 'Low':
-                return 'bg-blue-500';
-            default:
-                return 'bg-gray-500';
-        }
-    };
-
     // Filtering logic
     const filteredTasks = tasks.filter(task => {
+        // For 'My Tasks' tab, show only tasks assigned to current user for both admin and developer
+        if (activeTab === 'my' && user && user.id && userRole && (userRole.trim().toLowerCase().includes('developer') || userRole.trim().toLowerCase().includes('admin'))) {
+            if (Array.isArray(task.task_assignees)) {
+                return task.task_assignees.some((a: any) => String(a.user_id || a.id) === String(user.id));
+            }
+            return String(task.assigned_to_id) === String(user.id);
+        }
         // Status filter
         let statusMatch = true;
         if (filters.status) {
@@ -149,12 +133,14 @@ const ProjectTasks: React.FC<ProjectTakProps> = ({ moduleName }) => {
             </div>
             {/* Tabs */}
             <div className="flex border-b border-gray-200 mb-6">
-                <button
-                    className={`px-4 py-2 font-semibold text-[16px] border-b-2 transition-all ${activeTab === 'team' ? 'border-orange-500 text-black' : 'border-transparent text-gray-500'}`}
-                    onClick={() => setActiveTab('team')}
-                >
-                    Team Tasks
-                </button>
+                {!(userRole && userRole.trim().toLowerCase().includes('developer')) && (
+                    <button
+                        className={`px-4 py-2 font-semibold text-[16px] border-b-2 transition-all ${activeTab === 'team' ? 'border-orange-500 text-black' : 'border-transparent text-gray-500'}`}
+                        onClick={() => setActiveTab('team')}
+                    >
+                        Team Tasks
+                    </button>
+                )}
                 <button
                     className={`px-4 py-2 font-semibold text-[16px] border-b-2 transition-all ${activeTab === 'my' ? 'border-orange-500 text-black' : 'border-transparent text-gray-500'}`}
                     onClick={() => setActiveTab('my')}
@@ -215,12 +201,12 @@ const ProjectTasks: React.FC<ProjectTakProps> = ({ moduleName }) => {
                 <table className="min-w-full">
                     <thead>
                         <tr className="text-left border-b border-gray-200">
-                            <th className="px-4 py-3 text-sm font-semibold">Task Name</th>
-                            <th className="px-4 py-3 text-sm font-semibold">Status</th>
-                            <th className="px-4 py-3 text-sm font-semibold">Priority</th>
-                            <th className="px-4 py-3 text-sm font-semibold">Due Date</th>
-                            <th className="px-4 py-3 text-sm font-semibold">Assignee</th>
-                            <th className="px-4 py-3 text-sm font-semibold">Edit Task</th>
+                            <th className="px-4 py-3 !bg-gray-100 text-sm font-semibold">Task Name</th>
+                            <th className="px-4 py-3 !bg-gray-100 text-sm font-semibold">Status</th>
+                            <th className="px-4 py-3 !bg-gray-100 text-sm font-semibold">Priority</th>
+                            <th className="px-4 py-3 !bg-gray-100 text-sm font-semibold">Due Date</th>
+                            <th className="px-4 py-3 !bg-gray-100 text-sm font-semibold">Assignee</th>
+                            <th className="px-4 py-3 !bg-gray-100 text-sm font-semibold">Edit Task</th>
                         </tr>
                     </thead>
                     <tbody className="divide-y divide-gray-200">
@@ -293,7 +279,6 @@ const ProjectTasks: React.FC<ProjectTakProps> = ({ moduleName }) => {
                                                         onClick: async () => {
                                                             try {
                                                                 await api.delete(`${API_BASE_URL}/api/projectmanagement/tasks/${task.id}/`);
-                                                                // Remove from local state
                                                                 setTasks(tasks => tasks.filter(t => t.id !== task.id));
                                                                 showToast({
                                                                     type: 'success',
@@ -304,7 +289,6 @@ const ProjectTasks: React.FC<ProjectTakProps> = ({ moduleName }) => {
                                                             } catch (err) {
                                                                 alert('Failed to delete task.');
                                                             }
-                                                            // Remove the confirmation toast
                                                             const evt = new CustomEvent('toast:remove', { detail: { id: toastId } });
                                                             window.dispatchEvent(evt);
                                                         }
@@ -313,7 +297,6 @@ const ProjectTasks: React.FC<ProjectTakProps> = ({ moduleName }) => {
                                                         label: 'Cancel',
                                                         variant: 'default',
                                                         onClick: () => {
-                                                            // Remove the confirmation toast
                                                             const evt = new CustomEvent('toast:remove', { detail: { id: toastId } });
                                                             window.dispatchEvent(evt);
                                                         }

@@ -1,9 +1,6 @@
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import api from "../../services/api";
-import GenericFilter from "../../components/GenericFilter";
-import modules from "../../config/loadModules";
-import type { ModuleConfig } from "../../config/types";
     
 interface RolePermissionsListProps {
   moduleName: string;
@@ -28,20 +25,6 @@ interface RolePermission {
   permission: number;
 }
 
-interface GroupedRolePermission {
-  role: number;
-  role_name: string;
-  permissions: string[];
-  users_count: number;
-}
-
-interface User {
-  id: number;
-  first_name: string;
-  last_name: string;
-  email: string;
-}
-
 interface UserRole {
   id: number;
   user_id: number;
@@ -56,30 +39,11 @@ function truncateWords(text: string, wordLimit = 20) {
   return words.slice(0, wordLimit).join(' ') + '...';
 }
 
-// SVG icon components
-const EditIcon = () => (
-  <svg width="18" height="18" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15.232 5.232l3.536 3.536M9 13.5l6.75-6.75a2.121 2.121 0 113 3L12 16.5H9v-3z" /></svg>
-);
-const TrashIcon = () => (
-  <svg width="18" height="18" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6M1 7h22M8 7V5a2 2 0 012-2h4a2 2 0 012 2v2" /></svg>
-);
-
-// Loading spinner
-const LoadingSpinner = () => (
-  <div className="flex justify-center items-center py-8">
-    <svg className="animate-spin h-8 w-8 text-orange-500" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-      <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-      <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8z"></path>
-    </svg>
-  </div>
-);
-
 const RolePermissionsList: React.FC<RolePermissionsListProps> = ({ moduleName }) => {
   const navigate = useNavigate();
   const [rolePermissions, setRolePermissions] = useState<RolePermission[]>([]);
   const [roles, setRoles] = useState<Role[]>([]);
   const [permissions, setPermissions] = useState<Permission[]>([]);
-  const [users, setUsers] = useState<User[]>([]);
   const [userRoles, setUserRoles] = useState<UserRole[]>([]);
   const [loading, setLoading] = useState<boolean>(true);
   
@@ -89,22 +53,18 @@ const RolePermissionsList: React.FC<RolePermissionsListProps> = ({ moduleName })
   const [isCreatePermissionDropdownOpen, setIsCreatePermissionDropdownOpen] = useState(false);
   
   // List filter states
-  const [filterRole, setFilterRole] = useState<string>("");
   const [filterPermissions, setFilterPermissions] = useState<string[]>([]);
   const [isFilterPermissionDropdownOpen, setIsFilterPermissionDropdownOpen] = useState(false);
   const [search, setSearch] = useState("");
   const [allRolesDropdown, setAllRolesDropdown] = useState(false);
 
-  const config: ModuleConfig = modules[moduleName as keyof typeof modules];
-
   const fetchData = async () => {
     setLoading(true);
     try {
-      const [rolesResponse, permissionsResponse, rolePermissionsResponse, usersResponse, userRolesResponse] = await Promise.all([
+      const [rolesResponse, permissionsResponse, rolePermissionsResponse, userRolesResponse] = await Promise.all([
         api.get('/api/projectmanagement/roles/'),
         api.get('/api/projectmanagement/permissions/'),
         api.get('/api/projectmanagement/role-permissions/'),
-        api.get('/api/projectmanagement/users/'),
         api.get('/api/projectmanagement/user_roles/'),
       ]);
       const rolesData: Role[] = Array.isArray(rolesResponse.data)
@@ -121,16 +81,12 @@ const RolePermissionsList: React.FC<RolePermissionsListProps> = ({ moduleName })
           role: rp.role_id ?? rp.role,
           permission: rp.permission_id ?? rp.permission
         }));
-      const usersData: User[] = Array.isArray(usersResponse.data)
-        ? usersResponse.data
-        : usersResponse.data.data || usersResponse.data.users || [];
       const userRolesData: UserRole[] = Array.isArray(userRolesResponse.data)
         ? userRolesResponse.data
         : userRolesResponse.data.data || userRolesResponse.data.user_roles || [];
       setRoles(rolesData);
       setPermissions(permissionsData);
       setRolePermissions(rolePermissionsData);
-      setUsers(usersData);
       setUserRoles(userRolesData);
     } catch (error) {
       console.error('Error fetching data:', error);
@@ -142,31 +98,6 @@ const RolePermissionsList: React.FC<RolePermissionsListProps> = ({ moduleName })
   useEffect(() => {
     fetchData();
   }, [moduleName]);
-
-  // Group role-permission mappings by role
-  const groupedData = roles.map(role => {
-    const rolePerms = rolePermissions.filter(rp => rp.role === role.id);
-    const permissionObjs = rolePerms
-      .map(rp => permissions.find(p => Number(p.id) === Number(rp.permission)))
-      .filter(Boolean);
-    const permissionCodes = permissionObjs.map(p => p!.code_name);
-    const usersWithRole = userRoles.filter(ur => ur.role_id === role.id).map(ur => ur.user_id);
-    return {
-      role: role.id,
-      role_name: role.name,
-      permissions: permissionCodes,
-      permissionObjs,
-      users_count: usersWithRole.length
-    };
-  });
-
-  // Filtering logic for grouped data
-  const filteredData = groupedData.filter(item => {
-    const matchesRole = filterRole ? item.role_name === filterRole : true;
-    const matchesPermissions = filterPermissions.length === 0 || filterPermissions.every(fp => item.permissions.includes(fp));
-    const matchesSearch = search ? item.role_name.toLowerCase().includes(search.toLowerCase()) : true;
-    return matchesRole && matchesPermissions && matchesSearch;
-  });
 
   const handleCreatePermissionToggle = (permissionId: number) => {
     setCreateSelectedPermissions(prev =>
@@ -225,24 +156,6 @@ const RolePermissionsList: React.FC<RolePermissionsListProps> = ({ moduleName })
     } catch (error: any) {
       console.error('Error creating role permissions:', error);
       alert(error?.response?.data?.error || 'Failed to create role permissions. Please try again.');
-    }
-  };
-
-  // Delete a role-permission mapping
-  const handleDeleteRolePermission = async (roleId: number, permissionCode: string) => {
-    if (!window.confirm('Are you sure you want to remove this permission from the role?')) return;
-    try {
-      // Find the permission id
-      const permission = permissions.find(p => p.code_name === permissionCode);
-      if (!permission) throw new Error('Permission not found');
-      // Find the role-permission mapping
-      const mapping = rolePermissions.find(rp => rp.role === roleId && rp.permission === permission.id);
-      if (!mapping) throw new Error('Role-permission mapping not found');
-      await api.delete(`/api/projectmanagement/role-permissions/${mapping.id}/`);
-      await fetchData();
-    } catch (error: any) {
-      console.error('Error deleting role permission:', error);
-      alert(error?.response?.data?.error || 'Failed to delete role permission.');
     }
   };
 
@@ -334,13 +247,12 @@ const RolePermissionsList: React.FC<RolePermissionsListProps> = ({ moduleName })
             </button>
             {allRolesDropdown && (
               <div className="absolute z-10 bg-white border rounded shadow mt-1 w-full">
-                <div className="px-4 py-2 cursor-pointer" onClick={() => { setFilterRole(""); setAllRolesDropdown(false); }}>All Roles</div>
+                <div className="px-4 py-2 cursor-pointer" onClick={() => { setAllRolesDropdown(false); }}>All Roles</div>
                 {roles.map(role => (
                   <div 
                     key={role.id} 
                     className="px-4 py-2 cursor-pointer hover:bg-gray-100" 
                     onClick={() => { 
-                      setFilterRole(role.name); 
                       setAllRolesDropdown(false); 
                     }}
                   >
@@ -398,11 +310,11 @@ const RolePermissionsList: React.FC<RolePermissionsListProps> = ({ moduleName })
         <div className="overflow-x-auto bg-white rounded-lg">
           <table className="min-w-full border border-gray-200 text-sm">
             <thead className="bg-gray-100 text-gray-700 text-left">
-              <tr>
-                <th className="px-6 py-4 whitespace-nowrap w-[200px]">Role</th>
-                <th className="px-6 py-4 whitespace-nowrap w-[400px]">Permission</th>
-                <th className="px-6 py-4 whitespace-nowrap text-center w-[100px]">Users</th>
-                <th className="px-6 py-4 w-[100px]">Actions</th>
+              <tr className="!bg-gray-100">
+                <th className="px-6 py-4 !bg-gray-100 whitespace-nowrap w-[200px]">Role</th>
+                <th className="px-6 py-4 !bg-gray-100 whitespace-nowrap w-[400px]">Permission</th>
+                <th className="px-6 py-4 !bg-gray-100 whitespace-nowrap text-center w-[100px]">Users</th>
+                <th className="px-6 py-4 !bg-gray-100 w-[100px]">Actions</th>
               </tr>
             </thead>
             <tbody>

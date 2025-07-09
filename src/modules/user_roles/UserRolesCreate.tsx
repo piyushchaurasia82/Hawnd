@@ -65,7 +65,7 @@ const MultiSelectDropdown = ({ options, selectedValues, onChange, label, disable
     );
 };
 
-const UserRolesCreate = () => {
+const UserRolesCreate: React.FC = () => {
     const navigate = useNavigate();
     const [error, setError] = useState<string | null>(null);
     const [users, setUsers] = useState<{ id: number; username: string }[]>([]);

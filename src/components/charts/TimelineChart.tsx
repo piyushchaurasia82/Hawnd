@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { format, parseISO, isWithinInterval, eachDayOfInterval, getDate, getMonth, getYear, isAfter, isBefore } from 'date-fns';
+import { format, parseISO, isAfter, isBefore, eachDayOfInterval, getDate, getMonth } from 'date-fns';
 
 interface Task {
   id: number;
@@ -50,7 +50,7 @@ const TimelineChart: React.FC<TimelineChartProps> = ({ tasks, month, year }) => 
         <thead>
           <tr className="bg-orange-50">
             <th className="text-left font-medium pb-2 px-2">Project</th>
-            {days.map(day => (
+            {days.map((day: Date) => (
               <th key={day.toISOString()} className="text-center font-medium pb-2 px-2 text-orange-600">
                 {getDate(day)} {format(day, 'EEE')}
               </th>
@@ -64,8 +64,8 @@ const TimelineChart: React.FC<TimelineChartProps> = ({ tasks, month, year }) => 
             // Clamp to month
             const barStart = isBefore(start, firstDay) ? firstDay : start;
             const barEnd = isAfter(end, lastDay) ? lastDay : end;
-            const startIdx = days.findIndex(d => getDate(d) === getDate(barStart) && getMonth(d) === getMonth(barStart));
-            const endIdx = days.findIndex(d => getDate(d) === getDate(barEnd) && getMonth(d) === getMonth(barEnd));
+            const startIdx = days.findIndex((d: Date) => getDate(d) === getDate(barStart) && getMonth(d) === getMonth(barStart));
+            const endIdx = days.findIndex((d: Date) => getDate(d) === getDate(barEnd) && getMonth(d) === getMonth(barEnd));
             const startStr = format(start, 'dd MMM yyyy');
             const endStr = format(end, 'dd MMM yyyy');
             return (
@@ -74,7 +74,7 @@ const TimelineChart: React.FC<TimelineChartProps> = ({ tasks, month, year }) => 
                   {task.task_title}<br />
                   <span className="text-gray-400 text-xs">{task.team || ''}</span>
                 </td>
-                {days.map((day, idx) => {
+                {days.map((_day: Date, idx: number) => {
                   if (idx === startIdx) {
                     return (
                       <td
@@ -84,7 +84,7 @@ const TimelineChart: React.FC<TimelineChartProps> = ({ tasks, month, year }) => 
                           `${statusColor(task.status)} text-white rounded-l-full rounded-r-full text-center align-middle py-4 border-2 border-white relative cursor-pointer transition-all duration-150` +
                           (hoveredTaskId === task.id ? ' bg-opacity-70 ring-2 ring-white' : '')
                         }
-                        onMouseEnter={e => {
+                        onMouseEnter={() => {
                           setHoveredTaskId(task.id);
                         }}
                         onMouseLeave={() => setHoveredTaskId(null)}

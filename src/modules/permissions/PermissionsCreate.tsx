@@ -3,6 +3,8 @@ import { useNavigate } from 'react-router-dom';
 import api from '../../services/api';
 import modules from '../../config/loadModules';
 import type { ModuleConfig } from '../../config/types';
+import { useCurrentUser } from '../../context/CurrentUserContext';
+import { postAuditLog } from '../../services/api';
 
 interface PermissionsCreateProps {
     moduleName: string;
@@ -13,6 +15,7 @@ const PermissionsCreate: React.FC<PermissionsCreateProps> = ({ moduleName }) => 
     const navigate = useNavigate();
     const [formData, setFormData] = useState({ name: '', description: '' });
     const [error, setError] = useState<string | null>(null);
+    const { user: currentUser } = useCurrentUser();
 
     if (!config) return <div className="text-red-600 text-lg font-semibold p-4">Module not found</div>;
 
@@ -27,6 +30,14 @@ const PermissionsCreate: React.FC<PermissionsCreateProps> = ({ moduleName }) => 
                 `${config.apiBaseUrl}${config.endpoints.create.url}/`,
                 formData
             );
+            // Audit log: Permission Created
+            const performerName = currentUser ? `${currentUser.firstName} ${currentUser.lastName}`.trim() : (JSON.parse(localStorage.getItem('user_data') || '{}').username || 'Unknown');
+            await postAuditLog({
+                action: 'Permission Created',
+                affected_user: formData.name,
+                performer: performerName,
+                description: `Permission '${formData.name}' was created by ${performerName}.`
+            });
             navigate(`/${moduleName}`);
         } catch (error) {
             setError('Error creating permission. Please try again.');

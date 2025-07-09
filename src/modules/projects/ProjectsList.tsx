@@ -1,21 +1,15 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import api from '../../services/api';
-import GenericList from '../../components/GenericList';
-import GenericFilter from '../../components/GenericFilter';
 import modules from '../../config/loadModules';
 import type { ModuleConfig } from '../../config/types';
 import { useToast } from '../../components/ui/alert/ToastContext';
-import { ConfirmationModal } from '../../components/ui/modal';
+import { useCurrentUser } from '../../context/CurrentUserContext';
 
-interface ProjectsListProps {
-    moduleName: string;
-}
-
-const ProjectsList: React.FC<ProjectsListProps> = ({ moduleName }) => {
+const ProjectsList: React.FC = () => {
+    const moduleName = 'projects';
     const navigate = useNavigate();
     const { showToast } = useToast();
-    const [filters, setFilters] = useState<{ [key: string]: string }>({});
     const [search, setSearch] = useState('');
     const [statusFilter, setStatusFilter] = useState('');
     const [priorityFilter, setPriorityFilter] = useState('');
@@ -24,6 +18,8 @@ const ProjectsList: React.FC<ProjectsListProps> = ({ moduleName }) => {
     const [filteredProjects, setFilteredProjects] = useState<any[]>([]);
     const [loading, setLoading] = useState(true);
     const config: ModuleConfig = modules[moduleName as keyof typeof modules];
+    const { user, userRole } = useCurrentUser();
+    const [tasks, setTasks] = useState<any[]>([]);
 
     // Fetch projects from API
     const fetchProjects = async () => {
@@ -44,11 +40,32 @@ const ProjectsList: React.FC<ProjectsListProps> = ({ moduleName }) => {
 
     useEffect(() => {
         fetchProjects();
+        // If developer, fetch all tasks
+        if (userRole && userRole.trim().toLowerCase().includes('developer')) {
+            api.get('/api/projectmanagement/tasks/')
+                .then(res => {
+                    setTasks(res.data.data || res.data.tasks || res.data || []);
+                })
+                .catch(() => setTasks([]));
+        }
     }, []);
 
     // Apply filters whenever search or filter values change
     useEffect(() => {
         let filtered = [...projects];
+
+        // If developer, filter projects and tasks by task_assignees (user ID)
+        if (userRole && userRole.trim().toLowerCase().includes('developer') && user && user.id) {
+            // Find tasks where user is assignee by ID in task_assignees array
+            const assignedTasks = tasks.filter(task => {
+                if (Array.isArray(task.task_assignees)) {
+                    return task.task_assignees.some((a: any) => String(a.user_id || a.id) === String(user.id));
+                }
+                return false;
+            });
+            const assignedProjectIds = new Set(assignedTasks.map(task => task.project_id));
+            filtered = filtered.filter(project => assignedProjectIds.has(project.id));
+        }
 
         // Search filter - search by project title
         if (search.trim()) {
@@ -80,15 +97,11 @@ const ProjectsList: React.FC<ProjectsListProps> = ({ moduleName }) => {
         }
 
         setFilteredProjects(filtered);
-    }, [search, statusFilter, priorityFilter, typeFilter, projects]);
+    }, [search, statusFilter, priorityFilter, typeFilter, projects, userRole, user, tasks]);
 
     if (!config) {
         return <h1 className="text-xl font-semibold text-red-600">Module not found</h1>;
     }
-
-    const handleFilter = (newFilters: { [key: string]: string }) => {
-        setFilters(newFilters);
-    };
 
     const handleEdit = (id: number) => {
         navigate(`/${moduleName}/edit/${id}`);
@@ -159,12 +172,15 @@ const ProjectsList: React.FC<ProjectsListProps> = ({ moduleName }) => {
                     </nav>
                     <h1 className="text-2xl font-bold">Projects</h1>
                 </div>
+                {/* Hide New Project button for Developer */}
+                {!(userRole && userRole.trim().toLowerCase().includes('developer')) && (
                 <button
                     className="bg-[#F1F1F1] border-0 rounded px-4 py-2 text-sm font-semibold hover:bg-gray-200"
                     onClick={() => navigate(`/${moduleName}/create`)}
                 >
                     + New Project
                 </button>
+                )}
             </div>
 
             {/* Search and filters */}
@@ -233,14 +249,16 @@ const ProjectsList: React.FC<ProjectsListProps> = ({ moduleName }) => {
             {!loading && (
                 <div className="overflow-x-auto w-full">
                     <table className="min-w-full divide-y divide-gray-200 text-sm sm:text-base">
-                        <thead className="bg-gray-100 text-gray-700 text-left">
-                            <tr>
-                                <th className="px-4 py-3 whitespace-nowrap font-medium">Project Title</th>
-                                <th className="px-4 py-3 whitespace-nowrap font-medium">Owner</th>
-                                <th className="px-4 py-3 whitespace-nowrap font-medium">Status</th>
-                                <th className="px-4 py-3 whitespace-nowrap font-medium">Priority</th>
-                                <th className="px-4 py-3 whitespace-nowrap font-medium">Project Type</th>
-                                <th className="px-4 py-3 whitespace-nowrap font-medium">Actions</th>
+                        <thead>
+                            <tr className="bg-gray-100 text-gray-700 text-left">
+                                <th className="px-4 py-3 whitespace-nowrap font-medium !bg-gray-100" style={{background:'#f2f4f7'}}>Project Title</th>
+                                <th className="px-4 py-3 whitespace-nowrap font-medium !bg-gray-100" style={{background:'#f2f4f7'}}>Owner</th>
+                                <th className="px-4 py-3 whitespace-nowrap font-medium !bg-gray-100" style={{background:'#f2f4f7'}}>Status</th>
+                                <th className="px-4 py-3 whitespace-nowrap font-medium !bg-gray-100" style={{background:'#f2f4f7'}}>Priority</th>
+                                <th className="px-4 py-3 whitespace-nowrap font-medium !bg-gray-100" style={{background:'#f2f4f7'}}>Project Type</th>
+                                {!(userRole && userRole.trim().toLowerCase().includes('developer')) && (
+                                <th className="px-4 py-3 whitespace-nowrap font-medium !bg-gray-100" style={{background:'#f2f4f7'}}>Actions</th>
+                                )}
                             </tr>
                         </thead>
                         <tbody className="border border-[#EAEAEA]">
@@ -311,6 +329,7 @@ const ProjectsList: React.FC<ProjectsListProps> = ({ moduleName }) => {
                                                 }
                                             </span>
                                         </td>
+                                        {!(userRole && userRole.trim().toLowerCase().includes('developer')) && (
                                         <td className="px-4 py-4">
                                             <div className="flex space-x-3">
                                                 <button onClick={() => handleEdit(row.id)} className="text-black" title="Edit">
@@ -325,6 +344,7 @@ const ProjectsList: React.FC<ProjectsListProps> = ({ moduleName }) => {
                                                 </button>
                                             </div>
                                         </td>
+                                        )}
                                     </tr>
                                 ))
                             ) : (

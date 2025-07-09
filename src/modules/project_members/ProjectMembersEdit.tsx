@@ -5,12 +5,9 @@ import GenericForm from '../../components/GenericForm';
 import modules from '../../config/loadModules';
 import type { ModuleConfig } from '../../config/types';
 
-interface ProjectMembersEditProps {
-    moduleName: string;
-}
-
-const ProjectMembersEdit: React.FC<ProjectMembersEditProps> = ({ moduleName }) => {
+const ProjectMembersEdit: React.FC = () => {
     const { id } = useParams<{ id: string }>();
+    const moduleName = 'project_members';
     const config: ModuleConfig | undefined = moduleName ? modules[moduleName] : undefined;
     const navigate = useNavigate();
 
