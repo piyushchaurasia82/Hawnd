@@ -156,8 +156,87 @@ const UsersEdit: React.FC<{ moduleName?: string }> = ({ moduleName = 'users' }) 
         fname => config.fields.find(f => f.name === fname)
     ).filter(Boolean) as Field[];
 
-    // Filter out the hashed_password field from the form
-    const visibleFields = fields.filter(field => field.name !== 'hashed_password');
+    // Filter out the hashed_password and is_active fields from the form
+    const visibleFields = fields.filter(field => field.name !== 'hashed_password' && field.name !== 'is_active');
+
+    // Make username field disabled in edit form
+    const renderField = (field: Field) => {
+        if (field.name === 'username') {
+            return (
+                <div key={field.name} className="mb-4">
+                    <label className="block mb-2 font-medium text-gray-900 text-sm">Username</label>
+                    <input
+                        type="text"
+                        name="username"
+                        value={formData.username || ''}
+                        disabled
+                        className="w-full rounded-lg border border-gray-200 bg-gray-100 px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-orange-400"
+                    />
+                </div>
+            );
+        }
+        if (field.type === 'boolean') {
+            let value = formData[field.name];
+            if (typeof value === 'undefined' || value === null) {
+                value = true; // Default to true if undefined/null
+            } else if (typeof value === 'string') {
+                value = value === "true" || value === "True";
+            } else if (typeof value !== 'boolean') {
+                value = value === true || value === 'TRUE' || value === 1;
+            }
+            return (
+                <div key={field.name} className="flex items-center mt-6">
+                    <Checkbox
+                        id={field.name}
+                        label={field.label}
+                        checked={!!value}
+                        onChange={v => handleChange(field.name, v)}
+                    />
+                </div>
+            );
+        }
+        if (field.type === 'textarea') {
+            return (
+                <div key={field.name}>
+                    <label className="block font-semibold mb-1">{field.label}</label>
+                    <TextArea
+                        placeholder={`Enter ${field.label.toLowerCase()}`}
+                        value={formData[field.name]}
+                        onChange={v => handleChange(field.name, v)}
+                    />
+                </div>
+            );
+        }
+        if (field.type === 'select' && field.options) {
+            return (
+                <div key={field.name}>
+                    <label className="block font-semibold mb-1">{field.label}</label>
+                    <SelectField
+                        value={formData[field.name]}
+                        onChange={e => handleChange(field.name, e.target.value)}
+                    >
+                        <option value="">Select {field.label}</option>
+                        {field.options.map(opt => (
+                            <option key={opt.value} value={opt.value}>{opt.label}</option>
+                        ))}
+                    </SelectField>
+                </div>
+            );
+        }
+        // Default: text, number, etc.
+        return (
+            <div key={field.name}>
+                <label className="block font-semibold mb-1">{field.label}</label>
+                <InputField
+                    type={field.type === 'number' ? 'number' : 'text'}
+                    name={field.name}
+                    placeholder={`Enter ${field.label.toLowerCase()}`}
+                    value={formData[field.name]}
+                    onChange={e => handleChange(field.name, e.target.value)}
+                />
+            </div>
+        );
+    };
 
     const handleChange = (name: string, value: any) => {
         // Special handling for is_active to always set boolean
@@ -217,6 +296,13 @@ const UsersEdit: React.FC<{ moduleName?: string }> = ({ moduleName = 'users' }) 
                 message: 'The user has been updated successfully.',
                 duration: 5000
             });
+            // Remove force logout logic for current user
+            // const userData = tokenManager.getUserData();
+            // if (userData && String(userData.id) === String(id)) {
+            //     tokenManager.clearTokens();
+            //     window.location.href = '/auth';
+            //     return;
+            // }
             navigate(`/${moduleName}`);
         } catch (err: any) {
             setError('Error updating user. Please try again.');
@@ -244,63 +330,7 @@ const UsersEdit: React.FC<{ moduleName?: string }> = ({ moduleName = 'users' }) 
                 <div className="mb-8">
                     <h2 className="text-lg font-bold mb-4">User Information</h2>
                     <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                        {visibleFields.filter(field => field.name !== 'is_active').map(field => {
-                            let value = formData[field.name];
-                            if (field.type === 'boolean') {
-                                value = typeof value === 'boolean' ? value : value === 'TRUE' || value === 1;
-                                return (
-                                    <div key={field.name} className="flex items-center mt-6">
-                                        <Checkbox
-                                            id={field.name}
-                                            label={field.label}
-                                            checked={!!value}
-                                            onChange={v => handleChange(field.name, v)}
-                                        />
-                                    </div>
-                                );
-                            }
-                            if (field.type === 'textarea') {
-                                return (
-                                    <div key={field.name}>
-                                        <label className="block font-semibold mb-1">{field.label}</label>
-                                        <TextArea
-                                            placeholder={`Enter ${field.label.toLowerCase()}`}
-                                            value={value}
-                                            onChange={v => handleChange(field.name, v)}
-                                        />
-                                    </div>
-                                );
-                            }
-                            if (field.type === 'select' && field.options) {
-                                return (
-                                    <div key={field.name}>
-                                        <label className="block font-semibold mb-1">{field.label}</label>
-                                        <SelectField
-                                            value={value}
-                                            onChange={e => handleChange(field.name, e.target.value)}
-                                        >
-                                            <option value="">Select {field.label}</option>
-                                            {field.options.map(opt => (
-                                                <option key={opt.value} value={opt.value}>{opt.label}</option>
-                                            ))}
-                                        </SelectField>
-                                    </div>
-                                );
-                            }
-                            // Default: text, number, etc.
-                            return (
-                                <div key={field.name}>
-                                    <label className="block font-semibold mb-1">{field.label}</label>
-                                    <InputField
-                                        type={field.type === 'number' ? 'number' : 'text'}
-                                        name={field.name}
-                                        placeholder={`Enter ${field.label.toLowerCase()}`}
-                                        value={value}
-                                        onChange={e => handleChange(field.name, e.target.value)}
-                                    />
-                                </div>
-                            );
-                        })}
+                        {visibleFields.map(field => renderField(field))}
                     </div>
                 </div>
                 <div className="mb-8">

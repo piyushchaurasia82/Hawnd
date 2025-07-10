@@ -253,7 +253,7 @@ const ProjectsCreate: React.FC = () => {
                             type="text"
                             name="title"
                             placeholder="e.g. Website Redesign"
-                            className={`w-full bg-[#F1F1F1] rounded px-4 py-3 text-black placeholder:text-black border-0 ${fieldErrors.project_title ? 'border border-red-500' : ''}`}
+                            className={`w-full bg-gray-100 rounded px-4 py-3 text-black placeholder:text-black border-0 ${fieldErrors.project_title ? 'border border-red-500' : ''}`}
                             value={quickForm.title}
                             onChange={handleQuickChange}
                         />
@@ -265,7 +265,7 @@ const ProjectsCreate: React.FC = () => {
                         </label>
                         <select
                             name="owner"
-                            className={`w-full bg-[#F1F1F1] rounded px-4 py-3 text-black border-0 ${fieldErrors.project_owner ? 'border border-red-500' : ''}`}
+                            className={`w-full bg-gray-100 rounded px-4 py-3 text-black border-0 ${fieldErrors.project_owner ? 'border border-red-500' : ''}`}
                             value={quickForm.owner}
                             onChange={handleQuickChange}
                         >
@@ -330,7 +330,7 @@ const ProjectsCreate: React.FC = () => {
                                 type="text"
                                 name="title"
                                 placeholder="Enter project title"
-                                className={`w-full bg-[#F1F1F1] rounded px-4 py-3 text-black placeholder:text-black border-0 ${fieldErrors.project_title ? 'border border-red-500' : ''}`}
+                                className={`w-full bg-gray-100 rounded px-4 py-3 text-black placeholder:text-black border-0 ${fieldErrors.project_title ? 'border border-red-500' : ''}`}
                                 value={detailedForm.title}
                                 onChange={handleDetailedChange}
                             />
@@ -342,7 +342,7 @@ const ProjectsCreate: React.FC = () => {
                             </label>
                             <select
                                 name="owner"
-                                className={`w-full bg-[#F1F1F1] rounded px-4 py-3 text-black border-0 ${fieldErrors.project_owner ? 'border border-red-500' : ''}`}
+                                className={`w-full  bg-gray-100 rounded px-4 py-3 text-black border-0 ${fieldErrors.project_owner ? 'border border-red-500' : ''}`}
                                 value={detailedForm.owner}
                                 onChange={handleDetailedChange}
                             >
@@ -361,7 +361,7 @@ const ProjectsCreate: React.FC = () => {
                             <input
                                 type="date"
                                 name="startDate"
-                                className="w-full bg-[#F1F1F1] rounded px-4 py-3 text-black border-0"
+                                className="w-full bg-gray-100 rounded px-4 py-3 text-black border-0"
                                 value={detailedForm.startDate}
                                 onChange={handleDetailedChange}
                             />
@@ -373,7 +373,7 @@ const ProjectsCreate: React.FC = () => {
                             <label className="block mb-2 font-semibold">Status</label>
                             <select
                                 name="status"
-                                className="w-full bg-[#F1F1F1] rounded px-4 py-3 text-black border-0"
+                                className="w-full bg-gray-100 rounded px-4 py-3 text-black border-0"
                                 value={detailedForm.status}
                                 onChange={handleDetailedChange}
                             >
@@ -387,7 +387,7 @@ const ProjectsCreate: React.FC = () => {
                             <label className="block mb-2 font-semibold">Priority</label>
                             <select
                                 name="priority"
-                                className="w-full bg-[#F1F1F1] rounded px-4 py-3 text-black border-0"
+                                className="w-full bg-gray-100 rounded px-4 py-3 text-black border-0"
                                 value={detailedForm.priority}
                                 onChange={handleDetailedChange}
                             >
@@ -403,7 +403,7 @@ const ProjectsCreate: React.FC = () => {
                                 type="text"
                                 name="tags"
                                 placeholder="Enter tags"
-                                className="w-full bg-[#F1F1F1] rounded px-4 py-3 text-black border-0"
+                                className="w-full bg-gray-100 rounded px-4 py-3 text-black border-0"
                                 value={detailedForm.tags}
                                 onChange={handleDetailedChange}
                             />
@@ -416,7 +416,7 @@ const ProjectsCreate: React.FC = () => {
                                 type="text"
                                 name="integrationTag"
                                 placeholder="Select status"
-                                className="w-full bg-[#F1F1F1] rounded px-4 py-3 text-black border-0"
+                                className="w-full bg-gray-100 rounded px-4 py-3 text-black border-0"
                                 value={detailedForm.integrationTag}
                                 onChange={handleDetailedChange}
                             />
@@ -468,7 +468,7 @@ const ProjectsCreate: React.FC = () => {
                         <textarea
                             name="description"
                             placeholder=""
-                            className="w-full bg-[#F1F1F1] rounded px-4 py-3 text-black border-0 min-h-[100px]"
+                            className="w-full bg-gray-100 rounded px-4 py-3 text-black border-0 min-h-[100px]"
                             value={detailedForm.description}
                             onChange={handleDetailedChange}
                         />
@@ -477,7 +477,7 @@ const ProjectsCreate: React.FC = () => {
                     <div className="flex justify-end mt-8 gap-4">
                         <button
                             type="button"
-                            className="bg-[#F1F1F1] text-black px-8 py-2 rounded font-semibold text-[16px] hover:bg-gray-200"
+                            className="bg-gray-100 text-black px-8 py-2 rounded font-semibold text-[16px] hover:bg-gray-200"
                             onClick={handleCancel}
                             disabled={loading}
                         >

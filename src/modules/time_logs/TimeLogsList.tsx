@@ -7,6 +7,7 @@ import { format } from 'date-fns';
 import { useToast } from '../../components/ui/alert/ToastContext';
 import { saveAs } from 'file-saver';
 import { useCurrentUser } from '../../context/CurrentUserContext';
+import Select from 'react-select';
 
 interface TimeLog {
   id: number;
@@ -25,13 +26,24 @@ interface TimeLog {
 
 function formatTime(timeStr: string | null | undefined) {
   if (!timeStr) return '';
-  let parsed;
+  // If it's just HH:mm or HH:mm:ss, return as is (or format to HH:mm AM/PM)
+  if (/^\d{2}:\d{2}(:\d{2})?$/.test(timeStr)) {
+    const [h, m] = timeStr.split(':');
+    const hour = Number(h);
+    const minute = m;
+    const ampm = hour >= 12 ? 'PM' : 'AM';
+    const hour12 = hour % 12 === 0 ? 12 : hour % 12;
+    return `${hour12.toString().padStart(2, '0')}:${minute} ${ampm}`;
+  }
   try {
-    // If it's an ISO string, parse as date
-    parsed = new Date(timeStr);
-    if (isNaN(parsed.getTime())) return timeStr;
-    const formatted = format(parsed, 'hh:mm:aa').toUpperCase(); // e.g., 05:00:PM
-    return formatted;
+    const d = new Date(timeStr);
+    if (isNaN(d.getTime())) return timeStr;
+    // Format as UTC
+    const hour = d.getUTCHours();
+    const minute = d.getUTCMinutes();
+    const ampm = hour >= 12 ? 'PM' : 'AM';
+    const hour12 = hour % 12 === 0 ? 12 : hour % 12;
+    return `${hour12.toString().padStart(2, '0')}:${minute.toString().padStart(2, '0')} ${ampm}`;
   } catch {
     return timeStr;
   }
@@ -291,7 +303,7 @@ const TimeLogsList: React.FC = () => {
                 type="date"
                 value={dateRange.start}
                 onChange={e => setDateRange(r => ({...r, start: e.target.value}))}
-                className="rounded-lg border border-gray-200 bg-white px-3 py-2 text-sm min-w-[120px]"
+                className="rounded-lg border bg-white px-3 py-2 text-sm min-w-[120px] border-gray-200 focus:border-orange-500 focus:ring-0 focus:outline-none"
                 placeholder="Start Date"
               />
             </div>
@@ -301,38 +313,122 @@ const TimeLogsList: React.FC = () => {
                 type="date"
                 value={dateRange.end}
                 onChange={e => setDateRange(r => ({...r, end: e.target.value}))}
-                className="rounded-lg border border-gray-200 bg-white px-3 py-2 text-sm min-w-[120px]"
+                className="rounded-lg border bg-white px-3 py-2 text-sm min-w-[120px] border-gray-200 focus:border-orange-500 focus:ring-0 focus:outline-none"
                 placeholder="End Date"
               />
             </div>
             <div className="flex flex-col">
               <label className="text-xs font-medium mb-1">Status</label>
-              <select
-                value={statusFilter}
-                onChange={e => setStatusFilter(e.target.value)}
-                className="rounded-lg border border-gray-200 bg-white px-3 py-2 text-sm min-w-[120px]"
-              >
-                <option value="">Status</option>
-                <option value="To Do">To Do</option>
-                <option value="In Progress">In Progress</option>
-                <option value="Done">Done</option>
-              </select>
+              <Select
+                classNamePrefix="react-select"
+                value={
+                  [
+                    { value: '', label: 'Status' },
+                    { value: 'To Do', label: 'To Do' },
+                    { value: 'In Progress', label: 'In Progress' },
+                    { value: 'Done', label: 'Done' },
+                  ].find(opt => opt.value === statusFilter)
+                }
+                onChange={opt => setStatusFilter(opt ? opt.value : '')}
+                options={[
+                  { value: '', label: 'Status' },
+                  { value: 'To Do', label: 'To Do' },
+                  { value: 'In Progress', label: 'In Progress' },
+                  { value: 'Done', label: 'Done' },
+                ]}
+                isSearchable={false}
+                placeholder="Status"
+                styles={{
+                  container: base => ({ ...base, minWidth: 120 }),
+                  control: (base, state) => ({
+                    ...base,
+                    minHeight: 38,
+                    height: 38,
+                    fontSize: '0.875rem',
+                    borderColor: state.isFocused ? '#F97316' : '#E5E7EB', // orange-500 on focus, gray-200 default
+                    backgroundColor: '#F3F4F6', // gray-100
+                    boxShadow: state.isFocused ? '0 0 0 1.5px #F97316' : 'none',
+                    '&:hover': {
+                      borderColor: state.isFocused ? '#F97316' : '#E5E7EB',
+                      backgroundColor: '#FFF7ED', // orange-50
+                    },
+                  }),
+                  valueContainer: base => ({ ...base, height: 38, paddingTop: 0, paddingBottom: 0 }),
+                  indicatorsContainer: base => ({ ...base, height: 38 }),
+                  option: (base, state) => ({
+                    ...base,
+                    backgroundColor: state.isSelected
+                      ? '#F97316'
+                      : state.isFocused
+                      ? '#FFF7ED'
+                      : '#fff',
+                    color: state.isSelected ? '#fff' : '#111827',
+                    '&:hover': {
+                      backgroundColor: '#FFF7ED',
+                      color: '#111827',
+                    },
+                  }),
+                  menu: base => ({ ...base, zIndex: 20 }),
+                }}
+              />
             </div>
             {/* User filter for admin */}
             <div className="flex flex-col min-w-[180px]">
               <label className="text-xs font-medium mb-1">User</label>
-              <select
-                value={userFilter}
-                onChange={e => setUserFilter(e.target.value)}
-                className="rounded-lg border border-gray-200 bg-white px-3 py-2 text-sm"
-              >
-                <option value="">All Users</option>
-                {users.map(u => (
-                  <option key={u.id} value={u.id}>
-                    {u.first_name || u.firstName || ''} {u.last_name || u.lastName || ''} ({u.username || u.email || u.id})
-                  </option>
-                ))}
-              </select>
+              <Select
+                classNamePrefix="react-select"
+                value={
+                  [
+                    { value: '', label: 'All Users' },
+                    ...users.map(u => ({
+                      value: String(u.id),
+                      label: `${u.first_name || u.firstName || ''} ${u.last_name || u.lastName || ''} (${u.username || u.email || u.id})`
+                    }))
+                  ].find(opt => opt.value === userFilter)
+                }
+                onChange={opt => setUserFilter(opt ? opt.value : '')}
+                options={[
+                  { value: '', label: 'All Users' },
+                  ...users.map(u => ({
+                    value: String(u.id),
+                    label: `${u.first_name || u.firstName || ''} ${u.last_name || u.lastName || ''} (${u.username || u.email || u.id})`
+                  }))
+                ]}
+                isSearchable
+                placeholder="All Users"
+                styles={{
+                  container: base => ({ ...base, minWidth: 180 }),
+                  control: (base, state) => ({
+                    ...base,
+                    minHeight: 38,
+                    height: 38,
+                    fontSize: '0.875rem',
+                    borderColor: state.isFocused ? '#F97316' : '#E5E7EB', // orange-500 on focus, gray-200 default
+                    backgroundColor: '#F3F4F6', // gray-100
+                    boxShadow: state.isFocused ? '0 0 0 1.5px #F97316' : 'none',
+                    '&:hover': {
+                      borderColor: state.isFocused ? '#F97316' : '#E5E7EB',
+                      backgroundColor: '#FFF7ED', // orange-50
+                    },
+                  }),
+                  valueContainer: base => ({ ...base, height: 38, paddingTop: 0, paddingBottom: 0 }),
+                  indicatorsContainer: base => ({ ...base, height: 38 }),
+                  option: (base, state) => ({
+                    ...base,
+                    backgroundColor: state.isSelected
+                      ? '#F97316'
+                      : state.isFocused
+                      ? '#FFF7ED'
+                      : '#fff',
+                    color: state.isSelected ? '#fff' : '#111827',
+                    '&:hover': {
+                      backgroundColor: '#FFF7ED',
+                      color: '#111827',
+                    },
+                  }),
+                  menu: base => ({ ...base, zIndex: 20 }),
+                }}
+              />
             </div>
             {/* Remove All Filters and Download CSV Buttons */}
             <div className="flex flex-col justify-end mt-5">
@@ -355,7 +451,7 @@ const TimeLogsList: React.FC = () => {
                     className="rounded-lg border border-gray-200 bg-white px-4 py-2 text-sm font-semibold hover:bg-gray-100"
                     onClick={handleDownloadCSV}
                   >
-                    Download CSV
+                    Export CSV
                   </button>
                 )}
               </div>
@@ -393,7 +489,7 @@ const TimeLogsList: React.FC = () => {
                 type="date"
                 value={dateRange.start}
                 onChange={e => setDateRange(r => ({...r, start: e.target.value}))}
-                className="rounded-lg border border-gray-200 bg-white px-3 py-2 text-sm min-w-[120px]"
+                className="rounded-lg border bg-white px-3 py-2 text-sm min-w-[120px] border-gray-200 focus:border-orange-500 focus:ring-0 focus:outline-none"
                 placeholder="Start Date"
               />
             </div>
@@ -403,22 +499,33 @@ const TimeLogsList: React.FC = () => {
                 type="date"
                 value={dateRange.end}
                 onChange={e => setDateRange(r => ({...r, end: e.target.value}))}
-                className="rounded-lg border border-gray-200 bg-white px-3 py-2 text-sm min-w-[120px]"
+                className="rounded-lg border bg-white px-3 py-2 text-sm min-w-[120px] border-gray-200 focus:border-orange-500 focus:ring-0 focus:outline-none"
                 placeholder="End Date"
               />
             </div>
             <div className="flex flex-col">
               <label className="text-xs font-medium mb-1">Status</label>
-              <select
-                value={statusFilter}
-                onChange={e => setStatusFilter(e.target.value)}
-                className="rounded-lg border border-gray-200 bg-white px-3 py-2 text-sm min-w-[120px]"
-              >
-                <option value="">Status</option>
-                <option value="To Do">To Do</option>
-                <option value="In Progress">In Progress</option>
-                <option value="Done">Done</option>
-              </select>
+              <Select
+                classNamePrefix="react-select"
+                value={
+                  [
+                    { value: '', label: 'Status' },
+                    { value: 'To Do', label: 'To Do' },
+                    { value: 'In Progress', label: 'In Progress' },
+                    { value: 'Done', label: 'Done' },
+                  ].find(opt => opt.value === statusFilter)
+                }
+                onChange={opt => setStatusFilter(opt ? opt.value : '')}
+                options={[
+                  { value: '', label: 'Status' },
+                  { value: 'To Do', label: 'To Do' },
+                  { value: 'In Progress', label: 'In Progress' },
+                  { value: 'Done', label: 'Done' },
+                ]}
+                isSearchable={false}
+                placeholder="Status"
+                styles={{ container: base => ({ ...base, minWidth: 120 }) }}
+              />
             </div>
             {/* Remove All Filters and Download CSV Buttons */}
             <div className="flex flex-col justify-end mt-5">

@@ -45,12 +45,28 @@ const TimeLogsEdit: React.FC = () => {
             api.get(`/api/projectmanagement/time_logs/${id}/`)
                 .then(res => {
                     const data = res.data.data;
+                    // Robustly extract 'HH:mm' from ISO or time string
+                    function extractTime(val: any) {
+                        if (!val) return '';
+                        try {
+                            const d = new Date(val);
+                            if (!isNaN(d.getTime())) {
+                                // Pad hours and minutes
+                                const h = String(d.getHours()).padStart(2, '0');
+                                const m = String(d.getMinutes()).padStart(2, '0');
+                                return `${h}:${m}`;
+                            }
+                        } catch {}
+                        // Fallback: try to match HH:mm in string
+                        const match = val.match(/(\d{2}:\d{2})/);
+                        return match ? match[1] : '';
+                    }
                     setForm({
                         task_id: data.task_id ? String(data.task_id) : '',
                         start_date: data.start_date ? data.start_date.slice(0, 10) : '',
                         end_date: data.end_date ? data.end_date.slice(0, 10) : '',
-                        start_time: data.start_time ? data.start_time.slice(11, 16) : '', // HH:mm
-                        end_time: data.end_time ? data.end_time.slice(11, 16) : '',
+                        start_time: extractTime(data.start_time),
+                        end_time: extractTime(data.end_time),
                         total_hours: data.total_hours !== undefined && data.total_hours !== null ? String(data.total_hours) : '',
                         description: data.description || '',
                         status: data.status || '',

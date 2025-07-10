@@ -36,6 +36,9 @@ export const tokenManager = {
     localStorage.removeItem(TOKEN_KEYS.REFRESH_TOKEN);
     localStorage.removeItem(TOKEN_KEYS.SESSION_TOKEN);
     localStorage.removeItem(TOKEN_KEYS.USER_DATA);
+    localStorage.removeItem('user_role');
+    localStorage.removeItem('user_role_id');
+    localStorage.removeItem('user_data');
   },
 
   // Check if user is authenticated

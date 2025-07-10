@@ -82,8 +82,8 @@ const TimeLogsCreate: React.FC = () => {
                 if (!date || !time) return '';
                 // If time is '09:00', add ':00' for seconds
                 if (/^\d{2}:\d{2}$/.test(time)) time = time + ':00';
-                // Combine and add 'Z' for UTC (or remove 'Z' if backend expects local time)
-                return `${date}T${time}Z`;
+                // Combine as local time (no Z)
+                return `${date}T${time}`;
             }
             const payload = {
                 user_id: userData.id,
@@ -152,7 +152,7 @@ const TimeLogsCreate: React.FC = () => {
                             placeholder="Enter Task Name"
                             classNamePrefix="react-select"
                             styles={{
-                                control: (base) => ({ ...base, backgroundColor: '#F6F2ED', minHeight: '48px', borderRadius: '0.375rem', borderColor: '#d1d5db', boxShadow: 'none' }),
+                                control: (base) => ({ ...base, backgroundColor: '#f2f4f7', minHeight: '48px', borderRadius: '0.375rem', borderColor: '#d1d5db', boxShadow: 'none' }),
                                 menu: (base) => ({ ...base, zIndex: 9999 }),
                             }}
                         />
@@ -167,7 +167,7 @@ const TimeLogsCreate: React.FC = () => {
                                 name="start_date"
                                 value={form.start_date}
                                 onChange={handleChange}
-                                className="w-full bg-[#F6F2ED] rounded px-4 py-3 text-black outline-none "
+                                className="w-full bg-gray-100 rounded px-4 py-3 text-black outline-none "
                                 
                             />
                         </div>
@@ -182,7 +182,7 @@ const TimeLogsCreate: React.FC = () => {
                                 name="end_date"
                                 value={form.end_date}
                                 onChange={handleChange}
-                                className="w-full bg-[#F6F2ED] rounded px-4 py-3 text-black outline-none "
+                                className="w-full bg-gray-100 rounded px-4 py-3 text-black outline-none "
                                 
                             />
                         </div>
@@ -199,7 +199,7 @@ const TimeLogsCreate: React.FC = () => {
                                 name="start_time"
                                 value={form.start_time}
                                 onChange={handleChange}
-                                className="w-full bg-[#F6F2ED] rounded px-4 py-3 text-black outline-none "
+                                className="w-full bg-gray-100 rounded px-4 py-3 text-black outline-none "
                                 
                             />
                         </div>
@@ -214,7 +214,7 @@ const TimeLogsCreate: React.FC = () => {
                                 name="end_time"
                                 value={form.end_time}
                                 onChange={handleChange}
-                                className="w-full bg-[#F6F2ED] rounded px-4 py-3 text-black outline-none "
+                                className="w-full bg-gray-100 rounded px-4 py-3 text-black outline-none "
                                 
                             />
                         </div>
@@ -229,7 +229,7 @@ const TimeLogsCreate: React.FC = () => {
                                 name="total_hours"
                                 value={form.total_hours}
                                 readOnly
-                                className="w-full bg-[#F6F2ED] rounded px-4 py-3 text-black outline-none "
+                                className="w-full bg-gray-100 rounded px-4 py-3 text-black outline-none "
                             />
                         </div>
                         {fieldErrors.total_hours && <div className="text-red-500 text-sm mt-1">{fieldErrors.total_hours}</div>}
@@ -241,7 +241,7 @@ const TimeLogsCreate: React.FC = () => {
                             name="status"
                             value={form.status}
                             onChange={handleChange}
-                            className="w-full bg-[#F6F2ED] rounded px-4 py-3 text-black outline-none"
+                            className="w-full bg-gray-100 rounded px-4 py-3 text-black outline-none"
                         >
                             <option value="">Select Status</option>
                             <option value="To Do">To Do</option>
@@ -258,7 +258,7 @@ const TimeLogsCreate: React.FC = () => {
                         name="description"
                         value={form.description}
                         onChange={handleChange}
-                        className="w-full bg-[#F6F2ED] rounded px-4 py-3 text-black outline-none min-h-[90px]"
+                        className="w-full bg-gray-100 rounded px-4 py-3 text-black outline-none min-h-[90px]"
                         rows={4}
                         placeholder=""
                     />

@@ -173,7 +173,7 @@ const RolePermissionsList: React.FC<RolePermissionsListProps> = ({ moduleName })
         <h1 className="text-2xl font-bold mb-6">Create Role Permission</h1>
         <div className="flex flex-col sm:flex-row sm:items-start gap-4">
           <select
-            className="border rounded px-4 py-2 min-w-[420px]"
+            className="border rounded px-4 py-2 w-full sm:min-w-[420px]"
             value={createSelectedRole}
             onChange={e => setCreateSelectedRole(e.target.value)}
           >
@@ -185,7 +185,7 @@ const RolePermissionsList: React.FC<RolePermissionsListProps> = ({ moduleName })
           <div className="relative">
             <button
               type="button"
-              className="border rounded px-4 py-2 min-w-[420px] text-left bg-white flex justify-between items-center"
+              className="border rounded px-4 py-2 w-full sm:min-w-[420px] text-left bg-white flex justify-between items-center"
               onClick={() => setIsCreatePermissionDropdownOpen(!isCreatePermissionDropdownOpen)}
             >
               <span className="truncate">
@@ -232,17 +232,17 @@ const RolePermissionsList: React.FC<RolePermissionsListProps> = ({ moduleName })
               onClick={handleCreateRolePermission}
               disabled={!createSelectedRole || createSelectedPermissions.length === 0}
             >
-              Create Role Permission
+              Create
             </button>
           </div>
         </div>
       </div>
 
       {/* List Section */}
-      <div className="bg-white rounded-lg p-6 border border-gray-200">
-        <div className="flex flex-col sm:flex-row sm:items-center gap-4 mb-4">
-          <div className="relative">
-            <button className="border rounded px-4 py-2 bg-gray-50" onClick={() => setAllRolesDropdown(!allRolesDropdown)}>
+      <div className="bg-white rounded-lg p-4 sm:p-6 border border-gray-200">
+        <div className="flex flex-col sm:flex-row sm:items-center gap-4 mb-4 w-full">
+          <div className="relative w-full sm:w-auto">
+            <button className="border rounded px-4 py-2 bg-gray-50 w-full sm:w-auto" onClick={() => setAllRolesDropdown(!allRolesDropdown)}>
               All Roles <span className="ml-2">▼</span>
             </button>
             {allRolesDropdown && (
@@ -262,7 +262,7 @@ const RolePermissionsList: React.FC<RolePermissionsListProps> = ({ moduleName })
               </div>
             )}
           </div>
-          <div className="flex-1">
+          <div className="flex-1 w-full sm:w-auto">
             <input
               type="text"
               className="border rounded px-4 py-2 w-full"
@@ -271,10 +271,10 @@ const RolePermissionsList: React.FC<RolePermissionsListProps> = ({ moduleName })
               onChange={e => setSearch(e.target.value)}
             />
           </div>
-          <div className="relative">
+          <div className="relative w-full sm:w-auto">
             <button
               type="button"
-              className="border rounded px-4 py-2 min-w-[200px] text-left bg-white flex justify-between items-center"
+              className="border rounded px-4 py-2 min-w-[200px] w-full sm:w-auto text-left bg-white flex justify-between items-center"
               onClick={() => setIsFilterPermissionDropdownOpen(!isFilterPermissionDropdownOpen)}
             >
               <span className="truncate">
@@ -307,7 +307,7 @@ const RolePermissionsList: React.FC<RolePermissionsListProps> = ({ moduleName })
         </div>
 
         {/* Table */}
-        <div className="overflow-x-auto bg-white rounded-lg">
+        <div className="overflow-x-auto bg-white rounded-lg w-full">
           <table className="min-w-full border border-gray-200 text-sm">
             <thead className="bg-gray-100 text-gray-700 text-left">
               <tr className="!bg-gray-100">

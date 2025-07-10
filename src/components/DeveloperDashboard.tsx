@@ -63,6 +63,11 @@ export default function DeveloperDashboard() {
   const username = getUsername();
   const [tasks, setTasks] = useState<any[]>([]);
   const [userId, setUserId] = useState<string | null>(null);
+  // Pagination state
+  const [currentPage, setCurrentPage] = useState(1);
+  const pageSize = 10;
+  const totalPages = Math.ceil(tasks.length / pageSize);
+  const paginatedTasks = tasks.slice((currentPage - 1) * pageSize, currentPage * pageSize);
 
   // Get userId from localStorage (user_data or user_profile)
   useEffect(() => {
@@ -178,7 +183,7 @@ export default function DeveloperDashboard() {
             </tr>
           </thead>
           <tbody>
-            {tasks.map((row: any, idx: number) => (
+            {paginatedTasks.map((row: any, idx: number) => (
               <tr key={idx} className="border-t border-gray-100">
                 <td className="p-3">{row.task_title || row.name}</td>
                 <td className="p-3">{getStatusBadge(row.status)}</td>
@@ -188,6 +193,34 @@ export default function DeveloperDashboard() {
             ))}
           </tbody>
         </table>
+        {/* Pagination Controls */}
+        {totalPages > 1 && (
+          <div className="flex items-center justify-center gap-2 mt-4">
+            <button
+              className="px-3 py-1 rounded border bg-white text-orange-500 border-orange-300 disabled:opacity-50"
+              onClick={() => setCurrentPage(p => Math.max(1, p - 1))}
+              disabled={currentPage === 1}
+            >
+              Previous
+            </button>
+            {Array.from({ length: totalPages }, (_, i) => (
+              <button
+                key={i}
+                className={`px-3 py-1 rounded border ${currentPage === i + 1 ? 'bg-orange-500 text-white' : 'bg-white text-orange-500 border-orange-300'}`}
+                onClick={() => setCurrentPage(i + 1)}
+              >
+                {i + 1}
+              </button>
+            ))}
+            <button
+              className="px-3 py-1 rounded border bg-white text-orange-500 border-orange-300 disabled:opacity-50"
+              onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))}
+              disabled={currentPage === totalPages}
+            >
+              Next
+            </button>
+          </div>
+        )}
       </div>
     </div>
   );

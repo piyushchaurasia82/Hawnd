@@ -96,12 +96,12 @@ const TasksList: React.FC = () => {
       <nav className="text-[16px] text-black mb-1 flex items-center gap-1">
         <span className="hover:underline cursor-pointer text-orange-500" onClick={() => navigate('/')}>Dashboard</span>
         <span className="mx-1">/</span>
-        <span className="font-semibold">Project Tasks</span>
+        <span className="font-semibold">Task List</span>
       </nav>
       {/* <div className="text-[18px] text-black mb-1 font-medium">Projects / Project / Tasks</div> */}
       <div className="flex justify-between items-center mb-2">
         <div>
-          <h1 className="text-3xl font-bold">Project Tasks</h1>
+          <h1 className="text-3xl font-bold">Tasks</h1>
           <div className="text-gray-500 text-[15px]">Manage and track all tasks related to this project</div>
         </div>
         <button

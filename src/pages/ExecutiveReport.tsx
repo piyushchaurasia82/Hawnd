@@ -1,9 +1,11 @@
 import React, { useEffect, useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import ExecutiveBarChart from '../components/charts/bar/ExecutiveBarChart';
 import RoundChartOne from '../components/charts/round/RoundChartOne';
 import TimelineChart from '../components/charts/TimelineChart';
 import { getMonth, getYear, parseISO, isAfter, differenceInCalendarDays } from 'date-fns';
 import api from '../services/api';
+import Select from 'react-select';
 
 interface Task {
   id: number;
@@ -15,6 +17,7 @@ interface Task {
 }
 
 const ExecutiveReport: React.FC = () => {
+  const navigate = useNavigate();
   const [projects, setProjects] = useState<any[]>([]);
   const [selectedProject, setSelectedProject] = useState('');
   const [barData, setBarData] = useState<[number, number, number]>([0, 0, 0]);
@@ -154,29 +157,36 @@ const ExecutiveReport: React.FC = () => {
   }, [timelineTasks]);
 
   return (
-    <div className="p-6 max-w-6xl mx-auto">
+    <div className="p-4 sm:p-6 max-w-6xl mx-auto">
       {/* Breadcrumb */}
-      <div className="text-xs text-gray-500 mb-2">Home / Reports / Executive Reports</div>
+      <nav className="text-[16px] text-black mb-4 flex items-center gap-1">
+        <span className="hover:underline cursor-pointer text-orange-500" onClick={() => navigate('/')}>Dashboard</span>
+        <span className="mx-1">/</span>
+        <span className="font-semibold">Executive Reports</span>
+      </nav>
       {/* Title */}
       <h1 className="text-2xl font-bold mb-2">Executive Reports</h1>
       {/* Project Overview */}
-      <div className="flex flex-col md:flex-row md:items-center md:justify-between mb-4 gap-2">
+      <div className="flex flex-col md:flex-row md:items-center md:justify-between mb-4 gap-2 w-full">
         <h2 className="text-lg font-semibold">Project Overview</h2>
-        <select
-          className="border rounded px-3 py-2 text-sm"
-          value={selectedProject}
-          onChange={e => setSelectedProject(e.target.value)}
-        >
-          <option value="">Select Project</option>
-          {projects.map((project: any) => (
-            <option key={project.id} value={project.id}>
-              {project.project_title || project.name}
-            </option>
-          ))}
-        </select>
+        <div className="w-full md:w-auto max-w-full">
+          <Select
+            options={projects.map((project: any) => ({ value: project.id, label: project.project_title || project.name }))}
+            value={projects.find(p => String(p.id) === String(selectedProject)) ? { value: selectedProject, label: projects.find(p => String(p.id) === String(selectedProject)).project_title || projects.find(p => String(p.id) === String(selectedProject)).name } : null}
+            onChange={option => setSelectedProject(option ? option.value : '')}
+            isClearable
+            isSearchable={false}
+            placeholder="Select Project"
+            classNamePrefix="react-select"
+            styles={{
+              control: (base) => ({ ...base, backgroundColor: '#fff', minHeight: '40px', borderRadius: '0.375rem', borderColor: '#d1d5db', boxShadow: 'none' }),
+              menu: (base) => ({ ...base, zIndex: 9999 }),
+            }}
+          />
+        </div>
       </div>
       {/* Summary Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6 w-full">
         <div className="bg-gray-50 rounded-lg p-4 flex flex-col items-center">
           <div className="text-xs text-gray-500 mb-1">% Complete</div>
           <div className="text-2xl font-bold">{percentComplete}%</div>
@@ -193,8 +203,8 @@ const ExecutiveReport: React.FC = () => {
       {/* Visual Charts */}
       <div className="mb-8">
         <h3 className="text-base font-semibold mb-3">Visual Charts</h3>
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-          <div className="bg-white rounded-lg p-4 shadow-sm min-h-[340px] flex items-center justify-center">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6 w-full">
+          <div className="bg-white rounded-lg p-4 shadow-sm min-h-[340px] flex items-center justify-center w-full">
             <div className="w-full">
               {selectedProject && !barData.every(v => v === 0) && (
                 <div className="font-medium mb-2">Task Priority Distribution</div>
@@ -229,19 +239,19 @@ const ExecutiveReport: React.FC = () => {
         </div>
       </div>
       {/* Timeline Section */}
-      <div className="mb-4">
+      <div className="mb-4 w-full">
         <div className="text-xl font-bold text-center mb-4 mt-8">Project Task Summary</div>
         {selectedProject ? (
           timelineTasks.length === 0 ? (
             <div className="flex items-center justify-center h-[200px] text-gray-400 text-lg font-semibold">This project does not contain any data.</div>
           ) : (
             <>
-              <div className="flex items-center mb-2 gap-4">
+              <div className="flex flex-col sm:flex-row items-center mb-2 gap-4 w-full">
                 <div className="font-semibold">
                   {new Date(selectedYear, selectedMonth).toLocaleString('default', { month: 'long', year: 'numeric' })}
                 </div>
                 <select
-                  className="border rounded px-2 py-1 text-sm"
+                  className="border rounded px-2 py-1 text-sm w-full sm:w-auto mt-2 sm:mt-0"
                   value={selectedMonth}
                   onChange={e => setSelectedMonth(Number(e.target.value))}
                 >
@@ -250,7 +260,7 @@ const ExecutiveReport: React.FC = () => {
                   ))}
                 </select>
                 <select
-                  className="border rounded px-2 py-1 text-sm"
+                  className="border rounded px-2 py-1 text-sm w-full sm:w-auto mt-2 sm:mt-0"
                   value={selectedYear}
                   onChange={e => setSelectedYear(Number(e.target.value))}
                 >

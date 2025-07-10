@@ -328,7 +328,7 @@ const TasksCreate: React.FC = () => {
               </label>
               <select
                 name="project_id"
-                className="w-full bg-[#F3F3F3] rounded px-4 py-3 text-black outline-none"
+                className="w-full bg-gray-100 rounded px-4 py-3 text-black outline-none"
                 value={quickForm.project_id || ''}
                 onChange={(e) => handleChange(e, 'quick')}
               >
@@ -346,7 +346,7 @@ const TasksCreate: React.FC = () => {
             </label>
             <input
               name="title"
-              className="w-full bg-[#F3F3F3] rounded px-4 py-3 text-black placeholder:text-gray-500 outline-none"
+              className="w-full bg-gray-100 rounded px-4 py-3 text-black placeholder:text-gray-500 outline-none"
               placeholder="Enter task title"
               value={quickForm.title}
               onChange={(e) => handleChange(e, 'quick')}
@@ -400,7 +400,7 @@ const TasksCreate: React.FC = () => {
                   </label>
                   <select
                     name="project_id"
-                    className="w-full bg-[#F3F3F3] rounded px-4 py-3 text-black outline-none text-[15px]"
+                    className="w-full bg-gray-100 rounded px-4 py-3 text-black outline-none text-[15px]"
                     value={form.project_id || ''}
                     onChange={(e) => handleChange(e, 'detailed')}
                   >
@@ -418,7 +418,7 @@ const TasksCreate: React.FC = () => {
                 </label>
                 <input
                   name="title"
-                  className="w-full bg-[#F3F3F3] rounded px-4 py-3 text-black placeholder:text-gray-500 outline-none text-[15px]"
+                  className="w-full bg-gray-100 rounded px-4 py-3 text-black placeholder:text-gray-500 outline-none text-[15px]"
                   placeholder="Enter task title"
                   value={form.title}
                   onChange={(e) => handleChange(e, 'detailed')}
@@ -443,7 +443,7 @@ const TasksCreate: React.FC = () => {
                 <div className="flex gap-2">
                   <input
                     readOnly
-                    className="w-full bg-[#F3F3F3] rounded px-4 py-3 text-black placeholder:text-gray-500 outline-none text-[15px] cursor-pointer"
+                    className="w-full bg-gray-100 rounded px-4 py-3 text-black placeholder:text-gray-500 outline-none text-[15px] cursor-pointer"
                     placeholder="Start date - Due date"
                     value={
                       form.start_date && form.due_date
@@ -482,7 +482,7 @@ const TasksCreate: React.FC = () => {
               <label className="block mb-2 font-medium text-[15px]">Description</label>
               <textarea
                 name="description"
-                className="w-full bg-[#F3F3F3] rounded px-4 py-3 text-black outline-none text-[15px] min-h-[90px]"
+                className="w-full bg-gray-100 rounded px-4 py-3 text-black outline-none text-[15px] min-h-[90px]"
                 rows={4}
                 placeholder=""
                 value={form.description}
@@ -499,7 +499,7 @@ const TasksCreate: React.FC = () => {
                 <label className="block mb-2 font-medium text-[15px]">Priority</label>
                 <select
                   name="priority"
-                  className="w-full bg-[#F3F3F3] rounded px-4 py-3 text-black outline-none text-[15px]"
+                  className="w-full bg-gray-100 rounded px-4 py-3 text-black outline-none text-[15px]"
                   value={form.priority}
                   onChange={(e) => handleChange(e, 'detailed')}
                 >
@@ -511,7 +511,7 @@ const TasksCreate: React.FC = () => {
                 <label className="block mb-2 font-medium text-[15px]">Status</label>
                 <select
                   name="status"
-                  className="w-full bg-[#F3F3F3] rounded px-4 py-3 text-black outline-none text-[15px]"
+                  className="w-full bg-gray-100 rounded px-4 py-3 text-black outline-none text-[15px]"
                   value={form.status}
                   onChange={(e) => handleChange(e, 'detailed')}
                 >
@@ -523,7 +523,7 @@ const TasksCreate: React.FC = () => {
                 <label className="block mb-2 font-medium text-[15px]">Reviewer/Approver</label>
                 <select
                   name="reviewer"
-                  className="w-full bg-[#F3F3F3] rounded px-4 py-3 text-black outline-none text-[15px]"
+                  className="w-full bg-gray-100 rounded px-4 py-3 text-black outline-none text-[15px]"
                   value={form.reviewer}
                   disabled
                 >
@@ -542,7 +542,7 @@ const TasksCreate: React.FC = () => {
                 <label className="block mb-2 font-medium text-[15px]">Start After</label>
                 <input
                   name="startAfter"
-                  className="w-full bg-[#F3F3F3] rounded px-4 py-3 text-black outline-none text-[15px]"
+                  className="w-full bg-gray-100 rounded px-4 py-3 text-black outline-none text-[15px]"
                   placeholder="Select Start After"
                   value={form.startAfter}
                   onChange={(e) => handleChange(e, 'detailed')}
@@ -552,7 +552,7 @@ const TasksCreate: React.FC = () => {
                 <label className="block mb-2 font-medium text-[15px]">Blocked By</label>
                 <input
                   name="blockedBy"
-                  className="w-full bg-[#F3F3F3] rounded px-4 py-3 text-black outline-none text-[15px]"
+                  className="w-full bg-gray-100 rounded px-4 py-3 text-black outline-none text-[15px]"
                   placeholder="Select Blocked By"
                   value={form.blockedBy}
                   onChange={(e) => handleChange(e, 'detailed')}
@@ -564,7 +564,7 @@ const TasksCreate: React.FC = () => {
           {false && (
           <div>
             <div className="font-bold text-[17px] mb-4">Notification Control</div>
-            <div className="flex items-center bg-[#F3F3F3] rounded px-4 py-3 mb-2 justify-between">
+            <div className="flex items-center bg-gray-100 rounded px-4 py-3 mb-2 justify-between">
               <span className="mr-2 font-medium text-[15px]">Override Notification Settings</span>
               <button
                 type="button"

@@ -119,7 +119,7 @@ const ProjectTasks: React.FC = () => {
                     <span className="hover:underline cursor-pointer text-orange-500" onClick={() => navigate('/projects')}>Projects</span>
                     <span className="mx-1">/</span>
                     
-                    <span className="font-semibold">Tasks</span>
+                    <span className="font-semibold">Project Tasks</span>
                 </nav>
                 <div className="flex justify-between items-center">
                     <div>
