@@ -52,7 +52,7 @@ const PermissionsList: React.FC<PermissionsListProps> = ({ moduleName }) => {
         });
         window.location.reload();
       } catch (error) {
-        console.error("Error deleting:", error);
+        // Removed: console.error("Error deleting:", error);
       }
     }
   };

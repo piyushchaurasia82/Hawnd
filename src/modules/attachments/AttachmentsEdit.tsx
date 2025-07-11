@@ -26,7 +26,6 @@ const AttachmentsEdit: React.FC<AttachmentsEditProps> = ({ moduleName }) => {
             );
             navigate(`/${moduleName}`);
         } catch (error) {
-            console.error('Error updating:', error);
         }
     };
 

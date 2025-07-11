@@ -38,7 +38,6 @@ export default function SignUpForm() {
     }
 
     // Here you would typically make an API call to register the user
-    console.log('Form submitted:', formData);
   };
 
   return (

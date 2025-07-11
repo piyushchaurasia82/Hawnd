@@ -54,14 +54,8 @@ const ProjectsCreate: React.FC = () => {
                 let userRolesData = userRolesRes.data.data || userRolesRes.data.user_roles || userRolesRes.data;
                 let rolesData = rolesRes.data.data || rolesRes.data.roles || rolesRes.data;
 
-                // Debug logs
-                console.log('Users API:', usersData);
-                console.log('UserRoles API:', userRolesData);
-                console.log('Roles API:', rolesData);
-
                 // If roles API failed or returned an error, fallback to showing all users
                 if (!rolesData || rolesData.error) {
-                    console.warn('Roles API failed or unauthorized. Showing all users in project owner dropdown.');
                     setFilteredUsers(usersData);
                     return;
                 }
@@ -99,7 +93,6 @@ const ProjectsCreate: React.FC = () => {
                 setFilteredUsers(filtered);
 
             } catch (error) {
-                console.error('Error fetching users with roles:', error);
                 setFilteredUsers([]);
             }
         };

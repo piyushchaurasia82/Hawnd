@@ -23,7 +23,6 @@ const AttachmentsCreate: React.FC<AttachmentsCreateProps> = ({ moduleName }) => 
             );
             navigate(`/${moduleName}`);
         } catch (error) {
-            console.error('Error creating:', error);
         }
     };
 

@@ -145,7 +145,6 @@ const Dashboard: React.FC = () => {
         localStorage.setItem('user_profile', JSON.stringify(res.data));
         // Optionally, you can set this in state/context if needed
       } catch (err) {
-        console.error('Failed to fetch profile:', err);
       }
     };
     fetchProfile();

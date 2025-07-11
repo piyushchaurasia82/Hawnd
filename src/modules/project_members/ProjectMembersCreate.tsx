@@ -20,7 +20,6 @@ const ProjectMembersCreate: React.FC = () => {
             );
             navigate(`/${moduleName}`);
         } catch (error) {
-            console.error('Error creating:', error);
         }
     };
 

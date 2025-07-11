@@ -32,7 +32,7 @@ const ProjectMembersList: React.FC = () => {
                 );
                 window.location.reload();
             } catch (error) {
-                console.error('Error deleting:', error);
+                // Removed: console.error('Error deleting:', error);
             }
         }
     };

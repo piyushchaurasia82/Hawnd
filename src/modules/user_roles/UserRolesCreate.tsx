@@ -121,7 +121,6 @@ const UserRolesCreate: React.FC = () => {
         } catch (error: any) {
             const errorMessage = error.response?.data?.error || 'Failed to create user roles';
             setError(errorMessage);
-            console.error('Error creating:', error);
         }
     };
 

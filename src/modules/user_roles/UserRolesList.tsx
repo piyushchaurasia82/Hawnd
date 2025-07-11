@@ -84,7 +84,6 @@ const UserRolesList: React.FC = () => {
                 const grouped = groupUserRoles(userRolesData, usersData, rolesData);
                 setGroupedData(grouped);
             } catch (error) {
-                console.error('Error fetching data:', error);
             } finally {
                 setLoading(false);
             }
@@ -161,7 +160,6 @@ const UserRolesList: React.FC = () => {
                 await Promise.all(promises);
                 window.location.reload();
             } catch (error) {
-                console.error('Error deleting:', error);
             }
         }
     };

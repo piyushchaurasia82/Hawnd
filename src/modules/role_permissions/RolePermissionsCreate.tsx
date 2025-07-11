@@ -150,7 +150,6 @@ const RolePermissionsCreate: React.FC<RolePermissionsCreateProps> = ({ moduleNam
                 setPermissions(permissionsData);
             } catch (err) {
                 setError('Failed to fetch roles or permissions');
-                console.error('Error fetching data:', err);
             } finally {
                 setLoading(false);
             }
@@ -181,7 +180,6 @@ const RolePermissionsCreate: React.FC<RolePermissionsCreateProps> = ({ moduleNam
         } catch (error: any) {
             const errorMessage = error.response?.data?.error || 'Failed to create role permissions';
             setError(errorMessage);
-            console.error('Error creating:', error);
         }
     };
 

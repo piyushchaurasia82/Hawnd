@@ -129,9 +129,6 @@ const UsersEdit: React.FC<{ moduleName?: string }> = ({ moduleName = 'users' }) 
             .catch((err) => {
                 setError('Failed to load user data. ' + (err?.message || ''));
                 setLoading(false);
-                // Log error for debugging
-                // eslint-disable-next-line no-console
-                console.error('Error fetching user by id:', err);
             });
     }, [config, id, lastChangedPassword]);
 

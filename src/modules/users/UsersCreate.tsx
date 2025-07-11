@@ -5,10 +5,12 @@ import { Eye, EyeOff } from 'lucide-react';
 import MultiSelect from '../../components/form/MultiSelect';
 import { useCurrentUser } from '../../context/CurrentUserContext';
 import { postAuditLog } from '../../services/api';
+import { useToast } from '../../components/ui/alert/ToastContext';
 
 const UsersCreate: React.FC = () => {
   const navigate = useNavigate();
   const { user: currentUser } = useCurrentUser();
+  const { showToast } = useToast();
   // Form state
   const [fullName, setFullName] = useState('');
   const [email, setEmail] = useState('');
@@ -37,10 +39,8 @@ const UsersCreate: React.FC = () => {
         ? rolesRes.data
         : rolesRes.data.data || rolesRes.data.roles || [];
       setRolesOptions(Array.isArray(rolesArr) ? rolesArr.map((r: any) => ({ value: String(r.id), text: r.name || r.description })) : []);
-      console.log('Fetched roles:', rolesArr);
     } catch (e) {
       setRolesOptions([]);
-      console.error('Error fetching roles:', e);
     }
   };
 
@@ -57,7 +57,6 @@ const UsersCreate: React.FC = () => {
       })));
     } catch (e) {
       setProjects([]);
-      console.error('Error fetching projects:', e);
     }
   };
 
@@ -76,7 +75,6 @@ const UsersCreate: React.FC = () => {
       })));
     } catch (e) {
       setTasks([]);
-      console.error('Error fetching tasks:', e);
     }
   };
 
@@ -135,10 +133,7 @@ const UsersCreate: React.FC = () => {
         is_active: isActive ? "True" : "False"
       };
       
-      console.log('Creating user in project management system:', userPayload);
-      
       const userRes = await api.post('/api/projectmanagement/users/', userPayload);
-      console.log('User creation response:', userRes.data);
       
       // Extract user ID from response
       const userId = userRes.data.id || userRes.data.user_id;
@@ -146,8 +141,6 @@ const UsersCreate: React.FC = () => {
       if (!userId) {
         throw new Error('User created but no user ID returned');
       }
-      
-      console.log('Successfully created user with ID:', userId);
       
       // Assign roles if selected
       if (selectedRoles.length > 0) {
@@ -158,9 +151,7 @@ const UsersCreate: React.FC = () => {
               role_id: roleId 
             })
           ));
-          console.log('Roles assigned successfully');
         } catch (roleError) {
-          console.warn('Failed to assign some roles:', roleError);
         }
       }
       
@@ -173,9 +164,7 @@ const UsersCreate: React.FC = () => {
               user_id: userId 
             })
           ));
-          console.log('Projects assigned successfully');
         } catch (projectError) {
-          console.warn('Failed to assign some projects:', projectError);
         }
       }
       
@@ -195,9 +184,7 @@ const UsersCreate: React.FC = () => {
             };
             await api.put(`/api/projectmanagement/tasks/${taskId}/`, payload);
           }));
-          console.log('Tasks assigned successfully');
         } catch (taskError) {
-          console.warn('Failed to assign some tasks:', taskError);
         }
       }
       
@@ -210,7 +197,12 @@ const UsersCreate: React.FC = () => {
         description: `User account for ${firstName} ${lastName} was created by ${performerName}.`
       });
       
-      setSuccess(`User "${firstName} ${lastName}" created successfully! They can now login with username: ${username}`);
+      showToast({
+        type: 'success',
+        title: 'User Created',
+        message: `User "${firstName} ${lastName}" created successfully! They can now login with username: ${username}`,
+        duration: 5000
+      });
       
       // Reset form
       setFirstName('');
@@ -230,27 +222,41 @@ const UsersCreate: React.FC = () => {
       }, 2000);
       
     } catch (error: any) {
-      console.error('Error creating user:', error);
-      
       let errorMessage = 'Failed to create user. Please try again.';
-      
+      let errorTitle = 'Error';
       if (error.response?.data) {
         const data = error.response.data;
-        if (data.message) {
+        if (data.status === 'validation_error' && data.errors) {
+          errorTitle = 'Validation Error';
+          if (data.errors.username && data.errors.email) {
+            errorMessage = 'User with this username and email already exists.';
+          } else if (data.errors.username) {
+            errorMessage = 'User with this username already exists.';
+          } else if (data.errors.email) {
+            errorMessage = 'User with this email already exists.';
+          } else {
+            errorMessage = Object.entries(data.errors).map(([field, msgs]) => `${field}: ${Array.isArray(msgs) ? msgs.join(', ') : msgs}`).join('; ');
+          }
+        } else if (data.status === 'error' && data.message) {
+          errorTitle = 'Error';
+          errorMessage = data.message;
+        } else if (data.status === 'success' && data.message) {
+          errorTitle = 'Success';
+          errorMessage = data.message;
+        } else if (data.message) {
           errorMessage = data.message;
         } else if (data.error) {
           errorMessage = data.error;
         } else if (typeof data === 'string') {
           errorMessage = data;
-        } else if (data.data && typeof data.data === 'object') {
-          const fieldErrors = Object.entries(data.data)
-            .map(([field, messages]) => `${field}: ${Array.isArray(messages) ? messages.join(', ') : messages}`)
-            .join('; ');
-          errorMessage = `Validation errors: ${fieldErrors}`;
         }
       }
-      
-      setError(errorMessage);
+      showToast({
+        type: errorTitle === 'Success' ? 'success' : 'error',
+        title: errorTitle,
+        message: errorMessage,
+        duration: 5000
+      });
     } finally {
       setLoading(false);
     }

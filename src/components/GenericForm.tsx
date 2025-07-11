@@ -117,7 +117,6 @@ const GenericForm: React.FC<GenericFormProps> = ({
       );
       setFormData(getEditFormData(data, config.formConfig.fields));
     } catch (error) {
-      console.error("Error fetching data:", error);
     }
   }, [id, config.apiBaseUrl, config.endpoints.read.url, initialValues]);
 
@@ -169,7 +168,6 @@ const GenericForm: React.FC<GenericFormProps> = ({
       }));
       setOptions((prev) => ({ ...prev, [field.name]: fetchedOptions }));
     } catch (error) {
-      console.error(`Error fetching options for ${field.name}:`, error);
     }
   }, [config]);
 

@@ -47,8 +47,6 @@ export const CurrentUserProvider = ({ children }: { children: ReactNode }) => {
       // Fetch the current user using the get-profile API
       const res = await api.get('/api/projectmanagement/get-profile/');
       const u = res.data.data || res.data;
-      // Debug log: user id
-      console.log('User ID:', u.id);
       setUser({
         id: u.id,
         username: u.username,
@@ -61,24 +59,14 @@ export const CurrentUserProvider = ({ children }: { children: ReactNode }) => {
       // Fetch all user_roles
       const allUserRolesRes = await api.get('/api/projectmanagement/user_roles/');
       const allUserRolesArr = allUserRolesRes.data.data || allUserRolesRes.data.user_roles || allUserRolesRes.data;
-      // Debug log: user roles array
-      console.log('User Roles Array:', allUserRolesArr);
       // Find the user_roles entry for this user
       const userRoleEntry = Array.isArray(allUserRolesArr) ? allUserRolesArr.find((ur: any) => String(ur.user_id) === String(u.id)) : null;
-      // Debug log: user role entry
-      console.log('User Role Entry:', userRoleEntry);
       const userRoleId = userRoleEntry ? userRoleEntry.role_id : null;
-      // Debug log: user role id
-      console.log('User Role ID:', userRoleId);
       if (userRoleId) {
         // Fetch all roles
         const rolesRes = await api.get('/api/projectmanagement/roles/');
         const rolesArr = rolesRes.data.data || rolesRes.data.roles || rolesRes.data;
-        // Debug log: roles array
-        console.log('Roles Array:', rolesArr);
         const matchedRole = Array.isArray(rolesArr) ? rolesArr.find((r: any) => String(r.id) === String(userRoleId)) : null;
-        // Debug log: matched role
-        console.log('Matched Role:', matchedRole);
         if (matchedRole) {
           localStorage.setItem('user_role', matchedRole.name);
           localStorage.setItem('user_role_id', String(matchedRole.id));

@@ -21,7 +21,6 @@ const GenericShow: React.FC<GenericShowProps> = ({ config, id }) => {
             );
             setData(response.data);
         } catch (error) {
-            console.error('Error fetching data:', error);
         }
     };
 

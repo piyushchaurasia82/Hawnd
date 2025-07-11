@@ -40,7 +40,6 @@ const RolesEdit: React.FC<RolesEditProps> = ({ moduleName }) => {
       });
       navigate(`/${moduleName}`);
     } catch (error) {
-      console.error("Error updating:", error);
     }
   };
 

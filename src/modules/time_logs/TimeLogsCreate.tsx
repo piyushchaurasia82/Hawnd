@@ -102,7 +102,6 @@ const TimeLogsCreate: React.FC = () => {
         } catch (err: any) {
             setError('Failed to create time log.');
             if (err.response && err.response.data) {
-                console.error('API Error:', err.response.data);
                 showToast({ type: 'error', title: 'Error', message: JSON.stringify(err.response.data) });
             } else {
             showToast({ type: 'error', title: 'Error', message: 'Failed to create time log.' });

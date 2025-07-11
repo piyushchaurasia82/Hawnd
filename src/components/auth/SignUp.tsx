@@ -29,7 +29,6 @@ const SignUp: React.FC = () => {
       return;
     }
     // In a real application, you would send this to a registration API
-    console.log('Sign-up attempt:', { username, password });
     const messageBox = document.createElement('div');
     messageBox.className = 'fixed inset-0 flex items-center justify-center bg-black bg-opacity-50 z-50';
     messageBox.innerHTML = `

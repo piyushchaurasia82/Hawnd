@@ -35,7 +35,7 @@ const AttachmentsList: React.FC<AttachmentsListProps> = ({ moduleName }) => {
                 );
                 window.location.reload();
             } catch (error) {
-                console.error('Error deleting:', error);
+                // Removed: console.error('Error deleting:', error);
             }
         }
     };

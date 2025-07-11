@@ -125,7 +125,6 @@ const RolePermissionsEdit: React.FC<RolePermissionsEditProps> = ({ moduleName })
                     .filter((pid: number) => typeof pid === 'number' && !isNaN(pid));
                 setSelectedPermissions(permissionIds);
             } catch (error) {
-                console.error('Error fetching data:', error);
             } finally {
                 setLoading(false);
             }
@@ -165,7 +164,6 @@ const RolePermissionsEdit: React.FC<RolePermissionsEditProps> = ({ moduleName })
             setTimeout(() => navigate('/role_permissions'), 1200);
         } catch (error) {
             alert('Failed to update role permissions. Please try again.');
-            console.error('Error updating:', error);
         }
     };
 

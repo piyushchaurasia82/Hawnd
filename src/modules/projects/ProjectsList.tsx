@@ -30,7 +30,6 @@ const ProjectsList: React.FC = () => {
             setProjects(projectsData);
             setFilteredProjects(projectsData);
         } catch (error) {
-            console.error('Error fetching projects:', error);
             setProjects([]);
             setFilteredProjects([]);
         } finally {

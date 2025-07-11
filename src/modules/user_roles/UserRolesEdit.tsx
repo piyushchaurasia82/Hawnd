@@ -46,7 +46,6 @@ const UserRolesEdit: React.FC = () => {
                 });
             } catch (err) {
                 setError('Failed to fetch users or roles');
-                console.error('Error fetching data:', err);
             } finally {
                 setLoading(false);
             }
@@ -131,7 +130,6 @@ const UserRolesEdit: React.FC = () => {
         } catch (error: any) {
             const errorMessage = error.response?.data?.error || 'Failed to update user roles';
             setError(errorMessage);
-            console.error('Error updating:', error);
         }
     };
 

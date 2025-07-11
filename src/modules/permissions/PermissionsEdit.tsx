@@ -40,7 +40,6 @@ const PermissionsEdit: React.FC<PermissionsEditProps> = ({ moduleName }) => {
       });
       navigate(`/${moduleName}`);
     } catch (error) {
-      console.error("Error updating:", error);
     }
   };
 

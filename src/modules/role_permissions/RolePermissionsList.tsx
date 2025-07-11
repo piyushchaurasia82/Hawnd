@@ -89,7 +89,6 @@ const RolePermissionsList: React.FC<RolePermissionsListProps> = ({ moduleName })
       setRolePermissions(rolePermissionsData);
       setUserRoles(userRolesData);
     } catch (error) {
-      console.error('Error fetching data:', error);
     } finally {
       setLoading(false);
     }
@@ -154,7 +153,6 @@ const RolePermissionsList: React.FC<RolePermissionsListProps> = ({ moduleName })
       await fetchData();
 
     } catch (error: any) {
-      console.error('Error creating role permissions:', error);
       alert(error?.response?.data?.error || 'Failed to create role permissions. Please try again.');
     }
   };
@@ -354,7 +352,6 @@ const RolePermissionsList: React.FC<RolePermissionsListProps> = ({ moduleName })
                             await Promise.all(mappings.map(m => api.delete(`/api/projectmanagement/role-permissions/${m.id}/`)));
                             await fetchData();
                           } catch (error: any) {
-                            console.error('Error deleting role permissions:', error);
                             alert(error?.response?.data?.error || 'Failed to delete role permissions.');
                           }
                         }}

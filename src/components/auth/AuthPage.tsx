@@ -73,7 +73,6 @@ const AuthPage: React.FC = () => {
         displayMessage('error', 'Login Failed', response.data.message || 'Unexpected response from server. Please try again.');
       }
     } catch (error: any) {
-      console.error('Error during login:', error);
       let mainErrorMessage: string = 'Login failed. Please try again.';
       let detailedErrorBody: React.ReactNode | null = null;
 
@@ -225,13 +224,9 @@ const AuthPage: React.FC = () => {
                   onSuccess={credentialResponse => {
                     const idToken = credentialResponse.credential;
                     if (idToken) {
-                      const decoded = decodeJwt(idToken);
-                      console.log('Decoded Google ID Token:', decoded);
                     }
-                    console.log(credentialResponse);
                   }}
                   onError={() => {
-                    console.log('Login Failed');
                   }}
                   width="320"
                   size="large"

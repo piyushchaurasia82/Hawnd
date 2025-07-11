@@ -23,7 +23,6 @@ const ProjectMembersEdit: React.FC = () => {
             );
             navigate(`/${moduleName}`);
         } catch (error) {
-            console.error('Error updating:', error);
         }
     };
 

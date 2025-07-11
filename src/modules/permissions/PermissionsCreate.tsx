@@ -41,7 +41,6 @@ const PermissionsCreate: React.FC<PermissionsCreateProps> = ({ moduleName }) => 
             navigate(`/${moduleName}`);
         } catch (error) {
             setError('Error creating permission. Please try again.');
-            console.error('Error creating:', error);
         }
     };
 

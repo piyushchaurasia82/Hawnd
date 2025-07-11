@@ -9,7 +9,6 @@ const LoginForm: React.FC = () => {
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     // In a real application, you would send this to an authentication API
-    console.log('Login attempt:', { username, password });
   };
 
   return (

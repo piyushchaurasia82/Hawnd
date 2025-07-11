@@ -103,7 +103,7 @@ const GenericList: React.FC<GenericListProps> = ({
         setTotalCount(response.data.total || response.data.data.length);
       }
     } catch (error) {
-      console.error("Error fetching data:", error);
+      // Removed: console.error("Error fetching data:", error);
     }
   };
 
